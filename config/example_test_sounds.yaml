@@ -1,0 +1,17 @@
+enable_video: false
+
+default_inputs:
+    - type: test_audio
+      props:
+          freq: 200
+    - type: test_audio
+      props:
+          freq: 400
+          volume: 1.0
+    - type: test_audio
+      props:
+          freq: 600
+          volume: 0.2
+
+default_outputs:
+    - type: local

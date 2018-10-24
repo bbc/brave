@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0/slate/bootstrap.min.css" crossorigin="anonymous">
+        <link rel="stylesheet" href="style.css">
+        <title>Brave - elements table</title>
+    </head>
+    <body>
+    <main role="main" class="container">
+        <button style="float:right" onclick="refresh()">Refresh</button>
+        <h3>All GStreamer elements</h3>
+        <p>This view is for debugging. It shows all GStreamer elements and their status.</p>
+        <div id="main"></div>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+<script>
+
+function elementColumns(element) {
+    var cells = []
+    cells.push($('<td></td>').append($('<strong>' + element.name + '</strong>')))
+    cells.push($('<td></td>').append(element.type))
+    cells.push($('<td></td>').append(element.state).addClass(element.state))
+    var properties = []
+    if (element.channel) properties.push('Channel: "' + element.channel + '"')
+    cells.push($('<td></td>').append(properties.join('<br />')))
+    return cells
+}
+
+function addElements(table, elements) {
+    elements.forEach(function(element) {
+        var numPads = element.pads ? Object.keys(element.pads).length : 0
+        if (numPads) {
+            makeElementRowWithPads(table, element)
+        }
+        else {
+            makeElementRowWithoutPads(table, element)
+        }
+    })
+}
+
+function makeElementRowWithoutPads(table, element) {
+    var cells = elementColumns(element)
+    row = $('<tr></tr>')
+    row.append(cells)
+    table.append(row)
+}
+
+function makeElementRowWithPads(table, element) {
+    var numPads = Object.keys(element.pads).length
+    var padNum = 0
+    Object.keys(element.pads).forEach(function(padName) {
+        row = $('<tr></tr>')
+        var cells = []
+        if (padNum++ === 0) {
+            cells = elementColumns(element)
+            if (numPads > 1) cells.forEach(function(c) { c.attr('rowspan', numPads) })
+        }
+
+        var pad = element.pads[padName]
+        cells.push($('<td></td>').append(padName))
+        if (pad.peer) {
+            cells.push($('<td></td>')
+                .append(pad.peer.element_name + ' (' + pad.peer.pad_name + ')'))
+        }
+        else {
+            cells.push($('<td></td>').append('NOT CONNECTED'))
+        }
+
+        var messages = []
+        if (pad.blocked) messages.push('<em>BLOCKED!</em>')
+        if (pad.blocking) messages.push('<em>BLOCKING!</em>')
+        cells.push($('<td></td>').append(messages.join(' ')))
+
+        cells.push($('<td></td>').append(pad.caps))
+
+        row.append(cells)
+        table.append(row)
+    })
+}
+
+var tableHeader =  '<tr>' +
+                    '<th rowspan="2">Name</th>' +
+                    '<th rowspan="2">Type</th>' +
+                    '<th rowspan="2">State</th>' +
+                    '<th rowspan="2">Props</th>' +
+                    '<th colspan="4">Pad</th>' +
+                    '</tr><tr>' +
+                    '<th>Name</th>' +
+                    '<th>Connected to</th>' +
+                    '<th>Notices</th>' +
+                    '<th>Caps</th>' +
+                    '</tr>'
+
+
+function refresh() {
+    $.ajax({
+        url: 'api/elements'
+    }).then(function(data) {
+        $('#main').empty()
+        Object.keys(data).forEach(function(blockType) {
+            Object.keys(data[blockType]).forEach(function(blockId) {
+                header = $('<h3></h3>').append(blockType + ' ' + blockId)
+                var state = data[blockType][blockId].state
+                if (state) {
+                    header.append(' ')
+                        .append($('<span></span>').append(state).addClass(data[blockType][blockId].state))
+                }
+                table = $('<table class="table table-bordered table-hover"></table>')
+                table.append(tableHeader)
+                tbody = $('<tbody></tbody>')
+                table.append(tbody)
+                if (data[blockType][blockId].elements) addElements(tbody, data[blockType][blockId].elements)
+                $('#main').append(header, table)
+            })
+        })
+    })
+}
+refresh()
+</script>
+
+    </body>
+</html>

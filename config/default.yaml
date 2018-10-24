@@ -1,0 +1,81 @@
+##
+## Video, audio, or both? Default is both
+##
+enable_video: true
+enable_audio: true
+
+##
+## Default width and height (If ommitted, it will be 640,360)
+##
+default_mixer_width: 640
+default_mixer_height: 360
+
+##
+## DEFAULT INPUTS
+## Here you can define inputs that should exist at startup.
+## Types available: 'uri', 'image', 'test_video', 'test_audio'
+##
+default_inputs:
+    # - type: uri
+    #   props:
+    #       zorder: 2
+    #       uri: file:///path/to/file.mp4
+    #       width: 640
+    #       height: 360
+    # - type: image
+    #   props:
+    #       uri: https://upload.wikimedia.org/wikipedia/commons/e/eb/BBC.svg
+    # - type: test_audio
+    #   props:
+    #       freq: 200
+    # - type: test_video
+    #   props:
+    #       zorder: 3
+    #       pattern: 18
+
+##
+## DEFAULT OUTPUTS
+## Here you can define inputs that should exist at startup.
+## Types available: 'rtmp', 'tcp, 'image', 'file', 'local'
+##
+default_outputs:
+    # - type: local
+    # - type: file
+    #   props:
+    #     location: /path/to/file.mp4
+    # - type: image
+    # - type: tcp
+    # - type: rtmp
+    #   props:
+    #       uri: rtmp://domain/path/name
+
+##
+## DEFAULT OVERLAYS
+## Types available: 'text', 'clock', 'effect'
+##
+default_overlays:
+    # - type: text
+    #   props:
+    #       text: 'I am some text'
+    #       visible: true
+    # - type: clock
+    #   props:
+    #       valignment: 'top'
+    #       visible: true
+    # - type: effect
+    #   props:
+    #       effect_name: 'warptv'
+    #       visible: true
+
+##
+## DEFAULT MIXERS
+## If omitted, one mixer is always created.
+## At present only the first mixer is able to connect to inputs and outputs.
+## No 'type' field requided for mixers.
+## 'props' can have 'width' and 'height' and 'pattern' (all integers)
+##
+default_mixers:
+    # - props:
+    #     width: 160
+    #     height: 90
+    #     pattern: 6

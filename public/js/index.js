@@ -1,0 +1,256 @@
+//
+// This web interface has been quickly thrown together. It's not production code.
+//
+
+function onPageLoad() {
+    $(document).ready(function() {
+        $('#new-input-button').click(inputsHandler.showFormToAdd)
+        $('#new-overlay-button').click(overlaysHandler.showFormToAdd)
+        $('#new-output-button').click(outputsHandler.showFormToAdd)
+        $('#refresh-page-button').click(updatePage)
+        $('#restart-brave-button').click(restartBrave)
+        $("#top-message").hide();
+        updatePage();
+        websocket.setup()
+    })
+}
+
+function updatePage() {
+    $.ajax({
+        url: 'api/all'
+    }).then(function(data) {
+        inputsHandler.items = data.inputs
+        overlaysHandler.items = data.overlays
+        outputsHandler.items = data.outputs
+        mixersHandler.items = data.mixers
+        drawAllItems()
+    });
+}
+
+setInterval(updatePage, 5000)
+
+function drawAllItems() {
+    $('#cards').empty()
+    inputsHandler.draw()
+    overlaysHandler.draw()
+    mixersHandler.draw()
+    outputsHandler.draw()
+}
+
+function getStateBox(state, linkClassName) {
+    var allIcons = $('<div class="state-icons"></div>').append([
+        components.stateIcon('NULL', state, linkClassName),
+        components.stateIcon('READY', state, linkClassName),
+        components.stateIcon('PAUSED', state, linkClassName),
+        components.stateIcon('PLAYING', state, linkClassName), ' ' + state])
+    return {value: allIcons, className: state}
+}
+
+var topMessageInterval
+function showMessage(m, level) {
+    var VALID_LEVELS = ['warning', 'success', 'danger', 'info']
+    if (!level || VALID_LEVELS.indexOf(level) === -1) level = 'warning'
+    console.debug('Showing this top', level, ' message:', m)
+    $("#top-message").show();
+    $("#top-message div").text(m);
+    $("#top-message").removeClass('alert-warning alert-success alert-danger alert-info')
+    $("#top-message").addClass('alert-' + level)
+    if (topMessageInterval) clearInterval(topMessageInterval)
+    topMessageInterval = setInterval(hideMessage, 4000);
+}
+
+function hideMessage() {
+    $("#top-message").fadeOut(200);
+}
+
+function getSelect(name, currentlySelectedKey, msg, options, alwaysShowUnselectedOption) {
+    var h = $('<select name="' + name + '"></select>')
+    h.addClass('form-control form-control-sm')
+    if (!currentlySelectedKey || alwaysShowUnselectedOption) $(h).append('<option value="">' + msg + '</option>')
+    Object.keys(options).forEach(function(key) {
+        var option = $('<option></option>');
+        option.attr({ 'value': key }).text(options[key]);
+        if (key == currentlySelectedKey) option.attr({ selected: 'selected' });
+        $(h).append(option)
+    })
+
+    return h
+}
+
+function getDimensionsSelect(name, width, height) {
+    var currentDimensions = width && height ? width + 'x' + height : null
+    var dimensionsOptions = {}
+    dimensionsOptions[currentDimensions] = prettyDimensions({width: width, height: height})
+    standardDimensions.forEach(d => {
+        dimensions = d[0] + 'x' + d[1]
+        dimensionsOptions[dimensions] = prettyDimensions({width: d[0], height: d[1]})
+    })
+
+    return formGroup({
+        id: 'input-dimensions',
+        label: 'Dimensions',
+        name,
+        value: currentDimensions,
+        initialOption: 'None (automatically resize to full screen)',
+        options: dimensionsOptions,
+        alwaysShowUnselectedOption: true
+    })
+}
+
+function splitXyString(s) {
+    matches = s.match(/^(\d+)x(\d+)$/)
+    if (matches) return [matches[1], matches[2]]
+}
+
+function splitPositionIntoXposAndYpos(obj) {
+    if (obj.position) {
+        split = splitXyString(obj.position)
+        if (split) [obj.xpos, obj.ypos] = split
+        else {
+            showMessage('Cannot understand position', 'warning')
+            return false
+        }
+    }
+    delete obj.position // also deletes if empty string
+    return true
+}
+
+function splitDimensionsIntoWidthAndHeight(obj) {
+    if (obj.dimensions) {
+        split = splitXyString(obj.dimensions)
+        if (split) [obj.width, obj.height] = split
+        else {
+            showMessage('Cannot understand dimensions', 'warning')
+            return false
+        }
+    }
+    delete obj.dimensions // also deletes if empty string
+    return true
+}
+
+// Widescreen, selectively taken from https://en.wikipedia.org/wiki/16:9#Common_resolutions
+var standardDimensions = [
+    [254, 144],
+    [480, 270],
+    [640, 360],
+    [768, 432],
+    [1024, 576],
+    [1280, 720],
+    [1366, 768],
+
+    // // Portrait
+    // [360, 640],
+    // [720, 1280],
+    //
+    // // Square
+    // [360, 360],
+    // [640, 640],
+    // [1080, 1080],
+    //
+    // // 4:3
+    // [640, 480],
+    // [704, 576],
+]
+
+function prettyDimensions(obj) {
+    var str = obj.width + 'x' + obj.height
+    if (obj.width*(9/16) === obj.height) {
+        str += ' (16x9 landscape)'
+    }
+    else if (obj.width*(16/9) === obj.height) {
+        str += ' (16x9 portrait)'
+    }
+    else if (obj.width*(3/4) === obj.height) {
+        str += ' (4x3 landscape)'
+    }
+    else if (obj.width === obj.height) {
+        str += ' (square)'
+    }
+
+    if (obj.width === 720 && obj.height === 576) str += ' (PAL DVD)'
+    if (obj.width === 1280 && obj.height === 720) str += ' (720p HD)'
+    if (obj.width === 1920 && obj.height === 1080) str += ' (1080p Full HD)'
+    if (obj.width === 576 && obj.height === 520) str += ' (PAL SD)'
+    if (obj.width === 1024 && obj.height === 576) str += ' (Widescreen SD)'
+    if (obj.width === 1366 && obj.height === 768) str += ' (qHD)'
+    return str
+}
+
+function prettyType(i) {
+    i = i.replace(/_/g, ' ')
+    // i = i.replace(/./, i.toUpperCase()[0])
+    return i
+}
+
+// Creates part of a form, which Bootstrap calls a 'form-group'
+function formGroup(details) {
+    var e = $(document.createElement('div'))
+    e.addClass('form-group')
+    var label = $(document.createElement('label'))
+    label.html(details.label)
+    label.attr('for', details.id)
+    e.append(label)
+    if (details.options) {
+        var s = getSelect(details.name, details.value, details.initialOption, details.options, details.alwaysShowUnselectedOption)
+        e.append(s)
+    }
+    else {
+        var input = $(document.createElement('input'))
+        input.addClass('form-control form-control-sm')
+        var fields = ['min', 'max', 'step', 'name', 'type', 'id', 'value',
+                      'data-slider-min', 'data-slider-max', 'data-slider-step', 'data-slider-value']
+        fields.forEach(f => input.attr(f, details[f]))
+        e.append(input)
+        if (details['data-slider-value']) {
+            input.slider();
+            let msg = $('<span></span>')
+            let showPerc = (event) => msg.text(event.value + '%')
+            showPerc({value: details['data-slider-value']})
+            input.on("slide", showPerc)
+            // input.css('padding', '32px')
+            // input.css('margin', '32px')
+            e.append(msg)
+        }
+    }
+    if (details.help) {
+        var small = $(document.createElement('small'))
+        small.addClass('form-text text-muted')
+        small.html(details.help)
+        e.append(small)
+    }
+
+    return e
+}
+
+function showModal(label, content, onSave) {
+    $('#primary-modal').modal()
+    $('#primary-modal h5').html(label)
+    $('#primary-modal .modal-body').html(content)
+
+    if (onSave) {
+        var saveButton = $('<button type="button" class="btn btn-success save-button">Save</button>')
+        saveButton.click(onSave)
+        $('#primary-modal .modal-footer').empty().append(saveButton)
+    }
+}
+
+function hideModal() {
+    $('#primary-modal').modal('hide')
+    $('#primary-modal .modal-body').empty()
+    $('#primary-modal .modal-footer').empty()
+}
+
+function restartBrave() {
+    $.ajax({
+        type: 'POST',
+        url: 'api/restart',
+        success: function() {
+            showMessage('Restart underway', 'success')
+        },
+        error: function() {
+            showMessage('Sorry, an error occurred', 'danger')
+        }
+    });
+}
+
+onPageLoad()

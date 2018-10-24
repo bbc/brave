@@ -1,0 +1,32 @@
+enable_audio: false
+default_mixer_width: 640
+default_mixer_height: 360
+
+default_inputs:
+    - type: test_video
+      props:
+          pattern: 18
+          width: 320
+          height: 180
+    - type: test_video
+      props:
+          pattern: 18
+          width: 320
+          height: 180
+          xpos: 320
+    - type: test_video
+      props:
+          pattern: 18
+          width: 320
+          height: 180
+          ypos: 180
+    - type: test_video
+      props:
+          pattern: 18
+          width: 320
+          height: 180
+          xpos: 320
+          ypos: 180
+
+default_outputs:
+    - type: local
