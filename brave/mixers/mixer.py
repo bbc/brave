@@ -86,9 +86,12 @@ class Mixer(InputOutputOverlay):
         if config.enable_video():
             # To work reliably we have a default source (videotestsrc)
             # It has the lowest permitted zorder (0) so that other things will appear on top.
+            # After the compositor, the format is changed from RGBA to RGBx (i.e. remove the alpha chanel)
+            # This is done (a) for overlay effects to work, and (b) for all outputs to work.
             pipeline_string += ('videotestsrc is-live=true name=videotestsrc ! videoconvert ! videoscale ! '
-                                'capsfilter name=capsfilter ! compositor name=video_mixer ! videoconvert ! '
-                                'video/x-raw,format=RGB ! queue name=video_mixer_output_queue ! '
+                                'capsfilter name=capsfilter ! compositor name=video_mixer ! '
+                                'video/x-raw,format=RGBA ! videoconvert ! queue name=video_mixer_output_queue ! '
+                                'capsfilter name=end_capsfilter caps="video/x-raw,format=RGBx" ! videoconvert ! '
                                 'tee name=final_video_tee allow-not-linked=true')
         if config.enable_audio():
             pipeline_string += \
@@ -96,8 +99,11 @@ class Mixer(InputOutputOverlay):
                 'queue name=audio_queue ! audiomixer name=audio_mixer ! ' + \
                 'tee name=final_audio_tee allow-not-linked=true'
 
+
         if not self.create_pipeline_from_string(pipeline_string):
             return False
+
+        self.end_capsfilter = self.pipeline.get_by_name('end_capsfilter')
 
         if config.enable_video():
             self.videotestsrc = self.pipeline.get_by_name('videotestsrc')

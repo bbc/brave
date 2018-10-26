@@ -12,7 +12,7 @@ logger = logging.getLogger('brave.overlays')
 class OverlayCollection(AbstractCollection):
     '''
     This is the collection of all created overlays.
-    An overlay can be a clock, graphic, or effect.
+    An overlay can be text or clock.
     '''
 
     def add(self, **args):
@@ -57,7 +57,7 @@ class OverlayCollection(AbstractCollection):
 
         if len(overlays) == 0:
             if not _link_if_not_already_linked(self.session.mixers[0].video_mixer_output_queue,
-                                               self.session.mixers[0].final_video_tee):
+                                               self.session.mixers[0].end_capsfilter):
                 self.session.mixers[0].logger.warn('Unable to connect from video mixer output queue to me')
         else:
             # The first should be linked to from the video mixer
@@ -72,7 +72,7 @@ class OverlayCollection(AbstractCollection):
 
             # The last should be linked to the video mixer tee
             logger.debug('Now linking overlay %s to the video mixer tee' % overlays[-1].id)
-            if not _link_if_not_already_linked(overlays[-1].element, self.session.mixers[0].final_video_tee):
+            if not _link_if_not_already_linked(overlays[-1].element, self.session.mixers[0].end_capsfilter):
                 overlays[-1].logger.warn('Unable to connect to the video mixer tee')
 
         #  Unblock everything
@@ -102,7 +102,6 @@ def _link_if_not_already_linked(element1, element2):
     if not element1.link(element2):
         logger.warn('Cannot link %s to %s' % (element1.get_name(), element2.get_name()))
         return False
-
     return True
 
 

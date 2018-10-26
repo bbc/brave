@@ -14,10 +14,24 @@ class EffectOverlay(Overlay):
                 'type': 'str',
                 'default': 'edgetv',
                 'permitted_values': {
-                    'edgetv': 'Edge',
-                    'radioactv': 'Radioactive',
-                    'agingtv': 'Aging',
-                    'warptv': 'Warp'
+                    'agingtv': 'AgingTV effect',
+                    'burn': 'Burn',
+                    'chromium': 'Chromium',
+                    'dicetv': 'DiceTV effect',
+                    'dilate': 'Dilate',
+                    'dodge': 'Dodge',
+                    'edgetv': 'EdgeTV effect',
+                    'exclusion': 'Exclusion',
+                    'optv': 'OpTV effect',
+                    'quarktv': 'QuarkTV effect',
+                    'radioactv': 'RadioacTV effect',
+                    'revtv': 'RevTV effect',
+                    'rippletv': 'RippleTV effect',
+                    'shagadelictv': 'ShagadelicTV',
+                    'solarize': 'Solarize',
+                    'streaktv': 'StreakTV effect',
+                    'vertigotv': 'VertigoTV effect',
+                    'warptv': 'WarpTV effect'
                 }
             },
             'visible': {
@@ -43,11 +57,5 @@ class EffectOverlay(Overlay):
                 change_in_visibility_state = props['visible'] != self.visible
             else:
                 change_in_visibility_state = props['visible'] is True
-
-        if (change_in_visibility_state):
-            mixer_state = self.mixer.get_state()
-            if mixer_state == Gst.State.PLAYING or mixer_state == Gst.State.PAUSED:
-                raise brave.exceptions.InvalidConfiguration(
-                    'Cannot make effect overlay visible or invisible unless mixer is in READY or NULL state')
 
         super().update_props(props)
