@@ -1,5 +1,6 @@
 from gi.repository import Gst
 from brave.inputoutputoverlay import InputOutputOverlay
+import brave.exceptions
 
 
 class Overlay(InputOutputOverlay):
@@ -9,8 +10,8 @@ class Overlay(InputOutputOverlay):
 
     def __init__(self, **args):
         super().__init__(**args)
-        if not hasattr(self, 'mixer'):
-            raise Exception('Overlay must be instantiated with mixer')
+        # self.__validate_provided_mixer()
+
         self.visible = self.props['visible']
         self.create_elements()
         if self.visible:
@@ -40,12 +41,18 @@ class Overlay(InputOutputOverlay):
         if self.props['visible'] and not self.visible:
             self._make_visible()
 
+    def mixer(self):
+        '''
+        Returns the mixer that this overlay is for
+        '''
+        return self.session().mixers[self.props['mixer_id']]
+
     def delete(self):
         '''
         Delete this overlay. Works whether the overlay is visible or not.
         '''
         self._make_invisible()
-        if not self.mixer.pipeline.remove(self.element):
+        if not self.mixer().pipeline.remove(self.element):
             self.logger.warn('Whilst deleting me, unable to remove element')
         self.collection.pop(self.id)
         return True
@@ -56,14 +63,14 @@ class Overlay(InputOutputOverlay):
         self.visible = True
 
         # Reconsider how overlay elements are linked:
-        self.collection.ensure_overlays_are_correctly_connected()
+        self.collection.ensure_overlays_are_correctly_connected(self.mixer())
 
     def _make_invisible(self):
         self.logger.debug('Becoming invisible')
         self.visible = False
 
         # This will remove the connections to/from this overlay:
-        self.collection.ensure_overlays_are_correctly_connected()
+        self.collection.ensure_overlays_are_correctly_connected(self.mixer())
         self.element.set_state(Gst.State.NULL)
 
     def ensure_src_pad_not_blocked(self):
@@ -78,3 +85,13 @@ class Overlay(InputOutputOverlay):
 
     def getSortValue(self):
         return self.id
+
+    def _update_props(self, new_props):
+        '''
+        Overrided to validate that the mixer provided exists.
+        '''
+        if 'mixer_id' in new_props:
+            if new_props['mixer_id'] not in self.session().mixers:
+                raise brave.exceptions.InvalidConfiguration('Invalid mixer ID provided: "%s"' % new_props['mixer_id'])
+
+        super()._update_props(new_props)

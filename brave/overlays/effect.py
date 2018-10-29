@@ -1,6 +1,4 @@
 from brave.overlays.overlay import Overlay
-from gi.repository import Gst
-import brave.exceptions
 
 
 class EffectOverlay(Overlay):
@@ -10,6 +8,10 @@ class EffectOverlay(Overlay):
 
     def permitted_props(self):
         return {
+            'mixer_id': {
+                'type': 'int',
+                'default': 0
+            },
             'effect_name': {
                 'type': 'str',
                 'default': 'edgetv',
@@ -41,21 +43,7 @@ class EffectOverlay(Overlay):
         }
 
     def create_elements(self):
-        self.element = self.mixer.add_element(self.props['effect_name'], self)
+        self.element = self.mixer().add_element(self.props['effect_name'], self)
 
     def set_element_values_from_props(self):
         pass
-
-    def update_props(self, props):
-        '''
-        Stops visiblity change whilst the parent mixer is playing/paused.
-        This crashes the pipeline.
-        '''
-        change_in_visibility_state = False
-        if 'visible' in props:
-            if hasattr(self, 'visible'):
-                change_in_visibility_state = props['visible'] != self.visible
-            else:
-                change_in_visibility_state = props['visible'] is True
-
-        super().update_props(props)

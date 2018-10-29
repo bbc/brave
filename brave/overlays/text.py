@@ -8,6 +8,10 @@ class TextOverlay(Overlay):
 
     def permitted_props(self):
         return {
+            'mixer_id': {
+                'type': 'int',
+                'default': 0
+            },
             'text': {
                 'type': 'str',
                 'default': 'Default text'
@@ -29,7 +33,7 @@ class TextOverlay(Overlay):
         }
 
     def create_elements(self):
-        self.element = self.mixer.add_element('textoverlay', self)
+        self.element = self.mixer().add_element('textoverlay', self)
         self.set_element_values_from_props()
 
     def set_element_values_from_props(self):
