@@ -1,4 +1,5 @@
-import subprocess, sys, time, tempfile, yaml, os, requests, pytest, signal, json, inspect
+import subprocess, sys, time, tempfile, yaml, os, requests, pytest, signal, json, inspect, random
+from PIL import Image
 
 brave_processes = {}
 
@@ -114,11 +115,17 @@ def test_directory():
     return os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
 
-OUTPUT_IMAGE_LOCATION = '/tmp/test.jpg'
+temp_directory = None
+def get_temp_directory():
+    global temp_directory
+    if not temp_directory:
+        temp_directory = tempfile.TemporaryDirectory()
+    return temp_directory.name
+
+
 def create_output_image_location():
-    global OUTPUT_IMAGE_LOCATION
-    delete_if_exists(OUTPUT_IMAGE_LOCATION)
-    return OUTPUT_IMAGE_LOCATION
+    img_file = get_temp_directory() + '/image' + str(random.randint(100000,200000)) + '.jpg'
+    return img_file
 
 
 OUTPUT_VIDEO_LOCATION = '/tmp/test.mp4'
@@ -173,12 +180,15 @@ def assert_outputs(outputs, check_playing_state=True):
     for count, expected_output in enumerate(outputs):
         actual_output = response.json()[count]
         for (key, value) in expected_output.items():
-            assert key in actual_output
-            assert value == actual_output[key], 'For key "%s", expected "%s" but got "%s"' % (key, value, actual_output[key])
+            if key == 'props':
+                for (props_key, props_value) in expected_output['props'].items():
+                    assert props_key in actual_output['props']
+                    assert props_value == actual_output['props'][props_key], 'For output %s, for key %s, expected %s but got %s' % (expected_output['id'], props_key, props_value, actual_output['props'][props_key])
+            else:
+                assert value == actual_output[key], 'Key "%s" expected to be "%s", but was "%s"' % (key, value, actual_output[key])
 
 
 def assert_mixers(mixers):
-
     # Check /api/all
     response = api_get('/api/all')
     assert response.status_code == 200
@@ -193,8 +203,12 @@ def assert_mixers(mixers):
     for count, expected_mixer in enumerate(mixers):
         actual_mixer = response.json()[count]
         for (key, value) in expected_mixer.items():
-            assert key in actual_mixer
-            assert value == actual_mixer[key], 'For key %s, expected %s but got %s' % (key, value, actual_mixer[key])
+            if key == 'props':
+                for (props_key, props_value) in expected_mixer['props'].items():
+                    assert props_key in actual_mixer['props']
+                    assert props_value == actual_mixer['props'][props_key], 'For mixer %s, for key %s, expected %s but got %s' % (expected_mixer['id'], props_key, props_value, actual_mixer['props'][props_key])
+            else:
+                assert value == actual_mixer[key], 'Key "%s" expected to be "%s", but was "%s"' % (key, value, actual_mixer[key])
 
 
 def assert_overlays(overlays):
@@ -216,9 +230,9 @@ def assert_overlays(overlays):
         for (key, value) in expected_overlay.items():
             assert key in actual_overlay
             if key == 'props':
-                for (key, value) in expected_overlay['props'].items():
-                    assert key in actual_overlay['props']
-                    assert value == actual_overlay['props'][key]
+                for (props_key, props_value) in expected_overlay['props'].items():
+                    assert props_key in actual_overlay['props']
+                    assert props_value == actual_overlay['props'][props_key], 'For overlay %s, for key %s, expected %s but got %s' % (expected_overlay['id'], props_key, props_value, actual_overlay['props'][props_key])
             else:
                 assert value == actual_overlay[key], 'Key "%s" expected to be "%s", but was "%s"' % (key, value, actual_overlay[key])
 
@@ -271,7 +285,33 @@ def assert_inputs(inputs, check_playing_state=True):
                 assert value == actual_input[key], 'For key "%s", expected "%s" but got "%s"' % (key, value, actual_input[key])
 
 
-def remove_input(id, expected_status_code=200):
+def delete_input(id, expected_status_code=200):
     response = api_delete('/api/inputs/' + str(id))
     assert response.status_code == expected_status_code
     time.sleep(0.2)
+
+
+def assert_image_color(output_image_location, expected_color):
+    im = Image.open(output_image_location)
+    assert im.format == 'JPEG'
+    assert im.size[0] == 640
+    assert im.size[1] == 360
+    assert im.mode == 'RGB'
+    print('format/size/node=', im.format, im.size, im.mode)
+    __assert_image_color(im, expected_color)
+
+def __assert_image_color(im, expected):
+    '''
+    Given an image and a color tuple, asserts the image is made up solely of that color.
+    '''
+    NAMES = ['red', 'green', 'blue']
+    PERMITTED_RANGE=10
+
+    # Select a few pixels to check:
+    dimensions = [(0,0), (100,0), (0,100), (100,100), (im.size[0]-1, im.size[1]-1)]
+    for dimension in dimensions:
+        actual = im.getpixel(dimension)
+        p = actual
+        for i in range(len(expected)):
+            assert (expected[i]-PERMITTED_RANGE) < actual[i] < (expected[i]+PERMITTED_RANGE), \
+                '%s value was %d but expected %d (within range of %d)' % (NAMES[i], actual[i], expected[i], PERMITTED_RANGE)

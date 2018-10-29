@@ -8,8 +8,8 @@ def test_overlay_at_start(run_brave, create_config_file):
 
     add_overlay({'type': 'text', 'props': {'text': 'Overlay #1', 'visible': True}})
     time.sleep(1)
-    assert_overlays([{'id': 0, 'state': 'PLAYING', 'props': {'visible': True}},
-                     {'id': 1, 'state': 'PLAYING', 'props': {'visible': True}}])
+    assert_overlays([{'id': 0, 'state': 'PLAYING', 'props': {'visible': True, 'mixer_id': 0}},
+                     {'id': 1, 'state': 'PLAYING', 'props': {'visible': True, 'mixer_id': 0}}])
 
     # Try adding one that's not visible:
     add_overlay({'type': 'text', 'props': {'text': 'Overlay #2', 'visible': False}})

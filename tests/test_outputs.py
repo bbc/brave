@@ -37,10 +37,10 @@ def test_outputs(run_brave):
     # # Add a property to existing output
     # update_output(1, {'props': {'update_frequency': 5}})
     # assert_outputs([{'type': 'image', 'id': 1, 'props': {'update_frequency': 5}}])
-    #
-    # # Add a bad property to existing output
-    # update_output(1, {'props': {'not_real': 100}}, 400)
-    # assert_outputs([{'type': 'image', 'id': 1, 'props': {'update_frequency': 5}}])
+
+    # Add a bad property to existing output
+    update_output(1, {'props': {'not_real': 100}}, 400)
+    assert_outputs([{'type': 'local', 'id': 0}, {'type': 'image', 'id': 1}])
 
     # Add a property to missing output
     update_output(4, {'props': {'update_frequency': 5}}, 400)

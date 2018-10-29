@@ -57,7 +57,8 @@ def assert_valid_output_file(output_video_location):
 
         element = pipeline.get_by_name('inputselector0')
         caps = element.get_static_pad('src').get_current_caps()
-        assert caps.to_string() == 'video/x-raw(memory:GLMemory), format=(string)NV12, width=(int)640, height=(int)360, interlace-mode=(string)progressive, multiview-mode=(string)mono, multiview-flags=(GstVideoMultiviewFlagsSet)0:ffffffff:/right-view-first/left-flipped/left-flopped/right-flipped/right-flopped/half-aspect/mixed-mono, pixel-aspect-ratio=(fraction)1/1, chroma-site=(string)jpeg, colorimetry=(string)bt601, framerate=(fraction)30/1'
+        assert caps.to_string() == 'video/x-raw, format=(string)Y444, width=(int)640, height=(int)360, interlace-mode=(string)progressive, multiview-mode=(string)mono, multiview-flags=(GstVideoMultiviewFlagsSet)0:ffffffff:/right-view-first/left-flipped/left-flopped/right-flipped/right-flopped/half-aspect/mixed-mono, pixel-aspect-ratio=(fraction)1/1, chroma-site=(string)mpeg2, colorimetry=(string)bt601, framerate=(fraction)30/1'
+
         pipeline.set_state(Gst.State.NULL)
         mainloop.quit()
 

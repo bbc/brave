@@ -45,9 +45,9 @@ def test_inputs(run_brave):
     update_input(4, {'props': {'pattern': 6}}, 400)
 
     # Removing an existing input works:
-    remove_input(0)
+    delete_input(0)
     assert_inputs([{'type': 'test_audio', 'id': 1}])
 
     # Removing a non-existant input causes a user error
-    remove_input(3, expected_status_code=400) # Does not exist
+    delete_input(3, expected_status_code=400) # Does not exist
     assert_inputs([{'type': 'test_audio', 'id': 1}])

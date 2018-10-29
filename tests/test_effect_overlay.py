@@ -10,21 +10,29 @@ def test_effect_overlay_visible_after_creation(run_brave):
 
     add_overlay({'type': 'effect', 'props': {'effect_name': 'edgetv'}})
     time.sleep(0.1)
-    assert_overlays([{'id': 0, 'state': 'NULL', 'props': {'visible': False}}])
+    assert_overlays([{'id': 0, 'state': 'NULL', 'props': {'visible': False, 'effect_name': 'edgetv'}}])
 
-    # Making visible fails
-    update_overlay(0, {'props': {'visible': True}}, status_code=400)
-    time.sleep(0.1)
-    assert_overlays([{'id': 0, 'state': 'NULL', 'props': {'visible': False}}])
-
-    # But if the mixer is in READY, then making visible works
-    set_mixer_state(0, 'READY')
-    time.sleep(0.1)
-    update_overlay(0, {'props': {'visible': True}})
-    time.sleep(0.1)
-    set_mixer_state(0, 'PLAYING')
+    update_overlay(0, {'props': {'visible': True}}, status_code=200)
     time.sleep(0.1)
     assert_overlays([{'id': 0, 'state': 'PLAYING', 'props': {'visible': True,'effect_name': 'edgetv'}}])
+
+    add_overlay({'type': 'effect', 'props': {'effect_name': 'solarize'}})
+    time.sleep(0.1)
+    assert_overlays([{'id': 0, 'state': 'PLAYING', 'props': {'visible': True,'effect_name': 'edgetv'}},
+                     {'id': 1, 'state': 'NULL', 'props': {'visible': False, 'effect_name': 'solarize'}}])
+
+    update_overlay(1, {'props': {'visible': True}}, status_code=200)
+    time.sleep(0.1)
+    assert_overlays([{'id': 0, 'state': 'PLAYING', 'props': {'visible': True,'effect_name': 'edgetv'}},
+                     {'id': 1, 'state': 'PLAYING', 'props': {'visible': True,'effect_name': 'solarize'}}])
+
+    delete_overlay(0)
+    time.sleep(0.1)
+    assert_overlays([{'id': 1, 'state': 'PLAYING', 'props': {'visible': True,'effect_name': 'solarize'}}])
+
+    delete_overlay(1)
+    time.sleep(0.1)
+    assert_overlays([])
 
 # @pytest.mark.skip(reason="known bug that effects made visible at start should not be permitted")
 def test_effect_overlay_visible_at_creation(run_brave):
@@ -33,17 +41,8 @@ def test_effect_overlay_visible_at_creation(run_brave):
     time.sleep(0.5)
     check_brave_is_running()
 
-    # This time, visible from the start, will 400 fail as not allowed
-    add_overlay({'type': 'effect', 'props': {'effect_name': 'warptv', 'visible': True}}, status_code=400)
-    time.sleep(0.1)
-    assert_overlays([])
-
-    # But if the mixer is in READY, then creating one visible from the start works
-    set_mixer_state(0, 'READY')
-    time.sleep(0.1)
-    add_overlay({'type': 'effect', 'props': {'effect_name': 'warptv', 'visible': True}})
-    time.sleep(0.1)
-    set_mixer_state(0, 'PLAYING')
+    # This time, visible from the start with visible=True
+    add_overlay({'type': 'effect', 'props': {'effect_name': 'warptv', 'visible': True}}, status_code=200)
     time.sleep(0.1)
     assert_overlays([{'state': 'PLAYING', 'props': {'visible': True, 'effect_name': 'warptv'}}])
 
@@ -54,13 +53,13 @@ def test_set_up_effect_overlay_in_config_file(run_brave, create_config_file):
 
     config = {
     'default_overlays': [
-        {'type': 'effect', 'props': {'effect_name': 'edgetv', 'visible': True}},
-        {'type': 'effect', 'props': {'effect_name': 'warptv', 'visible': False}}
+        {'type': 'effect', 'props': {'effect_name': 'quarktv', 'visible': True}},
+        {'type': 'effect', 'props': {'effect_name': 'vertigotv', 'visible': False}}
     ]
     }
     config_file = create_config_file(config)
     run_brave(config_file.name)
     time.sleep(0.5)
     check_brave_is_running()
-    assert_overlays([{'id': 0, 'state': 'PLAYING', 'props': {'effect_name': 'edgetv', 'visible': True}},
-                     {'id': 1, 'state': 'PLAYING', 'props': {'effect_name': 'warptv', 'visible': False}}])
+    assert_overlays([{'id': 0, 'state': 'PLAYING', 'props': {'effect_name': 'quarktv', 'visible': True}},
+                     {'id': 1, 'state': 'PLAYING', 'props': {'effect_name': 'vertigotv', 'visible': False}}])
