@@ -10,6 +10,7 @@ class FileOutput(Output):
 
     def permitted_props(self):
         return {
+            **super().permitted_props(),
             'width': {
                 'type': 'int',
                 'default': config.default_mixer_width()

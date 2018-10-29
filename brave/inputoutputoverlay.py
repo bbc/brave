@@ -27,7 +27,7 @@ class InputOutputOverlay():
         # Handle the props of this input:
         self._set_default_props()
         if 'props' in args and args['props'] is not None:
-            self.update_props(args['props'])
+            self._update_props(args['props'])
 
         self.check_item_can_be_created()
 
@@ -35,7 +35,9 @@ class InputOutputOverlay():
         return self.collection.session
 
     def check_item_can_be_created(self):
-        'Allows subclasses to define rules on whether they are createable'
+        '''
+        Allows subclasses to define rules on whether they are createable
+        '''
         pass
 
     def create_pipeline_from_string(self, pipeline_string):
@@ -67,7 +69,7 @@ class InputOutputOverlay():
                 return False
 
         if 'props' in updates:
-            self.update_props(updates['props'])
+            self._update_props(updates['props'])
             self.handle_updated_props()
 
         return True
@@ -179,7 +181,7 @@ class InputOutputOverlay():
             if 'default' in details:
                 self.props[key] = details['default']
 
-    def update_props(self, new_props):
+    def _update_props(self, new_props):
         '''
         Given a dict of new props, updates self.props
         Once complete, call self.handle_updated_props()

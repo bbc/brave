@@ -85,8 +85,12 @@ async def cut_to_source(request, id):
     if input_id not in session.inputs or session.inputs[input_id] is None:
         return _user_error_response('No such input ID')
 
-    run_on_master_thread_when_idle(session.mixers[id].cut_to_source,
-                                   source_to_switch_to=session.inputs[input_id])
+    mixer = session.mixers[id]
+    source = mixer.sources.get_for_input_or_mixer(session.inputs[input_id])
+    if not source:
+        return _user_error_response('Input is not source on mixer')
+
+    run_on_master_thread_when_idle(source.cut)
     return _status_ok_response()
 
 
@@ -104,7 +108,13 @@ async def overlay_source(request, id):
     input_id = request.json['id']
     if input_id not in session.inputs or session.inputs[input_id] is None:
         return _user_error_response('No such input ID')
-    run_on_master_thread_when_idle(session.inputs[input_id].add_to_mix)
+
+    mixer = session.mixers[id]
+    source = mixer.sources.get_for_input_or_mixer(session.inputs[input_id])
+    if not source:
+        return _user_error_response('Input is not source on mixer')
+
+    run_on_master_thread_when_idle(source.add_to_mix)
     return _status_ok_response()
 
 
@@ -121,8 +131,14 @@ async def remove_source(request, id):
 
     input_id = request.json['id']
     if input_id not in session.inputs or session.inputs[input_id] is None:
-        return _user_error_response('No such inputop ID')
-    run_on_master_thread_when_idle(session.inputs[input_id].remove_from_mix)
+        return _user_error_response('No such input ID')
+
+    mixer = session.mixers[id]
+    source = mixer.sources.get_for_input_or_mixer(session.inputs[input_id])
+    if not source:
+        return _user_error_response('Input is not source on mixer')
+
+    run_on_master_thread_when_idle(source.remove_from_mix)
     return _status_ok_response()
 
 
@@ -154,7 +170,10 @@ async def update_output(request, id):
         request.json['state'] = state_string_to_constant(request.json['state'])
         if not request.json['state']:
             return _user_error_response('Invalid state')
-    session.outputs[id].update(request.json)
+    try:
+        session.outputs[id].update(request.json)
+    except brave.exceptions.InvalidConfiguration as e:
+        return _invalid_configuration_response(e)
     return _status_ok_response()
 
 
@@ -198,7 +217,8 @@ async def create_input(request):
         return _invalid_json_response()
     try:
         input = session.inputs.add(**request.json)
-        run_on_master_thread_when_idle(input.add_to_mix)
+        # TODO not hard-code mixer 0:
+        run_on_master_thread_when_idle(input.sources()[0].add_to_mix)
     except brave.exceptions.InvalidConfiguration as e:
         return _invalid_configuration_response(e)
     return _status_ok_response()
@@ -222,10 +242,9 @@ async def create_overlay(request):
     if not request.json:
         return _invalid_json_response()
     try:
-        overlay = session.overlays.add(**request.json, mixer=session.mixers[0])
+        overlay = session.overlays.add(**request.json)
     except brave.exceptions.InvalidConfiguration as e:
         return _invalid_configuration_response(e)
-    session.overlays.ensure_overlays_are_correctly_connected()
     logger.info('Created overlay #' + str(overlay.id) + ' with details ' + str(request.json))
     return _status_ok_response()
 

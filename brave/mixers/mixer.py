@@ -40,30 +40,6 @@ class Mixer(InputOutputOverlay):
         s['sources'] = self.sources.get_as_pretty_object()
         return s
 
-    def cut_to_source(self, source_to_switch_to):
-        '''
-        Cuts to a source (i.e. replaces all other inputs currently showing with the provided one).
-        '''
-
-        # Add first, then remove, so we don't have a period of showing the background.
-        if not source_to_switch_to.in_mix():
-            source_to_switch_to.add_to_mix()
-        for source in self.sources:
-            if source.input_or_mixer.id != source_to_switch_to.id:
-                source.input_or_mixer.remove_from_mix()
-
-    def add_element_for_source(self, factory_name, input_or_mixer, name=None):
-        '''
-        Add an element on the pipeline belonging to this mixer, on behalf of a source.
-        '''
-        source = self.sources.get_for_input_or_mixer(input_or_mixer)
-        if not source:
-            raise Exception('Cannot add element for source that is not added to mixer')
-
-        e = self.add_element(factory_name, input_or_mixer, name)
-        source.elements.append(e)
-        return e
-
     def add_element(self, factory_name, who_its_for, name=None):
         '''
         Add an element on the pipeline belonging to this mixer.
@@ -99,7 +75,6 @@ class Mixer(InputOutputOverlay):
                 'queue name=audio_queue ! audiomixer name=audio_mixer ! ' + \
                 'tee name=final_audio_tee allow-not-linked=true'
 
-
         if not self.create_pipeline_from_string(pipeline_string):
             return False
 
@@ -113,7 +88,7 @@ class Mixer(InputOutputOverlay):
             self.capsfilter = self.pipeline.get_by_name('capsfilter')
             self._set_dimensions()
             self.handle_updated_props()
-            self.session().overlays.ensure_overlays_are_correctly_connected()
+            self.session().overlays.ensure_overlays_are_correctly_connected(self)
 
         if config.enable_audio():
             self.audio_mixer = self.pipeline.get_by_name('audio_mixer')

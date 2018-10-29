@@ -11,6 +11,7 @@ class TCPOutput(Output):
 
     def permitted_props(self):
         return {
+            **super().permitted_props(),
             'host': {
                 'type': 'str'
             },

@@ -10,6 +10,7 @@ class RTMPOutput(Output):
 
     def permitted_props(self):
         return {
+            **super().permitted_props(),
             'uri': {
                 'type': 'str'
             },

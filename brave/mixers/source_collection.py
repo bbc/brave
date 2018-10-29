@@ -29,7 +29,7 @@ class SourceCollection():
             pretty = {
                 'id': input.id,
                 'type': input.input_output_overlay_or_mixer(),
-                'in_mix': input.in_mix()
+                'in_mix': source.in_mix()
             }
             pretty_sources.append(pretty)
 

@@ -12,7 +12,7 @@ class Output(InputOutputOverlay):
         super().__init__(**args)
 
         # In the future, we can have more varied sources:
-        self.source = self.session().mixers[0]
+        self.source = self.session().mixers[self.props['mixer_id']]
 
         self.create_elements()
 
@@ -21,6 +21,14 @@ class Output(InputOutputOverlay):
 
     def input_output_overlay_or_mixer(self):
         return 'output'
+
+    def permitted_props(self):
+        return {
+            'mixer_id': {
+                'type': 'int',
+                'default': 0
+            }
+        }
 
     def _create_initial_multiqueue(self):
         '''

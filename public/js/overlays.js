@@ -75,7 +75,7 @@ overlaysHandler._getMixOptions = (overlay) => {
         var buttons = $('<div class="option-icons"></div>').append(overlayButton)
         div.append(buttons)
     }
-    div.append('<strong>Mixer 0:</strong> ' + showingOrHidden)
+    div.append('<strong>Mixer ' + overlay.mixer_id + ':</strong> ' + showingOrHidden)
     return div
 
     return mixersHandler.items.map(mixer => {

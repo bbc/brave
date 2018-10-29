@@ -11,6 +11,7 @@ class ImageOutput(Output):
 
     def permitted_props(self):
         return {
+            **super().permitted_props(),
             'width': {
                 'type': 'int',
                 'default': 640

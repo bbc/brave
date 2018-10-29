@@ -70,11 +70,12 @@ class Session(object):
 
         if config.enable_video():
             for overlay_config in config.default_overlays():
-                self.overlays.add(**overlay_config, mixer=self.mixers[0])
+                self.overlays.add(**overlay_config)
 
         for input_config in config.default_inputs():
             input = self.inputs.add(**input_config)
-            input.add_to_mix()
+            for source in input.sources():
+                source.add_to_mix()
 
         for name, mixer in self.mixers.items():
             mixer.set_state(Gst.State.PLAYING)
