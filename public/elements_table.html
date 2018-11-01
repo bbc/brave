@@ -112,11 +112,15 @@ function refresh() {
                     header.append(' ')
                         .append($('<span></span>').append(state).addClass(data[blockType][blockId].state))
                 }
+
                 table = $('<table class="table table-bordered table-hover"></table>')
                 table.append(tableHeader)
                 tbody = $('<tbody></tbody>')
                 table.append(tbody)
-                if (data[blockType][blockId].elements) addElements(tbody, data[blockType][blockId].elements)
+                if (data[blockType][blockId].elements) {
+                    addElements(tbody, data[blockType][blockId].elements)
+                    header.append(' (' + data[blockType][blockId].elements.length + ' elements)')
+                }
                 $('#main').append(header, table)
             })
         })
