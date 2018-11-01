@@ -85,7 +85,7 @@ def setup_messaging(pipe, parent_object):
             #               'has sent QOS: {str(message.parse_qos())}')
         elif t == Gst.MessageType.PROPERTY_NOTIFY:
             parsed = message.parse_property_notify()
-            logger.info('Property notify: object="%s", property_name="%s", property_value="%s"' %
+            logger.debug('Property notify: object="%s", property_name="%s", property_value="%s"' %
                         (parsed.object.name, parsed.property_name, parsed.property_value))
         else:
             logger.info(f'GST UNHANDLED MESSAGE: {str(t)}: {str(message.src)}')

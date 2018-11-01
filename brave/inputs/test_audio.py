@@ -25,16 +25,14 @@ class TestAudioInput(Input):
 
     def create_elements(self):
         pipeline_string = 'audiotestsrc is-live=true name=audiotestsrc volume=0.2 ! ' + \
-            config.default_audio_caps() + ' ! interaudiosink name=interaudiosink'
+            config.default_audio_caps() + self.default_audio_pipeline_string_end()
 
         if not self.create_pipeline_from_string(pipeline_string):
             return False
 
-        self.interaudiosink = self.pipeline.get_by_name('interaudiosink')
+        self.final_audio_tee = self.pipeline.get_by_name('final_audio_tee')
         self.audiotestsrc = self.pipeline.get_by_name('audiotestsrc')
-        self.create_interaudiosrc_and_connections()
         self.handle_updated_props()
-        self.pipeline.set_state(Gst.State.PLAYING)
 
     def handle_updated_props(self):
         super().handle_updated_props()

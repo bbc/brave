@@ -37,19 +37,15 @@ class TestVideoInput(Input):
     def create_elements(self):
         pipeline_string = ('videotestsrc is-live=true name=videotestsrc ! '
                            'videoconvert ! videoscale ! capsfilter name=capsfilter ! '
-                           'queue name=queue_into_intervideosink ! intervideosink name=intervideosink')
+                           'queue name=queue_into_intervideosink' + self.default_video_pipeline_string_end())
+                           #  + ' final_video_tee. ! queue ! autovideosink '
         if not self.create_pipeline_from_string(pipeline_string):
             return False
 
-        self.intervideosink = self.pipeline.get_by_name('intervideosink')
+        self.final_video_tee = self.pipeline.get_by_name('final_video_tee')
         self.videotestsrc = self.pipeline.get_by_name('videotestsrc')
         self.capsfilter = self.pipeline.get_by_name('capsfilter')
-        if self.intervideosink is None:
-            raise Exception('Unable to make test video input - cannot find intervideosink')
-
-        self.create_intervideosrc_and_connections()
         self.handle_updated_props()
-        self.set_state(Gst.State.PLAYING)
 
     def handle_updated_props(self):
         super().handle_updated_props()

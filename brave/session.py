@@ -72,13 +72,14 @@ class Session(object):
             for overlay_config in config.default_overlays():
                 self.overlays.add(**overlay_config)
 
-        for input_config in config.default_inputs():
-            input = self.inputs.add(**input_config)
-            for source in input.sources():
-                source.add_to_mix()
-
         for name, mixer in self.mixers.items():
             mixer.set_state(Gst.State.PLAYING)
+
+        for input_config in config.default_inputs():
+            input = self.inputs.add(**input_config)
+            for name, mixer in self.mixers.items():
+                source = mixer.sources.get_or_create(input)
+                source.add_to_mix()
 
     def print_state_summary(self):
         '''

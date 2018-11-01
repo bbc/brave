@@ -97,8 +97,9 @@ var tableHeader =  '<tr>' +
 
 
 function refresh() {
+    const show_inside_bin_elements = (new window.URLSearchParams(window.location.search)).get('show_inside_bin_elements') !== null
     $.ajax({
-        url: 'api/elements'
+        url: 'api/elements' + (show_inside_bin_elements ? '?show_inside_bin_elements=yes' : '')
     }).then(function(data) {
         $('#main').empty()
         Object.keys(data).forEach(function(blockType) {

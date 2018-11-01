@@ -30,24 +30,29 @@ def create_intersink_channel_name():
     return 'inter_channel_' + str(channel_count)
 
 
-def get_pipeline_details(pipeline):
+def get_pipeline_details(pipeline, show_inside_bin_elements=True):
     '''
     Given a GStreamer pipeline, returns an object of details about itself.
     This is used for debugging.
     '''
     elements = []
 
-    def handle_each_element(element):
+    def handle_each_element(element, parent_element=None):
         details = {
             'name': element.name,
-            'type': element.get_factory().name,
             'state': element.get_state(0).state.value_nick.upper(),
             'pads': {}
         }
 
-        inter_elements = ['interaudiosrc', 'interaudiosink', 'intervideosrc', 'intervideosink']
-        if details['type'] in inter_elements:
-            details['channel'] = element.get_property('channel')
+        if parent_element is not None:
+            details['parent'] = parent_element.name
+
+        if element.get_factory() is not None:
+            details['type'] = element.get_factory().name
+
+            inter_elements = ['interaudiosrc', 'interaudiosink', 'intervideosrc', 'intervideosink']
+            if details['type'] in inter_elements:
+                details['channel'] = element.get_property('channel')
 
         def handle_pad(pad):
             details['pads'][pad.name] = {
@@ -65,13 +70,19 @@ def get_pipeline_details(pipeline):
             if pad.is_linked():
                 peer = pad.get_peer()
                 details['pads'][pad.name]['peer'] = {
-                    'element_name': peer.get_parent_element().name,
                     'pad_name': peer.name
                 }
+                parent = peer.get_parent_element()
+                if parent:
+                    details['pads'][pad.name]['peer']['element_name'] = peer.get_parent_element().name
 
         pad_iterator = element.iterate_pads()
         pad_iterator.foreach(handle_pad)
         elements.append(details)
+
+        if show_inside_bin_elements and hasattr(element, 'iterate_elements'):
+            iterator = element.iterate_elements()
+            iterator.foreach(handle_each_element, element)
 
     iterator = pipeline.iterate_elements()
     iterator.foreach(handle_each_element)
@@ -104,3 +115,30 @@ def run_on_master_thread_when_idle(func, **func_args):
     if func is None:
         raise RuntimeError('Missing function to run on master thread!')
     GLib.idle_add(function_runner, {'func': func, 'func_args': func_args})
+
+
+def unblock_pad(block, name):
+    if hasattr(block, name):
+        if name in block.probes:
+            getattr(block, name).remove_probe(block.probes[name])
+            block.probes.pop(name)
+            block.logger.debug('Removed block from %s' % name)
+        # else it wasn't blocked, no need to worry
+    else:
+        block.logger.error('Attempting to unblock pad %s that does not exist' % name)
+
+
+def block_pad(block, name):
+    if hasattr(block, name):
+        if name in block.probes:
+            self.logger.warn('Attempting to block %s but already blocked' % name)
+        else:
+            block.probes[name] = getattr(block, name).add_probe(
+                Gst.PadProbeType.BLOCK_DOWNSTREAM, _blocked_probe_callback, block)
+    else:
+        block.logger.error('Attempting to block pad %s that does not exist' % name)
+
+
+def _blocked_probe_callback(self, _, block):
+    block.logger.debug('_blocked_probe_callback called (default version)')
+    return Gst.PadProbeReturn.OK

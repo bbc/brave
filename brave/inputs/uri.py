@@ -57,7 +57,6 @@ class UriInput(Input):
             self._create_fake_audio()
 
         self.handle_updated_props()
-        self.set_state(Gst.State.PLAYING)
 
     def _create_fake_video(self):
         fakesink = Gst.ElementFactory.make('fakesink')
@@ -68,24 +67,21 @@ class UriInput(Input):
         self.playsink.set_property('audio-sink', fakesink)
 
     def create_video_elements(self):
-        bin = Gst.parse_bin_from_description(
-            f'videoconvert ! videoscale ! capsfilter name=capsfilter ! ' +
-            'queue name=queue_into_intervideosink ! intervideosink name=intervideosink', True)
+        bin_as_string = ('videoconvert ! videoscale ! capsfilter name=capsfilter ! '
+                         'queue' + self.default_video_pipeline_string_end())
+        bin = Gst.parse_bin_from_description(bin_as_string, True)
 
         self.capsfilter = bin.get_by_name('capsfilter')
+        self.final_video_tee = bin.get_by_name('final_video_tee')
         self._update_video_filter_caps()
-
         self.playsink.set_property('video-sink', bin)
-        self.intervideosink = bin.get_by_name('intervideosink')
-        self.create_intervideosrc_and_connections()
 
     def create_audio_elements(self):
         bin = Gst.parse_bin_from_description(
             f'audiorate ! audioconvert ! audioresample ! {config.default_audio_caps()} ! ' +
-            'queue ! interaudiosink name=interaudiosink', True)
+            'queue' + self.default_audio_pipeline_string_end(), True)
         self.playsink.set_property('audio-sink', bin)
-        self.interaudiosink = bin.get_by_name('interaudiosink')
-        self.create_interaudiosrc_and_connections()
+        self.final_audio_tee = bin.get_by_name('final_audio_tee')
 
     def update(self, updates):
         super().update(updates)
@@ -106,7 +102,6 @@ class UriInput(Input):
         Parses the caps that arrive from the input, and returns them.
         This allows the height/width/framerate/audio_rate to be retrieved.
         '''
-
         elements = {}
         if hasattr(self, 'intervideosink'):
             elements['video'] = self.intervideosink

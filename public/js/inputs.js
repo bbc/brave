@@ -78,13 +78,13 @@ inputsHandler._getMixOptions = (input) => {
     return mixersHandler.items.map(mixer => {
         if (!mixer.sources) return
         var foundThisInput = mixer.sources.find(i => i.id === input.id && i.type === 'input')
-        if (!foundThisInput) return
-        var inMix = foundThisInput.in_mix ? 'In mix' : 'Not in mix'
+        // if (!foundThisInput) return
+        var inMix = foundThisInput && foundThisInput.in_mix ? 'In mix' : 'Not in mix'
         var div = $('<div class="mix-option"></div>')
-        if (foundThisInput.in_mix) {
+        if (foundThisInput && foundThisInput.in_mix) {
             div.addClass('mix-option-showing')
             var removeButton = components.removeButton()
-            removeButton.click(() => { mixersHandler.remove(mixer, foundThisInput); return false })
+            removeButton.click(() => { mixersHandler.remove(mixer, input); return false })
             var buttons = $('<div class="option-icons"></div>')
             buttons.append([removeButton])
             div.append(buttons)
@@ -92,9 +92,9 @@ inputsHandler._getMixOptions = (input) => {
         else {
             div.addClass('mix-option-hidden')
             var cutButton = components.cutButton()
-            cutButton.click(() => { mixersHandler.cut(mixer, foundThisInput); return false })
+            cutButton.click(() => { mixersHandler.cut(mixer, input); return false })
             var overlayButton = components.overlayButton()
-            overlayButton.click(() => { mixersHandler.overlay(mixer, foundThisInput); return false })
+            overlayButton.click(() => { mixersHandler.overlay(mixer, input); return false })
             var buttons = $('<div class="option-icons"></div>')
             buttons.append([cutButton, overlayButton])
             div.append(buttons)
