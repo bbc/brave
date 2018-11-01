@@ -111,7 +111,7 @@ async def overlay_source(request, id):
         return _user_error_response('No such input ID')
 
     mixer = session.mixers[id]
-    source = mixer.sources.get_or_create(session.inputs[input_id])
+    source = mixer.sources.get_for_input_or_mixer(session.inputs[input_id])
     if not source:
         return _user_error_response('Input is not source on mixer')
 
