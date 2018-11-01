@@ -19,6 +19,7 @@ class InputOutputOverlay():
         self.logger.addHandler(handler)
         self.logger.propagate = False
         self.elements = {}
+        self.probes = {}
 
         # Merge in the arguments:
         for a in args:
@@ -240,30 +241,6 @@ class InputOutputOverlay():
                         continue
 
                 self.props[key] = value
-
-    def _blocked_probe_callback(self, a, b):
-        self.logger.debug('_blocked_probe_callback called (default version)')
-        return Gst.PadProbeReturn.OK
-
-    def _block_intervideosrc_src_pad(self):
-        self.intervideosrc_src_pad_probe = self.intervideosrc_src_pad.add_probe(
-            Gst.PadProbeType.BLOCK_DOWNSTREAM, self._blocked_probe_callback)
-
-    def unblock_intervideosrc_src_pad(self):
-        if hasattr(self, 'intervideosrc_src_pad_probe'):
-            self.intervideosrc_src_pad.remove_probe(self.intervideosrc_src_pad_probe)
-            delattr(self, 'intervideosrc_src_pad_probe')
-            self.logger.debug('Removed block from intervideosrc')
-
-    def _block_interaudiosrc_src_pad(self):
-        self.interaudiosrc_src_pad_probe = self.interaudiosrc_src_pad.add_probe(
-            Gst.PadProbeType.BLOCK_DOWNSTREAM, self._blocked_probe_callback)
-
-    def unblock_interaudiosrc_src_pad(self):
-        if hasattr(self, 'interaudiosrc_src_pad_probe'):
-            self.interaudiosrc_src_pad.remove_probe(self.interaudiosrc_src_pad_probe)
-            delattr(self, 'interaudiosrc_src_pad_probe')
-            self.logger.debug('Removed block from interaudiosrc')
 
     def __consider_initial_state(self, new_state):
         '''

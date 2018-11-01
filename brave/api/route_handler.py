@@ -87,7 +87,7 @@ async def cut_to_source(request, id):
         return _user_error_response('No such input ID')
 
     mixer = session.mixers[id]
-    source = mixer.sources.get_for_input_or_mixer(session.inputs[input_id])
+    source = mixer.sources.get_or_create(session.inputs[input_id])
     if not source:
         return _user_error_response('Input is not source on mixer')
 
@@ -111,7 +111,7 @@ async def overlay_source(request, id):
         return _user_error_response('No such input ID')
 
     mixer = session.mixers[id]
-    source = mixer.sources.get_for_input_or_mixer(session.inputs[input_id])
+    source = mixer.sources.get_or_create(session.inputs[input_id])
     if not source:
         return _user_error_response('Input is not source on mixer')
 
@@ -218,8 +218,10 @@ async def create_input(request):
         return _invalid_json_response()
     try:
         input = session.inputs.add(**request.json)
-        # TODO not hard-code mixer 0:
-        run_on_master_thread_when_idle(input.sources()[0].add_to_mix)
+        # TODO find a better way to decide which mixers this new input should be added to
+        mixer = session.mixers[0]
+        source = mixer.sources.get_or_create(input)
+        run_on_master_thread_when_idle(source.add_to_mix)
     except brave.exceptions.InvalidConfiguration as e:
         return _invalid_configuration_response(e)
     return _status_ok_response()

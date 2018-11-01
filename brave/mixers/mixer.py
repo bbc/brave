@@ -2,6 +2,7 @@ from gi.repository import Gst
 from brave.inputoutputoverlay import InputOutputOverlay
 from brave.mixers.source_collection import SourceCollection
 import brave.config as config
+from brave.helpers import unblock_pad
 
 
 class Mixer(InputOutputOverlay):
@@ -109,14 +110,14 @@ class Mixer(InputOutputOverlay):
         # Tell each output to unblock its intervideosrc as content is now coming through
         for name, output in self.session().outputs.items():
             if output.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]:
-                output.unblock_intervideosrc_src_pad()
-                output.unblock_interaudiosrc_src_pad()
+                unblock_pad(output, 'intervideosrc_src_pad')
+                unblock_pad(output, 'interaudiosrc_src_pad')
 
         # Likewise, tell each input
         for source in self.sources:
             if source.input_or_mixer.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]:
-                source.input_or_mixer.unblock_intervideosrc_src_pad()
-                source.input_or_mixer.unblock_interaudiosrc_src_pad()
+                unblock_pad(source, 'intervideosrc_src_pad')
+                unblock_pad(source, 'interaudiosrc_src_pad')
 
     def get_dimensions(self):
         '''

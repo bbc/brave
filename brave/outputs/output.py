@@ -1,5 +1,6 @@
 from gi.repository import Gst
-from brave.helpers import round_down, create_intersink_channel_name
+from brave.helpers import round_down, create_intersink_channel_name, block_pad, unblock_pad
+
 from brave.inputoutputoverlay import InputOutputOverlay
 
 
@@ -116,7 +117,7 @@ class Output(InputOutputOverlay):
         # Note: without this things work *most* of the time.
         # 'test_image_input' is an example that fails without it.
         if self.source.get_state() not in [Gst.State.PLAYING, Gst.State.PAUSED]:
-            self._block_intervideosrc_src_pad()
+            block_pad(self, 'intervideosrc_src_pad')
 
     def create_interaudiosink_and_connections(self):
         '''
@@ -134,7 +135,7 @@ class Output(InputOutputOverlay):
         # Otherwise we can get a partial message, which causes an error.
         # We don't need to do this if the other one is playing.
         if self.source.get_state() not in [Gst.State.PLAYING, Gst.State.PAUSED]:
-            self._block_interaudiosrc_src_pad()
+            block_pad(self, 'interaudiosrc_src_pad')
 
     def create_caps_string(self):
         '''
@@ -171,8 +172,8 @@ class Output(InputOutputOverlay):
         '''
         # We may have blocked pads. This will unblock them, assuming the  is running.
         if self.source.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]:
-            self.unblock_intervideosrc_src_pad()
-            self.unblock_interaudiosrc_src_pad()
+            unblock_pad(self, 'intervideosrc_src_pad')
+            unblock_pad(self, 'interaudiosrc_src_pad')
 
     def _multiqueue_pad_added(self, element, pad):
         '''
