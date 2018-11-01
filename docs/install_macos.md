@@ -21,7 +21,7 @@ Now the Python libraries:
 pip install pyyaml gbulb sanic websockets pytest pillow
 ```
 
-## Installing gstreamer
+## Installing gstreamer
 
 First up, dependencies:
 
