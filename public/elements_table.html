@@ -8,16 +8,19 @@
         <title>Brave - elements table</title>
     </head>
     <body>
-    <main role="main" class="container">
-        <button style="float:right" onclick="refresh()">Refresh</button>
-        <h3>All GStreamer elements</h3>
-        <p>This view is for debugging. It shows all GStreamer elements and their status.</p>
+    <main class="container-fluid">
+        <h1>Internal elements</h1>
+        <div>
+            <button style="float:right" class="btn btn-primary" onclick="refresh()">Refresh</button>
+            <button style="float:right" class="btn btn-primary" id="show-hide-bin-elements"></button>
+            <p>This view is for debugging. It shows all GStreamer elements and their status.</p>
+        </div>
         <div id="main"></div>
 
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js" crossorigin="anonymous"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-<script>
+        <script>
 
 function elementColumns(element) {
     var cells = []
@@ -98,7 +101,7 @@ var tableHeader =  '<tr>' +
 
 function refresh() {
     $.ajax({
-        url: 'api/elements'
+        url: 'api/elements' + (show_inside_bin_elements ? '?show_inside_bin_elements=yes' : '')
     }).then(function(data) {
         $('#main').empty()
         Object.keys(data).forEach(function(blockType) {
@@ -119,8 +122,15 @@ function refresh() {
         })
     })
 }
+
+const show_inside_bin_elements = (new window.URLSearchParams(window.location.search)).get('show_inside_bin_elements') !== null
+$('#show-hide-bin-elements').text(show_inside_bin_elements ? 'Hide inner bin elements' : 'Show inner bin elements')
+$('#show-hide-bin-elements').click(() => {
+    window.location = show_inside_bin_elements ? '?' : '?show_inside_bin_elements=yes'
+})
+
 refresh()
 </script>
-
+    </main>
     </body>
 </html>
