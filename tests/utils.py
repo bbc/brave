@@ -255,6 +255,12 @@ def update_input(id, updates, expected_status_code=200):
     time.sleep(0.2)
 
 
+def add_mixer(details):
+    response = api_put('/api/mixers', details)
+    assert response.status_code == 200
+    time.sleep(0.2)
+
+
 def update_mixer(id, updates, expected_status_code=200):
     response = api_post('/api/mixers/' + str(id), updates)
     assert response.status_code == expected_status_code

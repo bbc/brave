@@ -124,9 +124,7 @@ def unblock_pad(block, name):
             block.probes.pop(name)
             block.logger.debug('Removed block from %s' % name)
         # else it wasn't blocked, no need to worry
-    else:
-        block.logger.error('Attempting to unblock pad %s that does not exist' % name)
-
+    # else it does not exist, e.g. audio in a video-only situation, so ignore
 
 def block_pad(block, name):
     if hasattr(block, name):
