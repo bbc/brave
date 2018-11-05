@@ -35,13 +35,21 @@ class Source():
             if source != self:
                 source.remove_from_mix()
 
-    def set_element_state(self, state):
+    def set_mixer_element_state(self, state):
         '''
         Sets all the elements that speifically belong to this source bit of this input
         '''
         for e in self.elements_on_mixer_pipeline:
             if e.set_state(state) != Gst.StateChangeReturn.SUCCESS:
-                self.logger.warn('Unable to set %s to %s state' % (e.name, state.value_nick.upper()))
+                self.logger.warn('Unable to set mixer element %s to %s state' % (e.name, state.value_nick.upper()))
+
+    def set_input_element_state(self, state):
+        '''
+        Sets all the elements that speifically belong to this source bit of this input
+        '''
+        for e in self.elements_on_input_pipeline:
+            if e.set_state(state) != Gst.StateChangeReturn.SUCCESS:
+                self.logger.warn('Unable to set input element %s to %s state' % (e.name, state.value_nick.upper()))
 
     def delete(self, callback=None):
         '''
@@ -77,13 +85,11 @@ class Source():
             self._add_video_to_mix()
         if self.input_or_mixer.has_audio():
             self._add_audio_to_mix()
+
         self._unblock_mix_pads()
 
-        self.set_element_state(self.mixer().pipeline.get_state(0).state)
+        self.set_mixer_element_state(self.mixer().pipeline.get_state(0).state)
         self.mixer().report_update_to_user()
-
-        # If added for the first time, the input will need to start:
-        self.input_or_mixer.set_state(Gst.State.PLAYING)
 
     def remove_from_mix(self, callback=None):
         '''
@@ -95,7 +101,7 @@ class Source():
             return
 
         def _set_my_mixer_elements_to_null():
-            self.set_element_state(Gst.State.NULL)
+            self.set_mixer_element_state(Gst.State.NULL)
             self.logger.info('Completed removal from mix.')
             self.mixer().report_update_to_user()
             if callback:
@@ -174,6 +180,10 @@ class Source():
         self._handle_video_mix_props()
         # print('****** TEMP CRASH DISCOVERY: linking input to mix STARTING (%s/%s)' %
         #       (self.video_pad_to_connect_to_mix, self.video_mix_request_pad))
+        # print('****** TEMP CRASH DISCOVERY: parent 1:',self.video_pad_to_connect_to_mix.parent)
+        # print('****** TEMP CRASH DISCOVERY: parent 2:',self.video_mix_request_pad.parent)
+        # print('****** TEMP CRASH DISCOVERY: grandparent 1:',self.video_pad_to_connect_to_mix.parent.parent)
+        # print('****** TEMP CRASH DISCOVERY: grandparent 2:',self.video_mix_request_pad.parent.parent)
         self.video_pad_to_connect_to_mix.link(self.video_mix_request_pad)
         # print('****** TEMP CRASH DISCOVERY:  linking input to mix COMPLETE')
 
@@ -289,13 +299,17 @@ class Source():
         videoscale.set_property('method', 3)
         videoscale.set_property('dither', True)
 
+        videoconvert = self._add_element_to_mixer_pipeline('videoconvert')
+        videoscale.link(videoconvert)
+
         self.capsfilter_after_intervideosrc = self._add_element_to_mixer_pipeline('capsfilter')
-        videoscale.link(self.capsfilter_after_intervideosrc)
+        videoconvert.link(self.capsfilter_after_intervideosrc)
 
         queue = self._add_element_to_mixer_pipeline('queue', name='video_queue')
         self.capsfilter_after_intervideosrc.link(queue)
 
         self.video_pad_to_connect_to_mix = queue.get_static_pad('src')
+        self._sync_element_states()
 
     def _create_interaudio_elements(self):
         '''
@@ -310,6 +324,7 @@ class Source():
         interaudiosrc.set_property('channel', channel_name)
 
         self.audio_pad_to_connect_to_mix = interaudiosrc.get_static_pad('src')
+        self._sync_element_states()
 
     def _create_intervideosrc(self):
         '''
@@ -436,11 +451,12 @@ class Source():
         '''
         Remove all elements for this rouce, which will be partly on the mixer and partly on the input.
         '''
-        self.set_element_state(Gst.State.NULL)
+        self.set_mixer_element_state(Gst.State.NULL)
         for e in self.elements_on_mixer_pipeline:
             if not self.mixer().pipeline.remove(e):
                 self.collection.mixer.logger.warn('Unable to remove %s' % e.name)
 
+        self.set_input_element_state(Gst.State.NULL)
         for e in self.elements_on_input_pipeline:
             if not self.input_or_mixer.pipeline.remove(e):
                 self.collection.mixer.logger.warn('Unable to remove %s' % e.name)
@@ -463,3 +479,14 @@ class Source():
             return None
         self.elements_on_input_pipeline.append(e)
         return e
+
+    def _sync_element_states(self):
+        '''
+        Make sure the elements created on the source and destination have their state set to match their pipeline.
+        '''
+        for e in self.elements_on_mixer_pipeline:
+            if not e.sync_state_with_parent():
+                self.logger.warn('Unable to set %s to state of parent source' % e.name)
+        for e in self.elements_on_input_pipeline:
+            if not e.sync_state_with_parent():
+                self.logger.warn('Unable to set %s to state of parent source' % e.name)

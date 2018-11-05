@@ -19,7 +19,7 @@ def test_image_input_from_command_line(run_brave, create_config_file):
     run_brave(config_file.name)
     time.sleep(0.5)
     check_brave_is_running()
-    time.sleep(1.5)
+    time.sleep(3)
     response = api_get('/api/all')
     assert response.status_code == 200
     assert_everything_in_playing_state(response.json())
