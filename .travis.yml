@@ -4,7 +4,7 @@ python:
   - "3.6"
 
 install:
-  - pip pyyaml gbulb sanic websockets psutil
+  - pip install pyyaml gbulb sanic websockets psutil
 
 script:
   - pytest
