@@ -55,5 +55,3 @@ class LocalOutput(Output):
             self.interaudiosrc = self.pipeline.get_by_name('interaudiosrc')
             self.interaudiosrc_src_pad = self.interaudiosrc.get_static_pad('src')
             self.create_interaudiosink_and_connections()
-
-        self._sync_elements_on_source_pipeline()

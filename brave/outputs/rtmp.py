@@ -74,6 +74,4 @@ class RTMPOutput(Output):
         elif change_to_paused_state_response != Gst.StateChangeReturn.SUCCESS:
             self.logger.warn('Unable to change into PAUSED state:' + str(change_to_paused_state_response))
 
-        self._sync_elements_on_source_pipeline()
-
         self.logger.info('RTMP output now configured to send to ' + self.props['uri'])

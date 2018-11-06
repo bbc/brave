@@ -64,8 +64,6 @@ class FileOutput(Output):
             self.interaudiosrc_src_pad = self.interaudiosrc.get_static_pad('src')
             self.create_interaudiosink_and_connections()
 
-        self._sync_elements_on_source_pipeline()
-
     def set_state(self, new_state):
         sent_eos = False
         # If this is ending the file creation (identified by moving to READY or NULL)

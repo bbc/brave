@@ -52,7 +52,6 @@ class ImageOutput(Output):
         sink.set_property('location', self.props['location'])
 
         self.create_intervideosink_and_connections()
-        self._sync_elements_on_source_pipeline()
 
     def __delete_file_if_exists(self):
         try:

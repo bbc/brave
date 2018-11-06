@@ -15,6 +15,7 @@ class Output(InputOutputOverlay):
         self.source = self.session().mixers[self.props['mixer_id']]
 
         self.create_elements()
+        self._sync_elements_on_source_pipeline()
 
         # This stores the pads on the source's tee which are connected to this output:
         self.tee_src_pads = {}
