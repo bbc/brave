@@ -1,3 +1,4 @@
+dist: trusty
 sudo: required
 
 language: python
@@ -7,11 +8,24 @@ python:
 
 addons:
   apt:
+    sources:
+        - sourceline: "deb http://archive.ubuntu.com/ubuntu/ trusty multiverse"
+        - sourceline: "deb http://archive.ubuntu.com/ubuntu/ trusty-updates multiverse"
     packages:
+    - gstreamer1.0-plugins-base
+    - gstreamer1.0-plugins-good
+    - gstreamer1.0-plugins-bad
+    - gstreamer1.0-plugins-ugly
+    - gstreamer1.0-libav
+    - gstreamer1.0-tools
+    - python-gi
+    - python-gst-1.0
     - python3-gi
+    - python3-gst-1.0
+    - python3-pip
 
 install:
-  - pip install pyyaml gbulb sanic websockets psutil requests image
+  - pip3 install pyyaml gbulb sanic websockets psutil requests image
 
 script:
   - pytest
