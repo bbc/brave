@@ -1,9 +1,11 @@
+dist: trusty
 language: python
 
 python:
   - "3.6"
 
 install:
+  - apt-get install python3-gi
   - pip install pyyaml gbulb sanic websockets psutil requests image
 
 script:
