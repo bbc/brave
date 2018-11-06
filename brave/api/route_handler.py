@@ -37,12 +37,13 @@ async def mixers(request):
 
 
 async def elements(request):
+    show_inside_bin_elements = 'show_inside_bin_elements' in request.args
     session = brave.session.get_session()
     return sanic.response.json({
-        'inputs': session.inputs.get_pipeline_details(),
-        'overlays': session.overlays.get_pipeline_details(),
-        'outputs': session.outputs.get_pipeline_details(),
-        'mixers': session.mixers.get_pipeline_details()
+        'inputs': session.inputs.get_pipeline_details(show_inside_bin_elements),
+        'overlays': session.overlays.get_pipeline_details(show_inside_bin_elements),
+        'outputs': session.outputs.get_pipeline_details(show_inside_bin_elements),
+        'mixers': session.mixers.get_pipeline_details(show_inside_bin_elements)
     })
 
 

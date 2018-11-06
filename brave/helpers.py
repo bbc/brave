@@ -30,24 +30,29 @@ def create_intersink_channel_name():
     return 'inter_channel_' + str(channel_count)
 
 
-def get_pipeline_details(pipeline):
+def get_pipeline_details(pipeline, show_inside_bin_elements=True):
     '''
     Given a GStreamer pipeline, returns an object of details about itself.
     This is used for debugging.
     '''
     elements = []
 
-    def handle_each_element(element):
+    def handle_each_element(element, parent_element=None):
         details = {
             'name': element.name,
-            'type': element.get_factory().name,
             'state': element.get_state(0).state.value_nick.upper(),
             'pads': {}
         }
 
-        inter_elements = ['interaudiosrc', 'interaudiosink', 'intervideosrc', 'intervideosink']
-        if details['type'] in inter_elements:
-            details['channel'] = element.get_property('channel')
+        if parent_element is not None:
+            details['parent'] = parent_element.name
+
+        if element.get_factory() is not None:
+            details['type'] = element.get_factory().name
+
+            inter_elements = ['interaudiosrc', 'interaudiosink', 'intervideosrc', 'intervideosink']
+            if details['type'] in inter_elements:
+                details['channel'] = element.get_property('channel')
 
         def handle_pad(pad):
             details['pads'][pad.name] = {
@@ -65,13 +70,19 @@ def get_pipeline_details(pipeline):
             if pad.is_linked():
                 peer = pad.get_peer()
                 details['pads'][pad.name]['peer'] = {
-                    'element_name': peer.get_parent_element().name,
                     'pad_name': peer.name
                 }
+                parent = peer.get_parent_element()
+                if parent:
+                    details['pads'][pad.name]['peer']['element_name'] = peer.get_parent_element().name
 
         pad_iterator = element.iterate_pads()
         pad_iterator.foreach(handle_pad)
         elements.append(details)
+
+        if show_inside_bin_elements and hasattr(element, 'iterate_elements'):
+            iterator = element.iterate_elements()
+            iterator.foreach(handle_each_element, element)
 
     iterator = pipeline.iterate_elements()
     iterator.foreach(handle_each_element)

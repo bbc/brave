@@ -43,9 +43,9 @@ class AbstractCollection(collections.abc.MutableMapping):
         for id, obj in self.items():
             obj.print_state_summary()
 
-    def get_pipeline_details(self):
+    def get_pipeline_details(self, show_inside_bin_elements):
         details = {}
         for id, obj in self.items():
             if hasattr(obj, 'pipeline'):
-                details[id] = get_pipeline_details(obj.pipeline)
+                details[id] = get_pipeline_details(obj.pipeline, show_inside_bin_elements)
         return details
