@@ -15,9 +15,14 @@ class Mixer(InputOutputOverlay):
         args['type'] = 'mixer'
         super().__init__(**args)
         self.sources = SourceCollection(self)
+        self.create_elements()
+
+        # Set initially to READY, and when there we set to self.props['initial_state']
+        self.set_state(Gst.State.READY)
 
     def permitted_props(self):
         return {
+            **super().permitted_props(),
             'width': {
                 'type': 'int',
                 'default': config.default_mixer_width()

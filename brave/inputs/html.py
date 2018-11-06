@@ -1,5 +1,4 @@
 from brave.inputs.input import Input
-from gi.repository import Gst
 import brave.config as config
 
 
@@ -14,6 +13,7 @@ class HTMLInput(Input):
 
     def permitted_props(self):
         return {
+            **super().permitted_props(),
             'uri': {
                 'type': 'str',
                 'defatult': 'https://www.bbc.co.uk'
@@ -55,7 +55,6 @@ class HTMLInput(Input):
 
         self.create_intervideosrc_and_connections()
         self.handle_updated_props()
-        self.pipeline.set_state(Gst.State.PLAYING)
 
     def get_input_cap_props(self):
         '''

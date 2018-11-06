@@ -3,6 +3,7 @@ import logging
 from brave.pipeline_messaging import setup_messaging
 import brave.config as config
 import brave.exceptions
+from brave.helpers import state_string_to_constant
 
 
 class InputOutputOverlay():
@@ -54,9 +55,20 @@ class InputOutputOverlay():
     def permitted_props(self):
         '''
         The properties that the user can set for this input/output.
-        This method is likely to be overridden.
+        Likely overridden, to extend the list.
         '''
-        return {}
+        return {
+            'initial_state': {
+                'type': 'str',
+                'default': 'PLAYING',
+                'permitted_values': {
+                    'PLAYING': 'Playing',
+                    'PAUSED': 'Paused',
+                    'READY': 'Ready',
+                    'NULL': 'Null'
+                }
+            }
+        }
 
     def update(self, updates):
         '''
@@ -163,6 +175,7 @@ class InputOutputOverlay():
         self.logger.debug('Pipeline state change from %s to %s' %
                           (old_state.value_nick.upper(), new_state.value_nick.upper()))
 
+        self.__consider_initial_state(new_state)
         self.report_update_to_user()
 
     def report_update_to_user(self):
@@ -192,7 +205,8 @@ class InputOutputOverlay():
 
             # First, warn about any known props:
             if key not in permitted:
-                raise brave.exceptions.InvalidConfiguration('Invalid prop provided: "%s"' % key)
+                raise brave.exceptions.InvalidConfiguration(
+                    'Invalid prop provided to %s: "%s"' % (self.input_output_overlay_or_mixer(), key))
 
             # None (null in JSON) means it should be unset (or default if there is one)
             elif value is None:
@@ -250,3 +264,18 @@ class InputOutputOverlay():
             self.interaudiosrc_src_pad.remove_probe(self.interaudiosrc_src_pad_probe)
             delattr(self, 'interaudiosrc_src_pad_probe')
             self.logger.debug('Removed block from interaudiosrc')
+
+    def __consider_initial_state(self, new_state):
+        '''
+        If the user has requested an initial state for this element, this method sets it at the correct time.
+        '''
+        should_go_to_initial_state = new_state == Gst.State.READY and 'initial_state' in self.props and \
+            (not hasattr(self, 'initial_state_initiated') or not self.initial_state_initiated)
+        if should_go_to_initial_state:
+            self.logger.debug('Now at READY state, time to set initial state of "%s"' % self.props['initial_state'])
+            state_to_change_to = state_string_to_constant(self.props['initial_state'])
+            if state_to_change_to:
+                self.set_state(state_to_change_to)
+            else:
+                self.logger.warn('Unable to set to initial unknown state "%s"' % self.props['initial_state'])
+            self.initial_state_initiated = True

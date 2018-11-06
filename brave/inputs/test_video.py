@@ -1,5 +1,4 @@
 from brave.inputs.input import Input
-from gi.repository import Gst
 
 
 class TestVideoInput(Input):
@@ -8,6 +7,7 @@ class TestVideoInput(Input):
 
     def permitted_props(self):
         return {
+            **super().permitted_props(),
             'pattern': {
                 'type': 'int',
                 'default': 0
@@ -49,7 +49,6 @@ class TestVideoInput(Input):
 
         self.create_intervideosrc_and_connections()
         self.handle_updated_props()
-        self.set_state(Gst.State.PLAYING)
 
     def handle_updated_props(self):
         super().handle_updated_props()

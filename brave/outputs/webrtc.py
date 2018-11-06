@@ -52,11 +52,6 @@ class WebRTCOutput(Output):
         self.webrtc_video_tee = self.pipeline.get_by_name('webrtc_video_tee')
         self.webrtc_audio_tee = self.pipeline.get_by_name('webrtc_audio_tee')
 
-        if not self.set_state(Gst.State.READY):
-            self.logger.warn('Unable to enter READY state')
-            return False
-
-        self._sync_elements_on_source_pipeline()
         return True
 
     def _create_pipeline(self):

@@ -63,17 +63,4 @@ class RTMPOutput(Output):
             self.interaudiosrc_src_pad = self.interaudiosrc.get_static_pad('src')
             self.create_interaudiosink_and_connections()
 
-        # We set to PAUSED rather than PLAYING because the audio encode needs a moment in preroll.
-        # Without this, a not-negotiated error will occur.
-        # For now, we leave it up to the user to put it into the PLAYING state.
-        # A better solution would be to listen out for the successful prep of the pipeline
-        # and then move into PLAYING.
-        change_to_paused_state_response = self.pipeline.set_state(Gst.State.PAUSED)
-        if change_to_paused_state_response == Gst.StateChangeReturn.NO_PREROLL:
-            self.logger.debug('Moved to PAUSED state but preroll preparation still underway')
-        elif change_to_paused_state_response != Gst.StateChangeReturn.SUCCESS:
-            self.logger.warn('Unable to change into PAUSED state:' + str(change_to_paused_state_response))
-
-        self._sync_elements_on_source_pipeline()
-
         self.logger.info('RTMP output now configured to send to ' + self.props['uri'])

@@ -1,5 +1,4 @@
 from brave.inputs.input import Input
-from gi.repository import Gst
 import brave.config as config
 
 
@@ -9,6 +8,7 @@ class TestAudioInput(Input):
 
     def permitted_props(self):
         return {
+            **super().permitted_props(),
             'freq': {
                 'type': 'int',
                 'default': 440
@@ -34,7 +34,6 @@ class TestAudioInput(Input):
         self.audiotestsrc = self.pipeline.get_by_name('audiotestsrc')
         self.create_interaudiosrc_and_connections()
         self.handle_updated_props()
-        self.pipeline.set_state(Gst.State.PLAYING)
 
     def handle_updated_props(self):
         super().handle_updated_props()

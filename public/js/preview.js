@@ -96,7 +96,6 @@ preview._handlePreviewRequest = function(request) {
         outputsHandler._requestNewImageOutput()
     }
     else if (!isNaN(parseInt(request))) {
-        console.log('TEMP yay a number', request)
         const outputId = parseInt(request)
         const output = outputsHandler.findById(outputId)
         if (!output) {

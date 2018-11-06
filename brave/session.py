@@ -59,8 +59,7 @@ class Session(object):
         Create the inputs/outputs/mixers/overlays declared in the config file.
         '''
         for mixer_config in config.default_mixers():
-            mixer = self.mixers.add(**mixer_config)
-            mixer.create_elements()
+            self.mixers.add(**mixer_config)
 
         for output_config in config.default_outputs():
             output = self.outputs.add(**output_config)
@@ -76,9 +75,6 @@ class Session(object):
             input = self.inputs.add(**input_config)
             for source in input.sources():
                 source.add_to_mix()
-
-        for name, mixer in self.mixers.items():
-            mixer.set_state(Gst.State.PLAYING)
 
     def print_state_summary(self):
         '''
