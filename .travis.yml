@@ -20,6 +20,7 @@ addons:
     - gstreamer1.0-tools
     - python3-gst-1.0
     - python3-pip
+    - gobject-introspection
     - libgirepository1.0-dev
 
 install:
