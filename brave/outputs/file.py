@@ -64,7 +64,6 @@ class FileOutput(Output):
             self.interaudiosrc_src_pad = self.interaudiosrc.get_static_pad('src')
             self.create_interaudiosink_and_connections()
 
-        self.pipeline.set_state(Gst.State.PLAYING)
         self._sync_elements_on_source_pipeline()
 
     def set_state(self, new_state):

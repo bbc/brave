@@ -62,7 +62,7 @@ def setup_messaging(pipe, parent_object):
             pass
             # logger.debug(f'Message from GStreamer: Async done')
         elif t == Gst.MessageType.STREAM_START:
-            logger.debug(f'Message from GStreamer: Stream has now started.')
+            logger.debug('Message from GStreamer: Stream has now started.')
             if hasattr(parent_object, 'on_pipeline_start'):
                 parent_object.on_pipeline_start()
         elif t == Gst.MessageType.NEW_CLOCK:

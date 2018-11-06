@@ -13,6 +13,9 @@ class Input(InputOutputOverlay):
         self.session().mixers[0].sources.add(self)
         self.create_elements()
 
+        # Set initially to READY, and when there we set to self.props['initial_state']
+        self.pipeline.set_state(Gst.State.READY)
+
     def input_output_overlay_or_mixer(self):
         return 'input'
 

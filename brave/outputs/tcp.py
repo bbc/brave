@@ -1,6 +1,5 @@
 from brave.outputs.output import Output
 import socket
-from gi.repository import Gst
 import brave.config as config
 
 
@@ -110,10 +109,8 @@ class TCPOutput(Output):
         sink.set_property('recover-policy', 'keyframe')
         sink.set_property('sync', False)
 
-        self.pipeline.set_state(Gst.State.PLAYING)
         self._sync_elements_on_source_pipeline()
-        self.logger.info('Now available as TCP... point your VLC at tcp://' +
-                         self.props['host'] + ':' + str(self.props['port']))
+        self.logger.info('TCP output created at tcp://%s:%s' % (self.props['host'], self.props['port']))
 
     def _get_next_available_port(self):
         ports_in_use = self.get_ports_in_use()

@@ -1,5 +1,4 @@
 from brave.outputs.output import Output
-from gi.repository import Gst
 import brave.config as config
 import brave.exceptions
 
@@ -56,8 +55,5 @@ class LocalOutput(Output):
             self.interaudiosrc = self.pipeline.get_by_name('interaudiosrc')
             self.interaudiosrc_src_pad = self.interaudiosrc.get_static_pad('src')
             self.create_interaudiosink_and_connections()
-
-        if not self.set_state(Gst.State.PLAYING):
-            self.logger.warn('Unable to enter PLAYING state')
 
         self._sync_elements_on_source_pipeline()

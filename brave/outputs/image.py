@@ -1,5 +1,4 @@
 from brave.outputs.output import Output
-from gi.repository import Gst
 import brave.config as config
 import os
 
@@ -53,7 +52,6 @@ class ImageOutput(Output):
         sink.set_property('location', self.props['location'])
 
         self.create_intervideosink_and_connections()
-        self.pipeline.set_state(Gst.State.PLAYING)
         self._sync_elements_on_source_pipeline()
 
     def __delete_file_if_exists(self):

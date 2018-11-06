@@ -136,7 +136,7 @@ There are three ways to configure Brave:
 
 1. Web interface
 2. REST API (plus optoinal websocket)
-3. Config file
+3. [Config file](./docs/config_file.md)
 
 
 #### Web interface
@@ -158,16 +158,16 @@ The API allows read/write access of the state of Brave, including being able to 
 
 
 #### Config file
-Configuring inputs/outputs/overlays using the config file allows them to be set up straightaway when Brave starts.
-However, the config file is not read again after the start, so it cannot be used to dynamically change things (e.g. add a new input).
-
-The default config file can be found at `config/default.yaml`.
+Brave can be configured by config file.
+This includes being able to have certain inputs, mixers, outputs and overlays created when Brave starts.
 
 Provide another config with the `-c` parameter, e.g.
 
 ```
 ./brave.py -c config/example_empty.yaml
 ```
+
+See the [Config File](./docs/config_file.md) documentation for more.
 
 ## Tests
 Brave has functional black-box tests that ensure the config file and API is working correctly.

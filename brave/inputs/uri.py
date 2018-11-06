@@ -11,6 +11,7 @@ class UriInput(Input):
 
     def permitted_props(self):
         return {
+            **super().permitted_props(),
             'uri': {
                 'type': 'str',
             },
@@ -57,7 +58,6 @@ class UriInput(Input):
             self._create_fake_audio()
 
         self.handle_updated_props()
-        self.set_state(Gst.State.PLAYING)
 
     def _create_fake_video(self):
         fakesink = Gst.ElementFactory.make('fakesink')
