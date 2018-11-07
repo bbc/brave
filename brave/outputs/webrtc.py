@@ -74,7 +74,7 @@ class WebRTCOutput(Output):
         if config.enable_audio():
             # bandwidth=superwideband allows the encoder to focus a little more on the important audio
             # (Basic testing showed 'wideband' to be quite poor poor)
-            pipeline_string += (' interaudiosrc name=interaudiosrc ! audioconvert ! '
+            pipeline_string += (' interaudiosrc name=interaudiosrc ! audioconvert ! level message=true ! '
                                 'audioresample name=webrtc-audioresample ! opusenc bandwidth=superwideband  ! '
                                 'rtpopuspay ! application/x-rtp,media=audio,encoding-name=OPUS,payload=96 ! '
                                 'tee name=webrtc_audio_tee webrtc_audio_tee. ! fakesink')
@@ -103,6 +103,29 @@ class WebRTCOutput(Output):
         self.peers[ws]['webrtcbin'].connect('on-negotiation-needed', self._on_negotiation_needed)
         self.peers[ws]['webrtcbin'].connect('on-ice-candidate', self._send_ice_candidate_message)
         # In the future, use connect('pad-added' here if the client's return video is wanted
+
+        loop = asyncio.get_event_loop()
+
+        def on_message(bus, message):
+            t = message.type
+            if t == Gst.MessageType.ELEMENT:
+                if  message.get_structure().get_name() == 'level':
+                    s = message.get_structure()
+                    channels = len(s['peak'])
+                    data = []
+
+                    for i in range(0, channels):
+                        data.append(json.dumps({
+                            'peak': message.get_structure().get_value('peak')[i],
+                            'rms': message.get_structure().get_value('rms')[i],
+                            'decay': message.get_structure().get_value('decay')[i]
+                        }))
+
+                    jsonData = json.dumps({'msg_type': 'volume', 'channels': channels, 'data': data})
+                    loop.create_task(ws.send(jsonData))
+
+        self.pipeline.get_bus().add_signal_watch()
+        self.pipeline.get_bus().connect('message::element', on_message)
 
         if not self.pipeline.set_state(Gst.State.PLAYING):
             self.logger.warn('Unable to enter PLAYING state now that we have a peer')
