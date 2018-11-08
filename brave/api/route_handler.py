@@ -71,6 +71,14 @@ async def delete_overlay(request, id):
     return _status_ok_response()
 
 
+async def delete_mixer(request, id):
+    session = brave.session.get_session()
+    if id not in session.mixers:
+        return _user_error_response('No such mixer ID')
+    session.mixers[id].delete()
+    return _status_ok_response()
+
+
 async def cut_to_source(request, id):
     session = brave.session.get_session()
     if id not in session.mixers or session.mixers[id] is None:
@@ -249,6 +257,17 @@ async def create_overlay(request):
     except brave.exceptions.InvalidConfiguration as e:
         return _invalid_configuration_response(e)
     logger.info('Created overlay #' + str(overlay.id) + ' with details ' + str(request.json))
+    return _status_ok_response()
+
+
+async def create_mixer(request):
+    session = brave.session.get_session()
+    if not request.json:
+        return _invalid_json_response()
+    try:
+        mixer = session.mixers.add(**request.json)
+    except brave.exceptions.InvalidConfiguration as e:
+        return _invalid_configuration_response(e)
     return _status_ok_response()
 
 
