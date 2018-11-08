@@ -285,8 +285,8 @@ def assert_inputs(inputs, check_playing_state=True):
                 assert value == actual_input[key], 'For key "%s", expected "%s" but got "%s"' % (key, value, actual_input[key])
 
 
-def delete_input(id, expected_status_code=200):
-    response = api_delete('/api/inputs/' + str(id))
+def delete_mixer(id, expected_status_code=200):
+    response = api_delete('/api/mixers/' + str(id))
     assert response.status_code == expected_status_code
     time.sleep(0.2)
 
