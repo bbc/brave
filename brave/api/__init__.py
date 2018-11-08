@@ -43,6 +43,7 @@ class RestApi(object):
         app.add_route(route_handler.create_input, '/api/inputs', methods=['PUT'])
         app.add_route(route_handler.create_output, '/api/outputs', methods=['PUT'])
         app.add_route(route_handler.create_overlay, '/api/overlays', methods=['PUT'])
+        app.add_route(route_handler.create_mixer, '/api/mixers', methods=['PUT'])
 
         app.add_route(route_handler.update_input, '/api/inputs/<id:int>', methods=['POST'])
         app.add_route(route_handler.update_output, '/api/outputs/<id:int>', methods=['POST'])
@@ -52,6 +53,7 @@ class RestApi(object):
         app.add_route(route_handler.delete_input, '/api/inputs/<id:int>', methods=['DELETE'])
         app.add_route(route_handler.delete_output, '/api/outputs/<id:int>', methods=['DELETE'])
         app.add_route(route_handler.delete_overlay, '/api/overlays/<id:int>', methods=['DELETE'])
+        app.add_route(route_handler.delete_mixer, '/api/mixers/<id:int>', methods=['DELETE'])
 
         app.add_route(route_handler.cut_to_source, '/api/mixers/<id:int>/cut_to_source', methods=['POST'])
         app.add_route(route_handler.overlay_source, '/api/mixers/<id:int>/overlay_source', methods=['POST'])
