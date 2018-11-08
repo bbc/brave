@@ -5,8 +5,6 @@ from gi.repository import Gst
 
 
 def setup_messaging(pipe, parent_object):
-    bus = pipe.get_bus()
-    bus.add_signal_watch()
     logger = parent_object.logger
 
     # Some docs on parsing the message can be found at
@@ -23,6 +21,8 @@ def setup_messaging(pipe, parent_object):
             if is_pipeline_state_change:
                 old_state, new_state, pending_state = message.parse_state_changed()
                 parent_object.on_state_change(old_state, new_state)
+            else: # TEMP
+                old_state, new_state, pending_state = message.parse_state_changed()
         elif t == Gst.MessageType.ERROR:
             pipe.set_state(Gst.State.NULL)
             err, debug = message.parse_error()
@@ -62,9 +62,10 @@ def setup_messaging(pipe, parent_object):
             pass
             # logger.debug(f'Message from GStreamer: Async done')
         elif t == Gst.MessageType.STREAM_START:
+            # logger.error('TEMP Message from GStreamer: Stream has now started.')
             logger.debug('Message from GStreamer: Stream has now started.')
-            if hasattr(parent_object, 'on_pipeline_start'):
-                parent_object.on_pipeline_start()
+            # if hasattr(parent_object, 'on_pipeline_start'):
+            #     parent_object.on_pipeline_start()
         elif t == Gst.MessageType.NEW_CLOCK:
             pass
             # logger.debug(f'Message from GStreamer: New clock.')
@@ -87,7 +88,23 @@ def setup_messaging(pipe, parent_object):
             parsed = message.parse_property_notify()
             logger.debug('Property notify: object="%s", property_name="%s", property_value="%s"' %
                         (parsed.object.name, parsed.property_name, parsed.property_value))
+        elif t == Gst.MessageType.APPLICATION:
+            # parsed = message.parse_application()
+            struct = message.get_structure()
+            logger.debug('parse_application: %s' % struct.get_value('text'))
+            logger.debug('parse_application: %s' % struct.get_value('tex2t'))
         else:
             logger.info(f'GST UNHANDLED MESSAGE: {str(t)}: {str(message.src)}')
 
-    bus.connect('message', _on_message)
+    parent_object.bus = pipe.get_bus()
+    parent_object.bus.add_signal_watch()
+    parent_object.bus.connect('message', _on_message)
+    logger.error('TEMP bus now connected.')
+
+
+def set_state_via_bus(block, state_as_string):
+    state_to_change_to = state_string_to_constant(self.props['initial_state'])
+    struct = Gst.Structure.new_empty('user_text')
+    struct.set_value('text', 'some data')
+    block.bus.post(Gst.Message.new_application(block.pipeline, struct))
+    print('***** posted a mesage')

@@ -114,10 +114,14 @@ class Mixer(InputOutputOverlay):
                 unblock_pad(output, 'interaudiosrc_src_pad')
 
         # Likewise, tell each input
+        # self.logger.error('TEMP mixer looking to unblock %d sources' % len(self.sources))
         for source in self.sources:
-            if source.input_or_mixer.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]:
-                unblock_pad(source, 'intervideosrc_src_pad')
-                unblock_pad(source, 'interaudiosrc_src_pad')
+            source.unblock_intersrc_if_ready()
+            # if source.input_or_mixer.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]:
+            #     self.logger.error('TEMP unblocking a source 2')
+            #     source.unblock_intersrc_if_ready()
+            #     # unblock_pad(source, 'intervideosrc_src_pad')
+            #     # unblock_pad(source, 'interaudiosrc_src_pad')
 
     def get_dimensions(self):
         '''

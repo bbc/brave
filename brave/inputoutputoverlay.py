@@ -1,4 +1,4 @@
-from gi.repository import Gst, GLib
+from gi.repository import Gst, GLib, GObject
 import logging
 from brave.pipeline_messaging import setup_messaging
 import brave.config as config
@@ -149,6 +149,7 @@ class InputOutputOverlay():
         Set the state to NULL/READY/PAUSED/PLAYING.
         Only works for inputs and outputs that have their own pipeline.
         '''
+        self.logger.error('*********************** set_state(%s) ***********************' % state)
         if not hasattr(self, 'pipeline'):
             self.logger.warn('set_state() called but no pipeline')
             return False
@@ -175,8 +176,16 @@ class InputOutputOverlay():
             delattr(self, 'error_message')
         self.logger.debug('Pipeline state change from %s to %s' %
                           (old_state.value_nick.upper(), new_state.value_nick.upper()))
+        self.logger.error('TEMP Pipeline state change from %s to %s' %
+                          (old_state.value_nick.upper(), new_state.value_nick.upper()))
 
-        self.__consider_initial_state(new_state)
+        starting = (new_state in [Gst.State.PLAYING, Gst.State.PAUSED] and
+                    old_state not in [Gst.State.PLAYING, Gst.State.PAUSED])
+        if hasattr(self, 'on_pipeline_start') and starting:
+            self.on_pipeline_start()
+
+        # self.__consider_initial_state(new_state)
+        GObject.timeout_add(1, self.__consider_initial_state, new_state)
         self.report_update_to_user()
 
     def report_update_to_user(self):
@@ -256,3 +265,5 @@ class InputOutputOverlay():
             else:
                 self.logger.warn('Unable to set to initial unknown state "%s"' % self.props['initial_state'])
             self.initial_state_initiated = True
+
+        return False

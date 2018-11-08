@@ -10,7 +10,7 @@ from brave.overlays import OverlayCollection
 from brave.mixers import MixerCollection
 import brave.config as config
 assert Gst.VERSION_MINOR > 13, f'GStreamer is version 1.{Gst.VERSION_MINOR}, must be 1.14 or higher'
-PERIODIC_MESSAGE_FREQUENCY = 60
+PERIODIC_MESSAGE_FREQUENCY = 5 # TEMP
 singleton = None
 
 
