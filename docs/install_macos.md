@@ -57,6 +57,4 @@ brew install gst-libav gst-python
 
 Try it out
 
-```
-./brave.py
-```
+`pipenv run python3 brave.py`
