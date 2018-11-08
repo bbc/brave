@@ -4,6 +4,7 @@ import brave.config as config
 import json
 import asyncio
 import gi
+import websockets
 gi.require_version('GstWebRTC', '1.0')
 from gi.repository import GstWebRTC
 gi.require_version('GstSdp', '1.0')
@@ -110,8 +111,7 @@ class WebRTCOutput(Output):
             t = message.type
             if t == Gst.MessageType.ELEMENT:
                 if  message.get_structure().get_name() == 'level':
-                    s = message.get_structure()
-                    channels = len(s['peak'])
+                    channels = len(message.get_structure().get_value('peak'))
                     data = []
 
                     for i in range(0, channels):
@@ -122,7 +122,14 @@ class WebRTCOutput(Output):
                         }))
 
                     jsonData = json.dumps({'msg_type': 'volume', 'channels': channels, 'data': data})
-                    loop.create_task(ws.send(jsonData))
+
+                    async def _send_data():
+                        try:
+                            await ws.send(jsonData)
+                        except websockets.ConnectionClosed:
+                            pass
+
+                    loop.create_task(_send_data())
 
         self.pipeline.get_bus().add_signal_watch()
         self.pipeline.get_bus().connect('message::element', on_message)
