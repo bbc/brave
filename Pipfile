@@ -1,0 +1,20 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pyyaml = "*"
+gbulb = "*"
+sanic = "*"
+websockets = "~=5.0.0"
+pytest = "*"
+pillow = "*"
+pygobject = "*"
+vext = "*"
+psutil = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.7"

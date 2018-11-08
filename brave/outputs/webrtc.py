@@ -110,8 +110,7 @@ class WebRTCOutput(Output):
             t = message.type
             if t == Gst.MessageType.ELEMENT:
                 if  message.get_structure().get_name() == 'level':
-                    s = message.get_structure()
-                    channels = len(s['peak'])
+                    channels = len(message.get_structure().get_value('peak'))
                     data = []
 
                     for i in range(0, channels):
