@@ -21,12 +21,10 @@ def setup_messaging(pipe, parent_object):
             if is_pipeline_state_change:
                 old_state, new_state, pending_state = message.parse_state_changed()
                 parent_object.on_state_change(old_state, new_state)
-            else: # TEMP
-                old_state, new_state, pending_state = message.parse_state_changed()
         elif t == Gst.MessageType.ERROR:
             pipe.set_state(Gst.State.NULL)
             err, debug = message.parse_error()
-            logger.error(f'GStreamer error: {str(err)}')
+            logger.error('GStreamer error from %s: %s' % (message.src.name, err))
             logger.error(f'GStreamer error debug: {str(debug)}')
             logger.error(f'GStreamer error message: {str(err.message)}')
             parent_object.error_message = err.message
@@ -34,9 +32,9 @@ def setup_messaging(pipe, parent_object):
         elif t == Gst.MessageType.WARNING:
             pipe.set_state(Gst.State.NULL)
             err, debug = message.parse_warning()
-            logger.warn(f'GStreamer error: {str(err)}')
-            logger.warn(f'GStreamer error debug: {str(debug)}')
-            logger.warn(f'GStreamer error message: {str(err.message)}')
+            logger.warn('GStreamer warning from %s: %s' % (message.src.name, err))
+            logger.warn(f'GStreamer warning debug: {str(debug)}')
+            logger.warn(f'GStreamer warning message: {str(err.message)}')
             parent_object.error_message = err.message
             parent_object.report_update_to_user()
         elif t == Gst.MessageType.TAG:
@@ -99,7 +97,6 @@ def setup_messaging(pipe, parent_object):
     parent_object.bus = pipe.get_bus()
     parent_object.bus.add_signal_watch()
     parent_object.bus.connect('message', _on_message)
-    logger.error('TEMP bus now connected.')
 
 
 def set_state_via_bus(block, state_as_string):

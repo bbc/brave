@@ -149,7 +149,6 @@ class InputOutputOverlay():
         Set the state to NULL/READY/PAUSED/PLAYING.
         Only works for inputs and outputs that have their own pipeline.
         '''
-        self.logger.error('*********************** set_state(%s) ***********************' % state)
         if not hasattr(self, 'pipeline'):
             self.logger.warn('set_state() called but no pipeline')
             return False
@@ -175,8 +174,6 @@ class InputOutputOverlay():
         if old_state == Gst.State.NULL and new_state != Gst.State.NULL and hasattr(self, 'error_message'):
             delattr(self, 'error_message')
         self.logger.debug('Pipeline state change from %s to %s' %
-                          (old_state.value_nick.upper(), new_state.value_nick.upper()))
-        self.logger.error('TEMP Pipeline state change from %s to %s' %
                           (old_state.value_nick.upper(), new_state.value_nick.upper()))
 
         starting = (new_state in [Gst.State.PLAYING, Gst.State.PAUSED] and
