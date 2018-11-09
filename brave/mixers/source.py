@@ -56,13 +56,11 @@ class Source():
         Deletes this source. Don't get confused with remove_from_mix()
         '''
 
-        def after_removed_from_mix():
-            self._remove_all_elements()
-            self.collection._items.remove(self)
-            if callback:
-                callback()
-
-        self.remove_from_mix(after_removed_from_mix)
+        self.remove_from_mix()
+        self._remove_all_elements()
+        self.collection._items.remove(self)
+        if callback:
+            callback()
 
     def in_mix(self):
         '''
@@ -80,68 +78,23 @@ class Source():
         Places (adds) this input onto the mixer.
         If you want to replace what's on the mix. use source.cut()
         '''
-        self.logger.warn('TEMP add_to_mix: initiated')
-
         self._ensure_elements_are_created()
-        self.logger.warn('TEMP add_to_mix: 2')
-
-        self.logger.debug('Overlaying to mixer %d' % self.mixer().id)
-        self.logger.warn('TEMP add_to_mix: 3')
         if self.input_or_mixer.has_video():
-            self.logger.warn('TEMP add_to_mix: 4')
             self._add_video_to_mix()
-            self.logger.warn('TEMP add_to_mix: 4.1')
         if self.input_or_mixer.has_audio():
-            self.logger.warn('TEMP add_to_mix: 5')
             self._add_audio_to_mix()
-
-        self.logger.warn('TEMP add_to_mix: 6')
-
-        self.logger.warn('TEMP add_to_mix: about to unblock mix pads')
-        self._unblock_mix_pads()
-        # self.logger.warn('TEMP add_to_mix: about to unblock intersrc')
-        # self.unblock_intersrc_if_ready()
-        # self.logger.warn('TEMP add_to_mix: unblock done')
-
-        # TODO this can probably go:
-        # self.set_mixer_element_state(self.mixer().pipeline.get_state(0).state)
-
         self.mixer().report_update_to_user()
 
-    def remove_from_mix(self, callback=None):
+    def remove_from_mix(self):
         '''
         Removes this source from showing on this mixer
         '''
-        if not self.in_mix():
-            if callback:
-                callback()
-            return
-
-        def _set_my_mixer_elements_to_null():
-            self.set_mixer_element_state(Gst.State.NULL)
-            self.logger.info('Completed removal from mix.')
-            self.mixer().report_update_to_user()
-            if callback:
-                callback()
-
-        def _after_removal_from_both_mixes():
-            # We set the state of these elements to NULL because we don't need them running.
-            # But one of the elements (queue) is the one that this callback is for.
-            # So we cannot directly set the state or else a deadlock will occur.
-            # Instead, we ask the g event look to do this at the next idle moment.
-            GLib.idle_add(_set_my_mixer_elements_to_null)
-            self.logger.debug('Completed removal of from mix, except setting state to NULL.')
-
-        def _after_removal_from_video_mix():
+        if self.in_mix():
+            if self.input_or_mixer.has_video():
+                self._remove_from_video_mix()
             if self.input_or_mixer.has_audio():
-                self._remove_from_audio_mix(_after_removal_from_both_mixes)
-            else:
-                _after_removal_from_both_mixes()
-
-        if self.input_or_mixer.has_video():
-            self._remove_from_video_mix(_after_removal_from_video_mix)
-        else:
-            _after_removal_from_video_mix()
+                self._remove_from_audio_mix()
+            self.logger.debug('Completed removal of from mix.')
 
     def handle_updated_props(self):
         '''
@@ -165,66 +118,36 @@ class Source():
             self.capsfilter_after_intervideosrc.set_property('caps-change-mode', 1)
 
     def unblock_intersrc_if_ready(self):
-        self.logger.warn('TEMP is mixer ready 1')
-        if self.mixer().get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]:
-            self.logger.warn('TEMP is mixer ready 2:mixer is playing/paused')
-        if self.input_or_mixer.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]:
-            self.logger.warn('TEMP is mixer ready 3:mixer is playing/paused')
-        if self._elements_are_created():
-            self.logger.warn('TEMP is mixer ready 4: elements are created')
         if (self.mixer().get_state() in [Gst.State.PLAYING, Gst.State.PAUSED] and
             self.input_or_mixer.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED] and
             self._elements_are_created()):
-                self.logger.warn('TEMP is mixer ready - YES')
                 unblock_pad(self, 'intervideosrc_src_pad')
                 unblock_pad(self, 'interaudiosrc_src_pad')
         # otherwise, mixer will unblock when it does start.
 
     def _add_video_to_mix(self):
-        self.logger.warn('_add_video_to_mix 1')
 
         # 'video_pad_to_connect_to_mix' may not exist if decoder hasn't kicked in
         if not hasattr(self, 'video_pad_to_connect_to_mix'):
             return
-        self.logger.warn('_add_video_to_mix 2')
         if (self.video_pad_to_connect_to_mix.is_linked()):
             self.logger.info('Attempted to add to mix when already there')
             return
-        self.logger.warn('_add_video_to_mix 3')
         if hasattr(self, 'video_mix_request_pad'):
             traceback.print_stack()
             self.logger.warn('Already have video_mix_request_pad, should not be possible')
-        self.logger.warn('_add_video_to_mix 4')
+
         self.video_mix_request_pad = self.mixer().get_video_mixer_request_pad(self)
+
         if (self.video_pad_to_connect_to_mix.is_linked()):
             self.logger.info('Attempted to add to video mix when already there')
             return
 
         self._handle_video_mix_props()
-        print('****** TEMP CRASH DISCOVERY: linking input to mix STARTING (%s/%s)' %
-              (self.video_pad_to_connect_to_mix, self.video_mix_request_pad))
 
-        def _link():
-            import threading
-            print('***** thread=%s' % threading.current_thread().name)
-            print('****** TEMP CRASH DISCOVERY: Blocked: %s/%s' % (self.video_pad_to_connect_to_mix.is_blocked(), self.video_mix_request_pad.is_blocked()))
-            print('****** TEMP CRASH DISCOVERY: blocking: %s/%s' % (self.video_pad_to_connect_to_mix.is_blocking(), self.video_mix_request_pad.is_blocking()))
-            print('****** TEMP CRASH DISCOVERY: Active: %s/%s' % (self.video_pad_to_connect_to_mix.is_active(), self.video_mix_request_pad.is_active()))
-            print('****** TEMP CRASH DISCOVERY: parent 1:',self.video_pad_to_connect_to_mix.parent.name)
-            print('****** TEMP CRASH DISCOVERY: parent 2:',self.video_mix_request_pad.parent.name)
-            print('****** TEMP CRASH DISCOVERY: parent state: %s/%s' % (self.video_pad_to_connect_to_mix.parent.get_state(0), self.video_mix_request_pad.parent.get_state(0)))
-            print('****** TEMP CRASH DISCOVERY: grandparent 1:',self.video_pad_to_connect_to_mix.parent.parent)
-            print('****** TEMP CRASH DISCOVERY: grandparent 2:',self.video_mix_request_pad.parent.parent)
-            print('****** DOING THE LINK')
-            self.video_pad_to_connect_to_mix.link(self.video_mix_request_pad)
-            print('****** FINISHED DOING THE LINK')
-
-
-        # Linking into the compositor works better if done a moment later:
-        GObject.timeout_add(1, _link)
-        # _link()
-        print('****** TEMP CRASH DISCOVERY:  linking input to mix COMPLETE')
-
+        link_response = self.video_pad_to_connect_to_mix.link(self.video_mix_request_pad)
+        if link_response != Gst.PadLinkReturn.OK:
+            self.logger.error('Cannot link video to mix, response was %s' % link_response)
 
     def _add_audio_to_mix(self):
         if (hasattr(self, 'audio_pad_to_connect_to_mix') and
@@ -240,7 +163,10 @@ class Source():
             self.logger.info('Attempted to add to audio mix when already there')
             return
 
-        self.audio_pad_to_connect_to_mix.link(self.audio_mix_request_pad)
+        link_response = self.audio_pad_to_connect_to_mix.link(self.audio_mix_request_pad)
+        if link_response != Gst.PadLinkReturn.OK:
+            self.logger.error('Cannot link audio to mix, response was %s' % link_response)
+
         self._handle_audio_mix_props()
 
     def _handle_video_mix_props(self):
@@ -299,20 +225,6 @@ class Source():
                           (self.video_mix_request_pad.get_property('width'),
                            self.video_mix_request_pad.get_property('height')))
 
-    def _unblock_mix_pads(self):
-        '''
-        Mix pads will have been blocked if previously removed from a mix. This unblocks them.
-        '''
-        if hasattr(self, 'video_pad_to_mix_probe'):
-            self.video_pad_to_connect_to_mix.remove_probe(self.video_pad_to_mix_probe)
-            delattr(self, 'video_pad_to_mix_probe')
-            self.logger.debug('Remove block from video mix pad')
-            self.logger.error('TEMP Remove block from video mix pad')
-        if hasattr(self, 'audio_pad_to_mix_probe'):
-            self.audio_pad_to_connect_to_mix.remove_probe(self.audio_pad_to_mix_probe)
-            delattr(self, 'audio_pad_to_mix_probe')
-            self.logger.debug('Remove block from audio mix pad')
-
     def _create_intervideo_elements(self):
         '''
         Create the 'intervideosrc' element, which accepts the video input that's come from a separate pipeline.
@@ -322,34 +234,43 @@ class Source():
         intervideosrc = self._create_intervideosrc()
         intervideosink = self._create_intersink('video')
 
+        self.temp_intervideosink = intervideosink
+
         # Give the 'inter' elements a channel name. It doesn't matter what, so long as they're unique.
         channel_name = create_intersink_channel_name()
         intervideosink.set_property('channel', channel_name)
         intervideosrc.set_property('channel', channel_name)
 
         videoscale = self._add_element_to_mixer_pipeline('videoscale')
-        intervideosrc.link(videoscale)
+        if not intervideosrc.link(videoscale):
+            self.logger.error('Cannot link intervideosrc to videoscale')
 
         # Decent scaling options:
         videoscale.set_property('method', 3)
         videoscale.set_property('dither', True)
 
         videoconvert = self._add_element_to_mixer_pipeline('videoconvert')
-        videoscale.link(videoconvert)
+        if not videoscale.link(videoconvert):
+            self.logger.error('Cannot link videoscale to videoconvert')
 
         self.capsfilter_after_intervideosrc = self._add_element_to_mixer_pipeline('capsfilter')
-        videoconvert.link(self.capsfilter_after_intervideosrc)
+        if not videoconvert.link(self.capsfilter_after_intervideosrc):
+            self.logger.error('Cannot link videoconvert to capsfilter')
 
         queue = self._add_element_to_mixer_pipeline('queue', name='video_queue')
-        self.capsfilter_after_intervideosrc.link(queue)
 
-        self.video_pad_to_connect_to_mix = queue.get_static_pad('src')
+        # We use a tee even though we only have one output (the mixer) because then we can use
+        # allow-not-linked which means this bit of the pipeline does not fail when it's disconnected.
+        tee = self._add_element_to_mixer_pipeline('tee', name='tee_after_video_queue')
+        tee.set_property('allow-not-linked', True)
 
-        for e in [intervideosink]:
-            # state_to_set = self.input_or_mixer.get_state()
-            state_to_set = Gst.State.PLAYING
-            if not e.set_state(state_to_set):
-                self.logger.warn('Cannot set %s to %s' % (e.name, state_to_set.value_nick.upper()))
+        if not self.capsfilter_after_intervideosrc.link(queue):
+            self.logger.error('Cannot link capsfilter to queue')
+        if not queue.link(tee):
+            self.logger.error('Cannot link queue to tee')
+
+        tee_src_pad_template = tee.get_pad_template("src_%u")
+        self.video_pad_to_connect_to_mix = tee.request_pad(tee_src_pad_template, None, None)
 
     def _create_interaudio_elements(self):
         '''
@@ -363,7 +284,20 @@ class Source():
         interaudiosink.set_property('channel', channel_name)
         interaudiosrc.set_property('channel', channel_name)
 
-        self.audio_pad_to_connect_to_mix = interaudiosrc.get_static_pad('src')
+        # A queue ensures that disconnection from the audiomixer does not result in a pipeline failure:
+        queue = self._add_element_to_mixer_pipeline('queue', name='audio_queue')
+
+        # We use a tee even though we only have one output (the mixer) because then we can use
+        # allow-not-linked which means this bit of the pipeline does not fail when it's disconnected.
+        tee = self._add_element_to_mixer_pipeline('tee', name='tee_after_audio_queue')
+        tee.set_property('allow-not-linked', True)
+
+        if not interaudiosrc.link(queue):
+            self.logger.error('Cannot link interaudiosrc to queue')
+        if not queue.link(tee):
+            self.logger.error('Cannot link queue to tee')
+        tee_src_pad_template = tee.get_pad_template("src_%u")
+        self.audio_pad_to_connect_to_mix = tee.request_pad(tee_src_pad_template, None, None)
 
     def _create_intervideosrc(self):
         '''
@@ -432,59 +366,29 @@ class Source():
             self.logger.error('Failed to connect queue to %s' % element_name)
         return element
 
-    def _remove_from_video_mix(self, callback):
+    def _remove_from_video_mix(self):
         if (not self.video_pad_to_connect_to_mix.is_linked()):
             self.logger.info('Attempted to remove from mix when not in video mix')
-            callback()
             return
 
-        on_blocked_function_called = False
+        if hasattr(self, 'video_mix_request_pad'):
+            # First, unlink this input from the mixer:
+            self.video_pad_to_connect_to_mix.unlink(self.video_mix_request_pad)
+            # Then, tell the mixer to remove the request (input) pad
+            # (If we don't do this, the final frame remains in the mix.)
+            self.mixer().video_mixer.release_request_pad(self.video_mix_request_pad)
+            delattr(self, 'video_mix_request_pad')
 
-        def _remove_from_video_mix_now_blocked(*_):
-            nonlocal on_blocked_function_called
-            if on_blocked_function_called:
-                return Gst.PadProbeReturn.OK
-            on_blocked_function_called = True
-
-            if hasattr(self, 'video_mix_request_pad'):
-                # First, unlink this input from the mixer:
-                self.video_pad_to_connect_to_mix.unlink(self.video_mix_request_pad)
-                # Then, tell the mixer to remove the request (input) pad
-                self.mixer().video_mixer.release_request_pad(self.video_mix_request_pad)
-                delattr(self, 'video_mix_request_pad')
-            callback()
-
-            # We must keep the block in place as the elements are still in PLAYING state:
-            return Gst.PadProbeReturn.OK
-
-        self.video_pad_to_mix_probe = self.video_pad_to_connect_to_mix.add_probe(
-            Gst.PadProbeType.BLOCKING, _remove_from_video_mix_now_blocked, None)
-
-    def _remove_from_audio_mix(self, callback):
+    def _remove_from_audio_mix(self):
         if (not self.audio_pad_to_connect_to_mix.is_linked()):
             self.logger.info('Attempted to remove from mix when not in audio mix')
-            callback()
             return
 
-        on_blocked_function_called = False
-
-        def _remove_from_audio_mix_now_blocked(*_):
-            nonlocal on_blocked_function_called
-            if on_blocked_function_called:
-                return Gst.PadProbeReturn.OK
-            on_blocked_function_called = True
-
-            if hasattr(self, 'audio_mix_request_pad'):
-                self.audio_pad_to_connect_to_mix.unlink(self.audio_mix_request_pad)
-                self.mixer().audio_mixer.release_request_pad(self.audio_mix_request_pad)
-                delattr(self, 'audio_mix_request_pad')
-            callback()
-
-            # We must keep the block in place as the elements are still in PLAYING state:
-            return Gst.PadProbeReturn.OK
-
-        self.audio_pad_to_mix_probe = self.audio_pad_to_connect_to_mix.add_probe(
-            Gst.PadProbeType.BLOCKING, _remove_from_audio_mix_now_blocked)
+        if hasattr(self, 'audio_mix_request_pad'):
+            # Unlink freezes the last frame, then releasing the pad removes it fully.
+            self.audio_pad_to_connect_to_mix.unlink(self.audio_mix_request_pad)
+            self.mixer().audio_mixer.release_request_pad(self.audio_mix_request_pad)
+            delattr(self, 'audio_mix_request_pad')
 
     def _remove_all_elements(self):
         '''
@@ -538,9 +442,7 @@ class Source():
         # Connect the input (or source mixer) and the mixer, unless that's already been done
         if self.input_or_mixer.has_video() and not hasattr(self, 'video_is_linked'):
             self._create_intervideo_elements()
-            self.logger.error('TEMP finished creating video elements to connect source')
             self.video_is_linked = True
-        # Connect the input (or source mixer) and the mixer, unless that's already been done
         if self.input_or_mixer.has_audio() and not hasattr(self, 'audio_is_linked'):
             self._create_interaudio_elements()
             self.audio_is_linked = True
