@@ -21,8 +21,11 @@ class Output(InputOutputOverlay):
         # This stores the pads on the source's tee which are connected to this output:
         self.tee_src_pads = {}
 
+        # Link this to the source (input or mixer), assuming there is one
+        self.link_from_source()
+
         # Set initially to READY, and when there we set to self.props['initial_state']
-        self.pipeline.set_state(Gst.State.READY)
+        self.set_state(Gst.State.READY)
 
     def input_output_overlay_or_mixer(self):
         return 'output'

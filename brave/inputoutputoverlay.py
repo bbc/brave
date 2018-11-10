@@ -88,7 +88,10 @@ class InputOutputOverlay():
         return True
 
     def get_state(self):
-        return self.pipeline.get_state(0).state
+        if hasattr(self, 'pipeline'):
+            return self.pipeline.get_state(0).state
+        else:
+            return Gst.State.NULL
 
     def print_state_summary(self):
         '''

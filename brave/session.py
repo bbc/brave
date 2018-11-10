@@ -64,9 +64,6 @@ class Session(object):
         for output_config in config.default_outputs():
             output = self.outputs.add(**output_config)
 
-        for name, output in self.outputs.items():
-            output.link_from_source()
-
         if config.enable_video():
             for overlay_config in config.default_overlays():
                 self.overlays.add(**overlay_config)

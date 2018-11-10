@@ -10,10 +10,9 @@ class Input(InputOutputOverlay):
     def __init__(self, **args):
         super().__init__(**args)
         self.create_elements()
-        self.set_state(Gst.State.READY)
 
         # Set initially to READY, and when there we set to self.props['initial_state']
-        self.pipeline.set_state(Gst.State.READY)
+        self.set_state(Gst.State.READY)
 
     def input_output_overlay_or_mixer(self):
         return 'input'
