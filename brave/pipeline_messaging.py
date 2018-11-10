@@ -85,7 +85,7 @@ def setup_messaging(pipe, parent_object):
         elif t == Gst.MessageType.PROPERTY_NOTIFY:
             parsed = message.parse_property_notify()
             logger.debug('Property notify: object="%s", property_name="%s", property_value="%s"' %
-                        (parsed.object.name, parsed.property_name, parsed.property_value))
+                         (parsed.object.name, parsed.property_name, parsed.property_value))
         elif t == Gst.MessageType.APPLICATION:
             # parsed = message.parse_application()
             struct = message.get_structure()
@@ -97,11 +97,3 @@ def setup_messaging(pipe, parent_object):
     parent_object.bus = pipe.get_bus()
     parent_object.bus.add_signal_watch()
     parent_object.bus.connect('message', _on_message)
-
-
-def set_state_via_bus(block, state_as_string):
-    state_to_change_to = state_string_to_constant(self.props['initial_state'])
-    struct = Gst.Structure.new_empty('user_text')
-    struct.set_value('text', 'some data')
-    block.bus.post(Gst.Message.new_application(block.pipeline, struct))
-    print('***** posted a mesage')

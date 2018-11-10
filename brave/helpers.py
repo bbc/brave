@@ -126,10 +126,11 @@ def unblock_pad(block, name):
         # else it wasn't blocked, no need to worry
     # else it does not exist, e.g. audio in a video-only situation, so ignore
 
+
 def block_pad(block, name):
     if hasattr(block, name):
         if name in block.probes:
-            self.logger.warn('Attempting to block %s but already blocked' % name)
+            block.logger.warn('Attempting to block %s but already blocked' % name)
         else:
             block.probes[name] = getattr(block, name).add_probe(
                 Gst.PadProbeType.BLOCK_DOWNSTREAM, _blocked_probe_callback, block)
