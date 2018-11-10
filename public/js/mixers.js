@@ -47,7 +47,9 @@ mixersHandler._asCard = (mixer) => {
 }
 
 mixersHandler._optionButtonsForMixer = (mixer) => {
-    return components.editButton().click(() => { mixersHandler.showFormToEdit(mixer); return false })
+    const editButton = components.editButton().click(() => { mixersHandler.showFormToEdit(mixer); return false })
+    const deleteButton = components.deleteButton().click(() => { mixersHandler.delete(mixer); return false })
+    return [editButton, deleteButton]
 }
 
 mixersHandler._mixerCardBody = (mixer) => {
@@ -123,6 +125,10 @@ mixersHandler._handleFormSubmit = function() {
     hideModal();
 }
 
+mixersHandler.create = () => {
+    mixersHandler._submitCreateOrEdit(null, {})
+}
+
 
 mixersHandler._submitCreateOrEdit = function (id, values) {
     var putOrPost = (id != null) ? 'POST' : 'PUT'
@@ -142,4 +148,21 @@ mixersHandler._submitCreateOrEdit = function (id, values) {
                 'Error updating mixer: ' + response.responseJSON.error : 'Error updating mixer')
         }
     });
+}
+
+mixersHandler.delete = function(mixer) {
+    $.ajax({
+        contentType: "application/json",
+        type: 'DELETE',
+        url: 'api/mixers/' + mixer.id,
+        dataType: 'json',
+        success: function() {
+            showMessage('Successfully deleted mixer ' + mixer.id, 'success')
+            updatePage()
+        },
+        error: function() {
+            showMessage('Sorry, an error occurred whlst deleting mixer ' + mixer.id, 'danger')
+        }
+    });
+    return false
 }
