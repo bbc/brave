@@ -5,6 +5,7 @@
 function onPageLoad() {
     $(document).ready(function() {
         $('#new-input-button').click(inputsHandler.showFormToAdd)
+        $('#new-mixer-button').click(mixersHandler.create)
         $('#new-overlay-button').click(overlaysHandler.showFormToAdd)
         $('#new-output-button').click(outputsHandler.showFormToAdd)
         $('#refresh-page-button').click(updatePage)
