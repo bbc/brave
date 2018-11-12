@@ -24,6 +24,7 @@ def test_bad_body(run_brave):
 
 def test_missing_type(run_brave):
     run_brave()
-    response = api_post('/api/mixers', {})
-    # assert response.status_code == 400
-    assert response.json()['error'] == 'Invalid JSON not!'
+    response = api_put('/api/inputs', {})
+    assert response.status_code == 400
+    print('text=', response.text)
+    assert "input missing 'type'" in response.json()['error']

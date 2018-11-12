@@ -185,10 +185,8 @@ async def update_mixer(request, id):
 
 async def create_input(request):
     input = request['session'].inputs.add(**request.json)
-    # TODO find a better way to decide which mixers this new input should be added to
-    mixer = request['session'].mixers[0]
-    source = mixer.sources.get_or_create(input)
-    run_on_master_thread_when_idle(source.add_to_mix)
+    # TODO not hard-code mixer 0:
+    run_on_master_thread_when_idle(input.sources()[0].add_to_mix)
     logger.info('Created input #%d with details %s' % (input.id, request.json))
     return sanic.response.json({'id': input.id})
 
