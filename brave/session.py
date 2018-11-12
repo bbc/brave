@@ -62,7 +62,7 @@ class Session(object):
             self.mixers.add(**mixer_config)
 
         for output_config in config.default_outputs():
-            output = self.outputs.add(**output_config)
+            self.outputs.add(**output_config)
 
         if config.enable_video():
             for overlay_config in config.default_overlays():

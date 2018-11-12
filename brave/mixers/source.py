@@ -1,4 +1,4 @@
-from gi.repository import Gst, GLib, GObject
+from gi.repository import Gst
 from brave.helpers import create_intersink_channel_name, block_pad, unblock_pad
 import traceback
 
@@ -118,11 +118,11 @@ class Source():
             self.capsfilter_after_intervideosrc.set_property('caps-change-mode', 1)
 
     def unblock_intersrc_if_ready(self):
-        if (self.mixer().get_state() in [Gst.State.PLAYING, Gst.State.PAUSED] and
-            self.input_or_mixer.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED] and
-            self._elements_are_created()):
-                unblock_pad(self, 'intervideosrc_src_pad')
-                unblock_pad(self, 'interaudiosrc_src_pad')
+        if (self.mixer().get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]) and \
+           (self.input_or_mixer.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]) and \
+           self._elements_are_created():
+            unblock_pad(self, 'intervideosrc_src_pad')
+            unblock_pad(self, 'interaudiosrc_src_pad')
         # otherwise, mixer will unblock when it does start.
 
     def _add_video_to_mix(self):
@@ -260,7 +260,7 @@ class Source():
         queue = self._add_element_to_mixer_pipeline('queue', name='video_queue')
 
         # We use a tee even though we only have one output (the mixer) because then we can use
-        # allow-not-linked which means this bit of the pipeline does not fail when it's disconnected.
+        # allow-not-linked which means this bit of the pipeline does not fail when it's disconnected.
         tee = self._add_element_to_mixer_pipeline('tee', name='tee_after_video_queue')
         tee.set_property('allow-not-linked', True)
 
@@ -288,7 +288,7 @@ class Source():
         queue = self._add_element_to_mixer_pipeline('queue', name='audio_queue')
 
         # We use a tee even though we only have one output (the mixer) because then we can use
-        # allow-not-linked which means this bit of the pipeline does not fail when it's disconnected.
+        # allow-not-linked which means this bit of the pipeline does not fail when it's disconnected.
         tee = self._add_element_to_mixer_pipeline('tee', name='tee_after_audio_queue')
         tee.set_property('allow-not-linked', True)
 

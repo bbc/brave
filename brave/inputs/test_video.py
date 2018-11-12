@@ -36,9 +36,9 @@ class TestVideoInput(Input):
 
     def create_elements(self):
         pipeline_string = ('videotestsrc is-live=true name=videotestsrc'
-                           ' ! videoconvert ! videoscale ! capsfilter name=capsfilter'
-                           + self.default_video_pipeline_string_end())
-                            # + ' final_video_tee. ! queue ! autovideosink ')
+                           ' ! videoconvert ! videoscale ! capsfilter name=capsfilter' +
+                           self.default_video_pipeline_string_end())
+        # FOR TESTING TO VIEW LOCALLY, APPEND: + ' final_video_tee. ! queue ! autovideosink ')
         if not self.create_pipeline_from_string(pipeline_string):
             return False
 

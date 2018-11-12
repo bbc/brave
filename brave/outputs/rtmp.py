@@ -1,5 +1,4 @@
 from brave.outputs.output import Output
-from gi.repository import Gst
 import brave.config as config
 
 
