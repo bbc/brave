@@ -5,13 +5,16 @@ from brave.outputs.image import ImageOutput
 from brave.outputs.file import FileOutput
 from brave.outputs.webrtc import WebRTCOutput
 from brave.abstract_collection import AbstractCollection
+import brave.exceptions
 
 
 class OutputCollection(AbstractCollection):
     def add(self, **args):
         args['id'] = self.get_new_id()
 
-        if args['type'] == 'local':
+        if 'type' not in args:
+            raise brave.exceptions.InvalidConfiguration("Invalid output missing 'type'")
+        elif args['type'] == 'local':
             output = LocalOutput(**args, collection=self)
         elif args['type'] == 'rtmp':
             output = RTMPOutput(**args, collection=self)
@@ -24,7 +27,7 @@ class OutputCollection(AbstractCollection):
         elif args['type'] == 'webrtc':
             output = WebRTCOutput(**args, collection=self)
         else:
-            raise Exception(f"Invalid output type '{str(args['type'])}'")
+            raise brave.exceptions.InvalidConfiguration("Invalid output type '%s'" % args['type'])
 
         self._items[args['id']] = output
         return output

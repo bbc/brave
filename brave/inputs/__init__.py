@@ -11,7 +11,9 @@ class InputCollection(AbstractCollection):
     def add(self, **args):
         args['id'] = self.get_new_id()
 
-        if args['type'] == 'uri':
+        if 'type' not in args:
+            raise brave.exceptions.InvalidConfiguration("Invalid input missing 'type'")
+        elif args['type'] == 'uri':
             input = UriInput(**args, collection=self)
         elif args['type'] == 'test_video':
             input = TestVideoInput(**args, collection=self)
