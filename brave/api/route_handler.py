@@ -84,7 +84,7 @@ async def cut_to_source(request, id):
         return _user_error_response('No such input ID')
 
     mixer = request['session'].mixers[id]
-    source = mixer.sources.get_or_create(request['session'].inputs[input_id])
+    source = mixer.sources.add(request['session'].inputs[input_id])
     if not source:
         return _user_error_response('Input is not source on mixer')
 
@@ -107,7 +107,7 @@ async def overlay_source(request, id):
         return _user_error_response('No such input ID')
 
     mixer = request['session'].mixers[id]
-    source = mixer.sources.get_or_create(request['session'].inputs[input_id])
+    source = mixer.sources.add(request['session'].inputs[input_id])
     if not source:
         return _user_error_response('Input is not source on mixer')
 
