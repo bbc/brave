@@ -46,7 +46,6 @@ def subtest_change_width_and_height():
     update_mixer(0, {'props': {'width': 200, 'height': 300}})
 
 
-
 def subtest_delete_mixers():
     delete_mixer(0)
     delete_mixer(1)

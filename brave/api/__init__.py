@@ -33,6 +33,21 @@ class RestApi(object):
         async def not_found(request, exception):
             return sanic.response.json({'error': 'Not found'}, 404)
 
+        @app.middleware('request')
+        async def give_session_to_each_route_handler(request):
+            request['session'] = session
+
+        @app.middleware('request')
+        async def ensure_objects_always_provided_in_json(request):
+            if request.method in ['POST', 'PUT'] and not isinstance(request.json, dict):
+                return sanic.response.json({'error': 'Invalid JSON'}, 400)
+
+        @app.exception(brave.exceptions.InvalidConfiguration)
+        async def invalid_cf(request, exception):
+            msg = 'Invalid configuration from user: ' + str(exception)
+            logger.debug(msg)
+            return sanic.response.json({'error': msg}, 400)
+
         app.add_route(route_handler.all, "/api/all")
         app.add_route(route_handler.inputs, "/api/inputs")
         app.add_route(route_handler.outputs, "/api/outputs")
