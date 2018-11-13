@@ -25,9 +25,6 @@ addons:
     - gobject-introspection
     - libgirepository1.0-dev
 
-virtualenv:
-  system_site_packages: true
-
 install:
   - pip install pipenv
   - pipenv install
