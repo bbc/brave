@@ -184,7 +184,6 @@ class InputOutputOverlay():
         if hasattr(self, 'on_pipeline_start') and starting:
             self.on_pipeline_start()
 
-        # self.__consider_initial_state(new_state)
         GObject.timeout_add(1, self.__consider_initial_state, new_state)
         self.report_update_to_user()
 

@@ -84,7 +84,6 @@ def test_initial_state_option_via_api(run_brave):
     response = api_get('/api/all')
     assert response.status_code == 200
     details = response.json()
-    print(response.json())
     assert details['inputs'][0]['state'] == 'NULL'
     assert details['inputs'][1]['state'] == 'READY'
     assert details['inputs'][2]['state'] == 'PAUSED'
