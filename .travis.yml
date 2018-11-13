@@ -4,7 +4,7 @@ sudo: required
 language: python
 
 python:
-  - "3.4"
+  - "3.6"
 
 addons:
   apt:
@@ -12,6 +12,8 @@ addons:
         - sourceline: "deb http://archive.ubuntu.com/ubuntu/ trusty multiverse"
         - sourceline: "deb http://archive.ubuntu.com/ubuntu/ trusty-updates multiverse"
     packages:
+    - libffi6
+    - libffi-dev
     - gstreamer1.0-plugins-base
     - gstreamer1.0-plugins-good
     - gstreamer1.0-plugins-bad
@@ -27,7 +29,8 @@ virtualenv:
   system_site_packages: true
 
 install:
-  - pip3 install pyyaml gbulb sanic websockets psutil requests image
+  - pip install pipenv
+  - pipenv install
 
 script:
   - pytest
