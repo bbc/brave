@@ -4,22 +4,34 @@ This explains how to install Brave on macOS.
 
 First up, make sure you have Homebrew.
 
-## Installing Python
+## Installing Dependancies
 
-You need 3.6 or higher!
+Brave uses from of the newier features of Python. As such we recomend python 3.6 (or higher).
 
-It's worth confirming that the pip matches the version you've installed:
+### Managing Dependencies
 
-```
-pip --version
-# Make sure it says "(python 3.6)" (or higher)
-```
+Brave uses [Pipeenv](https://packaging.python.org/tutorials/managing-dependencies/#managing-dependencies) to manage an isolate its dependencies 
 
-Now the Python libraries:
+If not installed please install using:
 
-```
-pip install pyyaml gbulb sanic websockets pytest pillow
-```
+`pip install --user pipenv` or `pip3 install --user pipenv`
+
+If your python was installed by brew please use `brew install pipenv`
+
+`pipenv install`
+
+### Errors while installing
+
+Brave uses python-gst which requires the uses of GI. This can be a little tricky to working on OSX with a virtual enviroment. To get around this we can use vext. It requires the libary `libffi`.
+
+Install the libary
+`brew install libffi`
+
+Add the location to the env.
+`export PKG_CONFIG_PATH="/usr/local/opt/libffi/lib/pkgconfig"`
+
+Try running the install process again.
+`pipenv install`
 
 ## Installing gstreamer
 
@@ -45,6 +57,4 @@ brew install gst-libav gst-python
 
 Try it out
 
-```
-./brave.py
-```
+`pipenv run python3 brave.py`
