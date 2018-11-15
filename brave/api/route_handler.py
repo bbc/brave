@@ -7,73 +7,70 @@ from brave.helpers import state_string_to_constant, run_on_master_thread_when_id
 
 
 async def all(request):
-    session = brave.session.get_session()
     return sanic.response.json({
-        'inputs': session.inputs.summarise(),
-        'overlays': session.overlays.summarise(),
-        'outputs': session.outputs.summarise(),
-        'mixers': session.mixers.summarise()
+        'inputs': request['session'].inputs.summarise(),
+        'overlays': request['session'].overlays.summarise(),
+        'outputs': request['session'].outputs.summarise(),
+        'mixers': request['session'].mixers.summarise()
     })
 
 
 async def inputs(request):
-    session = brave.session.get_session()
-    return sanic.response.json(session.inputs.summarise())
+    return sanic.response.json(request['session'].inputs.summarise())
 
 
 async def outputs(request):
-    session = brave.session.get_session()
-    return sanic.response.json(session.outputs.summarise())
+    return sanic.response.json(request['session'].outputs.summarise())
 
 
 async def overlays(request):
-    session = brave.session.get_session()
-    return sanic.response.json(session.overlays.summarise())
+    return sanic.response.json(request['session'].overlays.summarise())
 
 
 async def mixers(request):
-    session = brave.session.get_session()
-    return sanic.response.json(session.mixers.summarise())
+    return sanic.response.json(request['session'].mixers.summarise())
 
 
 async def elements(request):
     show_inside_bin_elements = 'show_inside_bin_elements' in request.args
-    session = brave.session.get_session()
     return sanic.response.json({
-        'inputs': session.inputs.get_pipeline_details(show_inside_bin_elements),
-        'overlays': session.overlays.get_pipeline_details(show_inside_bin_elements),
-        'outputs': session.outputs.get_pipeline_details(show_inside_bin_elements),
-        'mixers': session.mixers.get_pipeline_details(show_inside_bin_elements)
+        'inputs': request['session'].inputs.get_pipeline_details(show_inside_bin_elements),
+        'overlays': request['session'].overlays.get_pipeline_details(show_inside_bin_elements),
+        'outputs': request['session'].outputs.get_pipeline_details(show_inside_bin_elements),
+        'mixers': request['session'].mixers.get_pipeline_details(show_inside_bin_elements)
     })
 
 
 async def delete_input(request, id):
-    session = brave.session.get_session()
-    if id not in session.inputs:
+    if id not in request['session'].inputs:
         return _user_error_response('No such input ID')
-    session.inputs[id].delete()
+    request['session'].inputs[id].delete()
     return _status_ok_response()
 
 
 async def delete_output(request, id):
-    session = brave.session.get_session()
-    if id not in session.outputs:
+    if id not in request['session'].outputs:
         return _user_error_response('No such output ID')
-    run_on_master_thread_when_idle(session.outputs[id].delete)
+    run_on_master_thread_when_idle(request['session'].outputs[id].delete)
     return _status_ok_response()
 
 
 async def delete_overlay(request, id):
-    session = brave.session.get_session()
-    if id not in session.overlays:
+    if id not in request['session'].overlays:
         return _user_error_response('No such overlay ID')
-    session.overlays[id].delete()
+    request['session'].overlays[id].delete()
+    return _status_ok_response()
+
+
+async def delete_mixer(request, id):
+    if id not in request['session'].mixers:
+        return _user_error_response('No such mixer ID')
+    request['session'].mixers[id].delete()
     return _status_ok_response()
 
 
 async def cut_to_source(request, id):
-    session = brave.session.get_session()
-    if id not in session.mixers or session.mixers[id] is None:
+    if id not in request['session'].mixers or request['session'].mixers[id] is None:
         return _user_error_response('No such mixer ID')
     if not request.json:
         return _user_error_response('Invalid JSON')
@@ -83,11 +80,11 @@ async def cut_to_source(request, id):
         return _user_error_response('Only inputs can be added to a mixer')
 
     input_id = request.json['id']
-    if input_id not in session.inputs or session.inputs[input_id] is None:
+    if input_id not in request['session'].inputs or request['session'].inputs[input_id] is None:
         return _user_error_response('No such input ID')
 
-    mixer = session.mixers[id]
-    source = mixer.sources.get_for_input_or_mixer(session.inputs[input_id])
+    mixer = request['session'].mixers[id]
+    source = mixer.sources.add(request['session'].inputs[input_id])
     if not source:
         return _user_error_response('Input is not source on mixer')
 
@@ -96,8 +93,7 @@ async def cut_to_source(request, id):
 
 
 async def overlay_source(request, id):
-    session = brave.session.get_session()
-    if id not in session.mixers or session.mixers[id] is None:
+    if id not in request['session'].mixers or request['session'].mixers[id] is None:
         return _user_error_response('No such mixer ID')
     if not request.json:
         return _user_error_response('Invalid JSON')
@@ -107,11 +103,11 @@ async def overlay_source(request, id):
         return _user_error_response('Only inputs can be added to a mixer')
 
     input_id = request.json['id']
-    if input_id not in session.inputs or session.inputs[input_id] is None:
+    if input_id not in request['session'].inputs or request['session'].inputs[input_id] is None:
         return _user_error_response('No such input ID')
 
-    mixer = session.mixers[id]
-    source = mixer.sources.get_for_input_or_mixer(session.inputs[input_id])
+    mixer = request['session'].mixers[id]
+    source = mixer.sources.add(request['session'].inputs[input_id])
     if not source:
         return _user_error_response('Input is not source on mixer')
 
@@ -120,8 +116,7 @@ async def overlay_source(request, id):
 
 
 async def remove_source(request, id):
-    session = brave.session.get_session()
-    if id not in session.mixers or session.mixers[id] is None:
+    if id not in request['session'].mixers or request['session'].mixers[id] is None:
         return _user_error_response('No such mixer ID')
     if not request.json:
         return _user_error_response('Invalid JSON')
@@ -131,11 +126,11 @@ async def remove_source(request, id):
         return _user_error_response('Only inputs can be added to a mixer')
 
     input_id = request.json['id']
-    if input_id not in session.inputs or session.inputs[input_id] is None:
+    if input_id not in request['session'].inputs or request['session'].inputs[input_id] is None:
         return _user_error_response('No such input ID')
 
-    mixer = session.mixers[id]
-    source = mixer.sources.get_for_input_or_mixer(session.inputs[input_id])
+    mixer = request['session'].mixers[id]
+    source = mixer.sources.get_for_input_or_mixer(request['session'].inputs[input_id])
     if not source:
         return _user_error_response('Input is not source on mixer')
 
@@ -144,114 +139,78 @@ async def remove_source(request, id):
 
 
 async def update_input(request, id):
-    session = brave.session.get_session()
-    if not request.json:
-        return _invalid_json_response()
-    if id not in session.inputs or session.inputs[id] is None:
+    if id not in request['session'].inputs or request['session'].inputs[id] is None:
         return _user_error_response('No such input ID')
 
     if 'state' in request.json:
         request.json['state'] = state_string_to_constant(request.json['state'])
         if not request.json['state']:
             return _user_error_response('Invalid state')
-    try:
-        session.inputs[id].update(request.json)
-    except brave.exceptions.InvalidConfiguration as e:
-        return _invalid_configuration_response(e)
+    request['session'].inputs[id].update(request.json)
     return _status_ok_response()
 
 
 async def update_output(request, id):
-    session = brave.session.get_session()
-    if not request.json:
-        return _user_error_response('Not valid JSON')
-    if id not in session.outputs or session.outputs[id] is None:
+    if id not in request['session'].outputs or request['session'].outputs[id] is None:
         return _user_error_response('no such output id')
     if 'state' in request.json:
         request.json['state'] = state_string_to_constant(request.json['state'])
         if not request.json['state']:
             return _user_error_response('Invalid state')
-    try:
-        session.outputs[id].update(request.json)
-    except brave.exceptions.InvalidConfiguration as e:
-        return _invalid_configuration_response(e)
+    request['session'].outputs[id].update(request.json)
     return _status_ok_response()
 
 
 async def update_overlay(request, id):
-    session = brave.session.get_session()
-    if not request.json:
-        return _invalid_json_response('Not valid JSON')
-    if id not in session.overlays or session.overlays[id] is None:
+    if id not in request['session'].overlays or request['session'].overlays[id] is None:
         return _user_error_response('No such overlay ID')
     if 'state' in request.json:
         request.json['state'] = state_string_to_constant(request.json['state'])
         if not request.json['state']:
             return _user_error_response('Invalid state')
-    try:
-        session.overlays[id].update(request.json)
-    except brave.exceptions.InvalidConfiguration as e:
-        return _invalid_configuration_response(e)
+    request['session'].overlays[id].update(request.json)
     return _status_ok_response()
 
 
 async def update_mixer(request, id):
-    session = brave.session.get_session()
-    if not request.json:
-        return _invalid_json_response()
-    if id not in session.mixers or session.mixers[id] is None:
+    if id not in request['session'].mixers or request['session'].mixers[id] is None:
         return _user_error_response('No such mixer ID')
     if 'state' in request.json:
         request.json['state'] = state_string_to_constant(request.json['state'])
         if not request.json['state']:
             return _user_error_response('Invalid state')
-    try:
-        session.mixers[id].update(request.json)
-    except brave.exceptions.InvalidConfiguration as e:
-        return _invalid_configuration_response(e)
+    request['session'].mixers[id].update(request.json)
     return _status_ok_response()
 
 
 async def create_input(request):
-    session = brave.session.get_session()
-    if not request.json:
-        return _invalid_json_response()
-    try:
-        input = session.inputs.add(**request.json)
-        # TODO not hard-code mixer 0:
-        run_on_master_thread_when_idle(input.sources()[0].add_to_mix)
-    except brave.exceptions.InvalidConfiguration as e:
-        return _invalid_configuration_response(e)
-    return _status_ok_response()
+    input = request['session'].inputs.add(**request.json)
+    # TODO not hard-code mixer 0:
+    run_on_master_thread_when_idle(input.sources()[0].add_to_mix)
+    logger.info('Created input #%d with details %s' % (input.id, request.json))
+    return sanic.response.json({'id': input.id})
 
 
 async def create_output(request):
-    session = brave.session.get_session()
-    if not request.json:
-        return _invalid_json_response()
-    try:
-        output = session.outputs.add(**request.json)
-        output.link_from_source()
-    except brave.exceptions.InvalidConfiguration as e:
-        return _invalid_configuration_response(e)
-    logger.info('Created output #' + str(output.id) + ' with details ' + str(request.json))
-    return sanic.response.json({'status': 'OK', 'id': output.id})
+    output = request['session'].outputs.add(**request.json)
+    logger.info('Created output #%d with details %s' % (output.id, request.json))
+    return sanic.response.json({'id': output.id})
 
 
 async def create_overlay(request):
-    session = brave.session.get_session()
-    if not request.json:
-        return _invalid_json_response()
-    try:
-        overlay = session.overlays.add(**request.json)
-    except brave.exceptions.InvalidConfiguration as e:
-        return _invalid_configuration_response(e)
-    logger.info('Created overlay #' + str(overlay.id) + ' with details ' + str(request.json))
+    overlay = request['session'].overlays.add(**request.json)
+    logger.info('Created overlay #%d with details %s' % (overlay.id, request.json))
     return _status_ok_response()
 
 
+async def create_mixer(request):
+    mixer = request['session'].mixers.add(**request.json)
+    logger.info('Created mixer #%d with details %s' % (mixer.id, request.json))
+    return sanic.response.json({'id': mixer.id})
+
+
 async def restart(request):
-    run_on_master_thread_when_idle(brave.session.get_session().end, restart=True)
+    run_on_master_thread_when_idle(request['session'].end, restart=True)
     return _status_ok_response()
 
 
@@ -261,10 +220,6 @@ def _status_ok_response():
 
 def _user_error_response(e):
     return sanic.response.json({'error': str(e)}, 400)
-
-
-def _invalid_json_response():
-    return _user_error_response('Invalid JSON')
 
 
 def _invalid_configuration_response(e):

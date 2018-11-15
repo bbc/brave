@@ -3,7 +3,7 @@ from brave.overlays.effect import EffectOverlay
 from brave.overlays.clock import ClockOverlay
 from brave.abstract_collection import AbstractCollection
 from gi.repository import Gst
-
+import brave.exceptions
 import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('brave.overlays')
@@ -18,14 +18,16 @@ class OverlayCollection(AbstractCollection):
     def add(self, **args):
         args['id'] = self.get_new_id()
 
-        if args['type'] == 'text':
+        if 'type' not in args:
+            raise brave.exceptions.InvalidConfiguration("Invalid output missing 'type'")
+        elif args['type'] == 'text':
             overlay = TextOverlay(**args, collection=self)
         elif args['type'] == 'effect':
             overlay = EffectOverlay(**args, collection=self)
         elif args['type'] == 'clock':
             overlay = ClockOverlay(**args, collection=self)
         else:
-            raise Exception(f"Invalid overlay type '{str(args['type'])}'")
+            raise brave.exceptions.InvalidConfiguration("Invalid overlay type '%s'" % args['type'])
 
         self._items[args['id']] = overlay
         return overlay
