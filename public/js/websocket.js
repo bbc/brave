@@ -3,7 +3,8 @@
 //
 
 websocket = {
-    setupErrorCount: 0
+    setupErrorCount: 0,
+    volume: {channels: 0, data: [] },
 }
 
 websocket.setup = function() {
@@ -56,6 +57,10 @@ websocket._onMessageReceived = event => {
     }
     else if (dataParsed.msg_type === 'webrtc-initialising') {
         if (dataParsed.ice_servers) webrtc.setIceServers(dataParsed.ice_servers)
+    }
+    else if (dataParsed.msg_type === 'volume') {
+        websocket.volume.channels = dataParsed.channels;
+        websocket.volume.data = dataParsed.data;
     }
     else if (dataParsed.sdp != null) {
         webrtc.onIncomingSDP(dataParsed.sdp);

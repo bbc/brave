@@ -114,6 +114,12 @@ body {
     }
 }
 
+#preview-bar canvas {
+    background-color: #222;
+    width: 80px;
+    height: 360px;
+}
+
 .preview-select {
     border: 1px solid #ccc;
     /* padding: 0 4px 0 4px; */
