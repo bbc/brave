@@ -73,7 +73,7 @@ class Session(object):
 
         for input_config in config.default_inputs():
             input = self.inputs.add(**input_config)
-            for name, mixer in self.mixers.items():
+            for id, mixer in self.mixers.items():
                 source = mixer.sources.get_or_create(input)
                 source.add_to_mix()
 

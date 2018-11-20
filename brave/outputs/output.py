@@ -1,6 +1,6 @@
 from gi.repository import Gst
 from brave.helpers import round_down, create_intersink_channel_name, block_pad, unblock_pad
-
+import brave.exceptions
 from brave.inputoutputoverlay import InputOutputOverlay
 
 
@@ -12,8 +12,10 @@ class Output(InputOutputOverlay):
     def __init__(self, **args):
         super().__init__(**args)
 
-        # In the future, we can have more varied sources:
-        self.source = self.session().mixers[self.props['mixer_id']]
+        try:
+            self.source = self.session().mixers[self.props['mixer_id']]
+        except KeyError as e:
+            raise brave.exceptions.InvalidConfiguration('Invalid mixer ID %s' % self.props['mixer_id'])
 
         self.create_elements()
         self._sync_elements_on_source_pipeline()
