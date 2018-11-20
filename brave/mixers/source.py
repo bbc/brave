@@ -17,6 +17,8 @@ class Source():
         self.elements_on_mixer_pipeline = []
         self.elements_on_input_pipeline = []
         self.probes = {}
+        self.tee_pad = {}
+        self.tee = {}
 
     def mixer(self):
         '''
@@ -55,7 +57,6 @@ class Source():
         '''
         Deletes this source. Don't get confused with remove_from_mix()
         '''
-
         self.remove_from_mix()
         self._remove_all_elements()
         self.collection._items.remove(self)
@@ -67,10 +68,10 @@ class Source():
         Returns True iff this is currently included in the mix
         (and actually showing, not just linked).
         '''
-        in_video_mix = hasattr(self, 'video_pad_to_connect_to_mix') and \
-            self.video_pad_to_connect_to_mix.is_linked()
-        in_audio_mix = hasattr(self, 'audio_pad_to_connect_to_mix') and \
-            self.audio_pad_to_connect_to_mix.is_linked()
+        in_video_mix = hasattr(self, 'video_mix_request_pad') and \
+            self.video_mix_request_pad.is_linked()
+        in_audio_mix = hasattr(self, 'audio_mix_request_pad') and \
+            self.audio_mix_request_pad.is_linked()
         return in_video_mix or in_audio_mix
 
     def add_to_mix(self):
@@ -107,7 +108,7 @@ class Source():
 
     def on_input_pipeline_start(self):
         '''
-        Called when the input (or source mixer) starts
+        Called when the input starts
         '''
         self.unblock_intersrc_if_ready()
 
@@ -118,36 +119,32 @@ class Source():
             self.capsfilter_after_intervideosrc.set_property('caps-change-mode', 1)
 
     def unblock_intersrc_if_ready(self):
+        '''
+        The intervideosrc and interaudiosrc elements are the bits of the mixer that receive the input.
+        They will be blocked when first created, as they can fail if the input is not yet sending content.
+        This method unblocks them.
+        '''
         if (self.mixer().get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]) and \
            (self.input_or_mixer.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]) and \
            self._elements_are_created():
             unblock_pad(self, 'intervideosrc_src_pad')
             unblock_pad(self, 'interaudiosrc_src_pad')
-        # otherwise, mixer will unblock when it does start.
 
     def _add_video_to_mix(self):
-
-        # 'video_pad_to_connect_to_mix' may not exist if decoder hasn't kicked in
-        if not hasattr(self, 'video_pad_to_connect_to_mix'):
-            return
-        if (self.video_pad_to_connect_to_mix.is_linked()):
-            self.logger.info('Attempted to add to mix when already there')
-            return
         if hasattr(self, 'video_mix_request_pad'):
             traceback.print_stack()
             self.logger.warn('Already have video_mix_request_pad, should not be possible')
 
+        # We need to conect the tee to the mixer. This is the pad of the tee:
+        tee_pad = self._get_or_create_tee_pad('video')
         self.video_mix_request_pad = self.mixer().get_video_mixer_request_pad(self)
-
-        if (self.video_pad_to_connect_to_mix.is_linked()):
-            self.logger.info('Attempted to add to video mix when already there')
-            return
-
         self._handle_video_mix_props()
 
-        link_response = self.video_pad_to_connect_to_mix.link(self.video_mix_request_pad)
+        link_response = tee_pad.link(self.video_mix_request_pad)
         if link_response != Gst.PadLinkReturn.OK:
             self.logger.error('Cannot link video to mix, response was %s' % link_response)
+
+        self.unblock_intersrc_if_ready()
 
     def _add_audio_to_mix(self):
         if (hasattr(self, 'audio_pad_to_connect_to_mix') and
@@ -261,16 +258,13 @@ class Source():
 
         # We use a tee even though we only have one output (the mixer) because then we can use
         # allow-not-linked which means this bit of the pipeline does not fail when it's disconnected.
-        tee = self._add_element_to_mixer_pipeline('tee', name='tee_after_video_queue')
-        tee.set_property('allow-not-linked', True)
+        self.tee['video'] = self._add_element_to_mixer_pipeline('tee', name='video_tee_after_queue')
+        self.tee['video'].set_property('allow-not-linked', True)
 
         if not self.capsfilter_after_intervideosrc.link(queue):
             self.logger.error('Cannot link capsfilter to queue')
-        if not queue.link(tee):
+        if not queue.link(self.tee['video']):
             self.logger.error('Cannot link queue to tee')
-
-        tee_src_pad_template = tee.get_pad_template("src_%u")
-        self.video_pad_to_connect_to_mix = tee.request_pad(tee_src_pad_template, None, None)
 
     def _create_interaudio_elements(self):
         '''
@@ -289,14 +283,16 @@ class Source():
 
         # We use a tee even though we only have one output (the mixer) because then we can use
         # allow-not-linked which means this bit of the pipeline does not fail when it's disconnected.
-        tee = self._add_element_to_mixer_pipeline('tee', name='tee_after_audio_queue')
-        tee.set_property('allow-not-linked', True)
+        self.tee['audio'] = self._add_element_to_mixer_pipeline('tee', name='audio_tee_after_queue')
+        self.tee['audio'].set_property('allow-not-linked', True)
 
         if not interaudiosrc.link(queue):
             self.logger.error('Cannot link interaudiosrc to queue')
-        if not queue.link(tee):
+        if not queue.link(self.tee['audio']):
             self.logger.error('Cannot link queue to tee')
-        tee_src_pad_template = tee.get_pad_template("src_%u")
+
+        # TODO change this to match video (i.e. scrap audio_pad_to_connect_to_mix):
+        tee_src_pad_template = self.tee['audio'].get_pad_template("src_%u")
         self.audio_pad_to_connect_to_mix = tee.request_pad(tee_src_pad_template, None, None)
 
     def _create_intervideosrc(self):
@@ -355,6 +351,9 @@ class Source():
         queue.set_property('max-size-time', MAX_SIZE_IN_SECONDS * 1000000000)
         queue.set_property('max-size-bytes', MAX_SIZE_IN_SECONDS * 10485760)
 
+        # async=False is important for when adding PLAYING inputs to PLAYING mixers:
+        element.set_property('async', False)
+
         tee_src_pad_template = tee.get_pad_template("src_%u")
         tee_src_pad = tee.request_pad(tee_src_pad_template, None, None)
 
@@ -367,21 +366,19 @@ class Source():
         return element
 
     def _remove_from_video_mix(self):
-        if (not self.video_pad_to_connect_to_mix.is_linked()):
-            self.logger.info('Attempted to remove from mix when not in video mix')
+        if (not self.video_mix_request_pad.is_linked()):
+            self.logger.info('Attempted to remove from video mix but not currently mixed')
             return
 
         if hasattr(self, 'video_mix_request_pad'):
-            # First, unlink this input from the mixer:
-            self.video_pad_to_connect_to_mix.unlink(self.video_mix_request_pad)
-            # Then, tell the mixer to remove the request (input) pad
-            # (If we don't do this, the final frame remains in the mix.)
+            self.video_mix_request_pad.unlink(self.video_mix_request_pad.get_peer())
+            # After unlinking, if we don't remove the pad, the final frame remains in the mix:
             self.mixer().video_mixer.release_request_pad(self.video_mix_request_pad)
             delattr(self, 'video_mix_request_pad')
 
     def _remove_from_audio_mix(self):
         if (not self.audio_pad_to_connect_to_mix.is_linked()):
-            self.logger.info('Attempted to remove from mix when not in audio mix')
+            self.logger.info('Attempted to remove from audio mix but not currently mixed')
             return
 
         if hasattr(self, 'audio_mix_request_pad'):
@@ -447,3 +444,14 @@ class Source():
             self._create_interaudio_elements()
             self.audio_is_linked = True
         self._sync_element_states()
+
+        # If input and mixer have already started, we need to unblock straightaway:
+        self.unblock_intersrc_if_ready()
+
+    def _get_or_create_tee_pad(self, audio_or_video):
+        if audio_or_video in self.tee_pad:
+            return self.tee_pad[audio_or_video]
+        else :
+            tee_src_pad_template = self.tee[audio_or_video].get_pad_template("src_%u")
+            self.tee_pad[audio_or_video] = self.tee[audio_or_video].request_pad(tee_src_pad_template, None, None)
+            return self.tee_pad[audio_or_video]
