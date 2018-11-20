@@ -1,6 +1,5 @@
 from gi.repository import Gst
-from brave.helpers import create_intersink_channel_name, block_pad, unblock_pad
-import traceback
+from brave.helpers import create_intersink_channel_name
 
 
 class Source():
@@ -16,9 +15,11 @@ class Source():
         self.collection = collection
         self.elements_on_mixer_pipeline = []
         self.elements_on_input_pipeline = []
-        self.probes = {}
+        self.intersrc_src_pad = {}
+        self.intersrc_src_pad_probe = {}
         self.tee_pad = {}
         self.tee = {}
+        self.mix_request_pad = {}
 
     def mixer(self):
         '''
@@ -68,10 +69,10 @@ class Source():
         Returns True iff this is currently included in the mix
         (and actually showing, not just linked).
         '''
-        in_video_mix = hasattr(self, 'video_mix_request_pad') and \
-            self.video_mix_request_pad.is_linked()
-        in_audio_mix = hasattr(self, 'audio_mix_request_pad') and \
-            self.audio_mix_request_pad.is_linked()
+        in_video_mix = 'video' in self.mix_request_pad and \
+            self.mix_request_pad['video'].is_linked()
+        in_audio_mix = 'audio' in self.mix_request_pad and \
+            self.mix_request_pad['audio'].is_linked()
         return in_video_mix or in_audio_mix
 
     def add_to_mix(self):
@@ -81,9 +82,10 @@ class Source():
         '''
         self._ensure_elements_are_created()
         if self.input_or_mixer.has_video():
-            self._add_video_to_mix()
+            self._add_to_mix('video')
         if self.input_or_mixer.has_audio():
-            self._add_audio_to_mix()
+            self._add_to_mix('audio')
+        self.unblock_intersrc_if_ready()
         self.mixer().report_update_to_user()
 
     def remove_from_mix(self):
@@ -92,10 +94,11 @@ class Source():
         '''
         if self.in_mix():
             if self.input_or_mixer.has_video():
-                self._remove_from_video_mix()
+                self._remove_from_mix('video')
             if self.input_or_mixer.has_audio():
-                self._remove_from_audio_mix()
+                self._remove_from_mix('audio')
             self.logger.debug('Completed removal of from mix.')
+            self.mixer().report_update_to_user()
 
     def handle_updated_props(self):
         '''
@@ -127,77 +130,61 @@ class Source():
         if (self.mixer().get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]) and \
            (self.input_or_mixer.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]) and \
            self._elements_are_created():
-            unblock_pad(self, 'intervideosrc_src_pad')
-            unblock_pad(self, 'interaudiosrc_src_pad')
+            for audio_or_video in ['audio', 'video']:
+                if audio_or_video in self.intersrc_src_pad and audio_or_video in self.intersrc_src_pad_probe:
+                    self.intersrc_src_pad[audio_or_video].remove_probe(self.intersrc_src_pad_probe[audio_or_video])
+                    del self.intersrc_src_pad_probe[audio_or_video]
 
-    def _add_video_to_mix(self):
-        if hasattr(self, 'video_mix_request_pad'):
-            traceback.print_stack()
-            self.logger.warn('Already have video_mix_request_pad, should not be possible')
+    def _add_to_mix(self, audio_or_video):
+        if audio_or_video in self.mix_request_pad:
+            self.logger.info('Request to add to %s mix, but already added' % audio_or_video)
+            return
 
         # We need to conect the tee to the mixer. This is the pad of the tee:
-        tee_pad = self._get_or_create_tee_pad('video')
-        self.video_mix_request_pad = self.mixer().get_video_mixer_request_pad(self)
-        self._handle_video_mix_props()
+        tee_pad = self._get_or_create_tee_pad(audio_or_video)
+        self.mix_request_pad[audio_or_video] = self.mixer().get_new_pad_for_source(audio_or_video)
 
-        link_response = tee_pad.link(self.video_mix_request_pad)
+        link_response = tee_pad.link(self.mix_request_pad[audio_or_video])
         if link_response != Gst.PadLinkReturn.OK:
-            self.logger.error('Cannot link video to mix, response was %s' % link_response)
+            self.logger.error('Cannot link %s to mix, response was %s' % (audio_or_video, link_response))
 
-        self.unblock_intersrc_if_ready()
-
-    def _add_audio_to_mix(self):
-        if (hasattr(self, 'audio_pad_to_connect_to_mix') and
-                self.audio_pad_to_connect_to_mix.is_linked()):
-            self.logger.info('Attempted to add to mix when already there')
-            return
-
-        if hasattr(self, 'audio_mix_request_pad'):
-            self.logger.warn('Already have audio_mix_request_pad, should not be possible')
-
-        self.audio_mix_request_pad = self.mixer().get_audio_mixer_request_pad(self)
-        if (self.audio_pad_to_connect_to_mix.is_linked()):
-            self.logger.info('Attempted to add to audio mix when already there')
-            return
-
-        link_response = self.audio_pad_to_connect_to_mix.link(self.audio_mix_request_pad)
-        if link_response != Gst.PadLinkReturn.OK:
-            self.logger.error('Cannot link audio to mix, response was %s' % link_response)
-
-        self._handle_audio_mix_props()
+        if audio_or_video == 'audio':
+            self._handle_audio_mix_props()
+        else:
+            self._handle_video_mix_props()
 
     def _handle_video_mix_props(self):
         '''
         Update the video mixer with the props from this - position on screen, and z-order.
         '''
-        if not hasattr(self, 'video_mix_request_pad'):
+        if 'video' not in self.mix_request_pad:
             return
 
-        self.video_mix_request_pad.set_property('xpos', self.input_or_mixer.props['xpos'])
-        self.video_mix_request_pad.set_property('ypos', self.input_or_mixer.props['ypos'])
+        self.mix_request_pad['video'].set_property('xpos', self.input_or_mixer.props['xpos'])
+        self.mix_request_pad['video'].set_property('ypos', self.input_or_mixer.props['ypos'])
         self._set_mixer_width_and_height()
 
         # Setting zorder to what's already set can cause a segfault.
-        current_zorder = self.video_mix_request_pad.get_property('zorder')
+        current_zorder = self.mix_request_pad['video'].get_property('zorder')
         if current_zorder != self.input_or_mixer.props['zorder']:
             self.logger.debug('Setting zorder to %d (current state: %s)' %
                               (self.input_or_mixer.props['zorder'],
-                               self.mixer().video_mixer.get_state(0).state.value_nick.upper()))
-            self.video_mix_request_pad.set_property('zorder', self.input_or_mixer.props['zorder'])
+                               self.mixer().mixer_element['video'].get_state(0).state.value_nick.upper()))
+            self.mix_request_pad['video'].set_property('zorder', self.input_or_mixer.props['zorder'])
 
     def _handle_audio_mix_props(self):
         '''
         Update the audio mixer with the props from this - just volume at the moment
         '''
-        if not hasattr(self, 'audio_mix_request_pad'):
+        if 'audio' not in self.mix_request_pad:
             return
 
-        prev_volume = self.audio_mix_request_pad.get_property('volume')
+        prev_volume = self.mix_request_pad['audio'].get_property('volume')
         volume = self.input_or_mixer.props['volume']
 
         if volume != prev_volume:
             # self.logger.debug(f'Setting volume from {str(prev_volume)} to {str(volume)}')
-            self.audio_mix_request_pad.set_property('volume', float(volume))
+            self.mix_request_pad['audio'].set_property('volume', float(volume))
 
     def _set_mixer_width_and_height(self):
         # First stage: go with mixer's size
@@ -216,28 +203,19 @@ class Source():
         if height + self.input_or_mixer.props['ypos'] > self.mixer().props['height']:
             height = self.mixer().props['height'] - self.input_or_mixer.props['ypos']
 
-        self.video_mix_request_pad.set_property('width', width)
-        self.video_mix_request_pad.set_property('height', height)
+        self.mix_request_pad['video'].set_property('width', width)
+        self.mix_request_pad['video'].set_property('height', height)
         self.logger.debug('Setting width and height in mixer to be %s and %s' %
-                          (self.video_mix_request_pad.get_property('width'),
-                           self.video_mix_request_pad.get_property('height')))
+                          (self.mix_request_pad['video'].get_property('width'),
+                           self.mix_request_pad['video'].get_property('height')))
 
-    def _create_intervideo_elements(self):
+    def _create_video_elements(self):
         '''
         Create the 'intervideosrc' element, which accepts the video input that's come from a separate pipeline.
         Then connects intervideosrc to the convert/scale/queue elements, ready for mixing.
         '''
 
-        intervideosrc = self._create_intervideosrc()
-        intervideosink = self._create_intersink('video')
-
-        self.temp_intervideosink = intervideosink
-
-        # Give the 'inter' elements a channel name. It doesn't matter what, so long as they're unique.
-        channel_name = create_intersink_channel_name()
-        intervideosink.set_property('channel', channel_name)
-        intervideosrc.set_property('channel', channel_name)
-
+        intervideosrc, intervideosink = self._create_inter_elements('video')
         videoscale = self._add_element_to_mixer_pipeline('videoscale')
         if not intervideosrc.link(videoscale):
             self.logger.error('Cannot link intervideosrc to videoscale')
@@ -266,17 +244,11 @@ class Source():
         if not queue.link(self.tee['video']):
             self.logger.error('Cannot link queue to tee')
 
-    def _create_interaudio_elements(self):
+    def _create_audio_elements(self):
         '''
-        The audio equivalent of _create_intervideo_elements
+        The audio equivalent of _create_video_elements
         '''
-        interaudiosrc = self._create_interaudiosrc()
-        interaudiosink = self._create_intersink('audio')
-
-        # Give the 'inter' elements a channel name. It doesn't matter what, so long as they're unique.
-        channel_name = create_intersink_channel_name()
-        interaudiosink.set_property('channel', channel_name)
-        interaudiosrc.set_property('channel', channel_name)
+        interaudiosrc, interaudiosink = self._create_inter_elements('audio')
 
         # A queue ensures that disconnection from the audiomixer does not result in a pipeline failure:
         queue = self._add_element_to_mixer_pipeline('queue', name='audio_queue')
@@ -291,41 +263,45 @@ class Source():
         if not queue.link(self.tee['audio']):
             self.logger.error('Cannot link queue to tee')
 
-        # TODO change this to match video (i.e. scrap audio_pad_to_connect_to_mix):
-        tee_src_pad_template = self.tee['audio'].get_pad_template("src_%u")
-        self.audio_pad_to_connect_to_mix = tee.request_pad(tee_src_pad_template, None, None)
+    def _create_inter_elements(self, audio_or_video):
+        '''
+        Creates intervideosrc and intervideosink (or the equivalent audio ones)
+        '''
+        intersrc = self._create_intersrc(audio_or_video)
+        intersink = self._create_intersink(audio_or_video)
 
-    def _create_intervideosrc(self):
+        # Give the 'inter' elements a channel name. It doesn't matter what, so long as they're unique.
+        channel_name = create_intersink_channel_name()
+        intersink.set_property('channel', channel_name)
+        intersrc.set_property('channel', channel_name)
+        return intersrc, intersink
+
+    def _create_intersrc(self, audio_or_video):
         '''
-        The intervideosrc goes on the destination (mixer) pipeline, so that it
-        can accept video from the source pipeline.
+        The intervideosrc/interaudiosrc goes on the destination (mixer) pipeline, so that it
+        can accept content from the source pipeline.
         '''
+        assert(audio_or_video in ['audio', 'video'])
+
         # Create the receiving 'inter' element to accept the AV into the main pipeline
-        intervideosrc = self._add_element_to_mixer_pipeline('intervideosrc')
-        self.intervideosrc_src_pad = intervideosrc.get_static_pad('src')
+        intersrc_element = self._add_element_to_mixer_pipeline('inter%ssrc' % audio_or_video)
+        self.intersrc_src_pad[audio_or_video] = intersrc_element.get_static_pad('src')
 
         # We ask the src to hold the frame for 24 hours (basically, a very long time)
         # This is optional, but prevents it from going black when it's better to show the last frame.
-        intervideosrc.set_property('timeout', Gst.SECOND * 60 * 60 * 24)
+        if audio_or_video is 'video':
+            intersrc_element.set_property('timeout', Gst.SECOND * 60 * 60 * 24)
 
-        # We block the source (output) pad of this intervideosrc until we're sure video is being sent.
+        def _blocked_probe_callback(*_):
+            self.logger.debug('_blocked_probe_callback called')
+            return Gst.PadProbeReturn.OK
+
+        # We block the source (output) pad of this intervideosrc/interaudiosrc until we're sure video is being sent.
         # Otherwise we can get a partial message, which causes an error.
-        block_pad(self, 'intervideosrc_src_pad')
-        return intervideosrc
+        self.intersrc_src_pad_probe[audio_or_video] = self.intersrc_src_pad[audio_or_video].add_probe(
+            Gst.PadProbeType.BLOCK_DOWNSTREAM, _blocked_probe_callback)
 
-    def _create_interaudiosrc(self):
-        '''
-        The interaudiosrc goes on the destination (mixer) pipeline, so that it
-        can accept audio from the source pipeline.
-        '''
-        # Create the receiving 'inter' elements to accept the AV into the main pipeline
-        interaudiosrc = self._add_element_to_mixer_pipeline('interaudiosrc')
-        self.interaudiosrc_src_pad = interaudiosrc.get_static_pad('src')
-
-        # Blocks the src pad to stop incomplete messages.
-        # Note, this has caused issues in the past.
-        block_pad(self, 'interaudiosrc_src_pad')
-        return interaudiosrc
+        return intersrc_element
 
     def _create_intersink(self, audio_or_video):
         '''
@@ -365,27 +341,16 @@ class Source():
             self.logger.error('Failed to connect queue to %s' % element_name)
         return element
 
-    def _remove_from_video_mix(self):
-        if (not self.video_mix_request_pad.is_linked()):
-            self.logger.info('Attempted to remove from video mix but not currently mixed')
+    def _remove_from_mix(self, audio_or_video):
+        if (not self.mix_request_pad[audio_or_video].is_linked()):
+            self.logger.info('Attempted to remove from %s mix but not currently mixed' % audio_or_video)
             return
 
-        if hasattr(self, 'video_mix_request_pad'):
-            self.video_mix_request_pad.unlink(self.video_mix_request_pad.get_peer())
+        if audio_or_video in self.mix_request_pad:
+            self.mix_request_pad[audio_or_video].get_peer().unlink(self.mix_request_pad[audio_or_video])
             # After unlinking, if we don't remove the pad, the final frame remains in the mix:
-            self.mixer().video_mixer.release_request_pad(self.video_mix_request_pad)
-            delattr(self, 'video_mix_request_pad')
-
-    def _remove_from_audio_mix(self):
-        if (not self.audio_pad_to_connect_to_mix.is_linked()):
-            self.logger.info('Attempted to remove from audio mix but not currently mixed')
-            return
-
-        if hasattr(self, 'audio_mix_request_pad'):
-            # Unlink freezes the last frame, then releasing the pad removes it fully.
-            self.audio_pad_to_connect_to_mix.unlink(self.audio_mix_request_pad)
-            self.mixer().audio_mixer.release_request_pad(self.audio_mix_request_pad)
-            delattr(self, 'audio_mix_request_pad')
+            self.mixer().mixer_element[audio_or_video].release_request_pad(self.mix_request_pad[audio_or_video])
+            del self.mix_request_pad[audio_or_video]
 
     def _remove_all_elements(self):
         '''
@@ -393,13 +358,13 @@ class Source():
         '''
         self.set_mixer_element_state(Gst.State.NULL)
         for e in self.elements_on_mixer_pipeline:
-            if not self.mixer().pipeline.remove(e):
+            if not e.get_parent().remove(e):
                 self.collection.mixer.logger.warn('Unable to remove %s' % e.name)
 
         self.set_input_element_state(Gst.State.NULL)
         for e in self.elements_on_input_pipeline:
-            if not self.input_or_mixer.pipeline.remove(e):
-                self.collection.mixer.logger.warn('Unable to remove %s' % e.name)
+            if not e.get_parent().remove(e):
+                self.logger.warn('Unable to remove %s' % e.name)
 
     def _add_element_to_mixer_pipeline(self, factory_name, name=None):
         '''
@@ -438,10 +403,10 @@ class Source():
     def _ensure_elements_are_created(self):
         # Connect the input (or source mixer) and the mixer, unless that's already been done
         if self.input_or_mixer.has_video() and not hasattr(self, 'video_is_linked'):
-            self._create_intervideo_elements()
+            self._create_video_elements()
             self.video_is_linked = True
         if self.input_or_mixer.has_audio() and not hasattr(self, 'audio_is_linked'):
-            self._create_interaudio_elements()
+            self._create_audio_elements()
             self.audio_is_linked = True
         self._sync_element_states()
 
@@ -451,7 +416,7 @@ class Source():
     def _get_or_create_tee_pad(self, audio_or_video):
         if audio_or_video in self.tee_pad:
             return self.tee_pad[audio_or_video]
-        else :
+        else:
             tee_src_pad_template = self.tee[audio_or_video].get_pad_template("src_%u")
             self.tee_pad[audio_or_video] = self.tee[audio_or_video].request_pad(tee_src_pad_template, None, None)
             return self.tee_pad[audio_or_video]

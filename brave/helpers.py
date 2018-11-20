@@ -104,10 +104,8 @@ def run_on_master_thread_when_idle(func, **func_args):
 
         try:
             f = args['func']
-            # print('********* TEMP Function runner running ', f)
             func_args = args['func_args']
             f(**func_args)
-            # print('========= TEMP Function runner FINISHED', f)
         except Exception as e:
             print("ERROR: Unexpected error whilst running in master thread:", e)
         return False
