@@ -1,4 +1,4 @@
-from gi.repository import Gst, GLib
+from gi.repository import Gst, GLib, GObject
 import logging
 from brave.pipeline_messaging import setup_messaging
 import brave.config as config
@@ -19,6 +19,7 @@ class InputOutputOverlay():
         self.logger.addHandler(handler)
         self.logger.propagate = False
         self.elements = {}
+        self.probes = {}
 
         # Merge in the arguments:
         for a in args:
@@ -87,7 +88,10 @@ class InputOutputOverlay():
         return True
 
     def get_state(self):
-        return self.pipeline.get_state(0).state
+        if hasattr(self, 'pipeline'):
+            return self.pipeline.get_state(0).state
+        else:
+            return Gst.State.NULL
 
     def print_state_summary(self):
         '''
@@ -175,7 +179,12 @@ class InputOutputOverlay():
         self.logger.debug('Pipeline state change from %s to %s' %
                           (old_state.value_nick.upper(), new_state.value_nick.upper()))
 
-        self.__consider_initial_state(new_state)
+        starting = (new_state in [Gst.State.PLAYING, Gst.State.PAUSED] and
+                    old_state not in [Gst.State.PLAYING, Gst.State.PAUSED])
+        if hasattr(self, 'on_pipeline_start') and starting:
+            self.on_pipeline_start()
+
+        GObject.timeout_add(1, self.__consider_initial_state, new_state)
         self.report_update_to_user()
 
     def report_update_to_user(self):
@@ -241,30 +250,6 @@ class InputOutputOverlay():
 
                 self.props[key] = value
 
-    def _blocked_probe_callback(self, a, b):
-        self.logger.debug('_blocked_probe_callback called (default version)')
-        return Gst.PadProbeReturn.OK
-
-    def _block_intervideosrc_src_pad(self):
-        self.intervideosrc_src_pad_probe = self.intervideosrc_src_pad.add_probe(
-            Gst.PadProbeType.BLOCK_DOWNSTREAM, self._blocked_probe_callback)
-
-    def unblock_intervideosrc_src_pad(self):
-        if hasattr(self, 'intervideosrc_src_pad_probe'):
-            self.intervideosrc_src_pad.remove_probe(self.intervideosrc_src_pad_probe)
-            delattr(self, 'intervideosrc_src_pad_probe')
-            self.logger.debug('Removed block from intervideosrc')
-
-    def _block_interaudiosrc_src_pad(self):
-        self.interaudiosrc_src_pad_probe = self.interaudiosrc_src_pad.add_probe(
-            Gst.PadProbeType.BLOCK_DOWNSTREAM, self._blocked_probe_callback)
-
-    def unblock_interaudiosrc_src_pad(self):
-        if hasattr(self, 'interaudiosrc_src_pad_probe'):
-            self.interaudiosrc_src_pad.remove_probe(self.interaudiosrc_src_pad_probe)
-            delattr(self, 'interaudiosrc_src_pad_probe')
-            self.logger.debug('Removed block from interaudiosrc')
-
     def __consider_initial_state(self, new_state):
         '''
         If the user has requested an initial state for this element, this method sets it at the correct time.
@@ -279,3 +264,5 @@ class InputOutputOverlay():
             else:
                 self.logger.warn('Unable to set to initial unknown state "%s"' % self.props['initial_state'])
             self.initial_state_initiated = True
+
+        return False

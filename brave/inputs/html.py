@@ -46,14 +46,11 @@ class HTMLInput(Input):
 
         if not self.create_pipeline_from_string('cef url="' + self.props['uri'] + '" ! '
                                                 ' videoconvert ! video/x-raw,format=ARGB ! '
-                                                'queue ! intervideosink sync=true name=intervideosink'):
+                                                'queue' + self.default_video_pipeline_string_end()):
             return False
 
         self.intervideosink = self.pipeline.get_by_name('intervideosink')
-        if self.intervideosink is None:
-            raise Exception('Unable to make image input - cannot find intervideosink')
-
-        self.create_intervideosrc_and_connections()
+        self.final_video_tee = self.pipeline.get_by_name('final_video_tee')
         self.handle_updated_props()
 
     def get_input_cap_props(self):

@@ -23,7 +23,7 @@ def subtest_elements_endpoint():
     assert len(elements_object['inputs'].items()) == 1
     assert len(elements_object['mixers'].items()) == 1
     assert len(elements_object['outputs'].items()) == 0
-    assert len(elements_object['inputs']['0']['elements']) == 5
+    assert len(elements_object['inputs']['0']['elements']) == 7
 
 def subtest_elements_endpoint_with_bin_elements():
     elements_response = api_get('/api/elements?show_inside_bin_elements=yes')
@@ -32,4 +32,4 @@ def subtest_elements_endpoint_with_bin_elements():
     assert len(elements_object['inputs'].items()) == 1
     assert len(elements_object['mixers'].items()) == 1
     assert len(elements_object['outputs'].items()) == 0
-    assert len(elements_object['inputs']['0']['elements']) == 10
+    assert len(elements_object['inputs']['0']['elements']) == 12

@@ -6,13 +6,17 @@ class SourceCollection():
         self.mixer = mixer
         self._items = []
 
-    def add(self, input_or_mixer):
+    def get_or_create(self, input_or_mixer):
         '''
-        This connects a source (input or mixer) to a mixer.
+        Gets or creates the source that connects an input (or mixer as an an input) to a mixer.
         '''
         already_there = next((x for x in self._items if x.input_or_mixer == input_or_mixer), None)
-        if not already_there:
-            self._items.append(Source(input_or_mixer, self))
+        if already_there:
+            return already_there
+        else:
+            source = Source(input_or_mixer, self)
+            self._items.append(source)
+            return source
 
     def get_for_input_or_mixer(self, input_or_mixer):
         return next((x for x in self._items if x.input_or_mixer == input_or_mixer), None)
@@ -37,3 +41,6 @@ class SourceCollection():
 
     def __iter__(self):
         return self._items.__iter__()
+
+    def __len__(self):
+        return len(self._items)

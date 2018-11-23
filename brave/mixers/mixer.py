@@ -2,6 +2,7 @@ from gi.repository import Gst
 from brave.inputoutputoverlay import InputOutputOverlay
 from brave.mixers.source_collection import SourceCollection
 import brave.config as config
+from brave.helpers import unblock_pad
 
 
 class Mixer(InputOutputOverlay):
@@ -14,6 +15,8 @@ class Mixer(InputOutputOverlay):
     def __init__(self, **args):
         args['type'] = 'mixer'
         super().__init__(**args)
+        self.mixer_element = {}
+        self.request_pad_count = {'video': 0, 'audio': 0}
         self.sources = SourceCollection(self)
         self.create_elements()
 
@@ -87,7 +90,7 @@ class Mixer(InputOutputOverlay):
 
         if config.enable_video():
             self.videotestsrc = self.pipeline.get_by_name('videotestsrc')
-            self.video_mixer = self.pipeline.get_by_name('video_mixer')
+            self.mixer_element['video'] = self.pipeline.get_by_name('video_mixer')
             self.video_mixer_output_queue = self.pipeline.get_by_name('video_mixer_output_queue')
             self.final_video_tee = self.pipeline.get_by_name('final_video_tee')
             self.capsfilter = self.pipeline.get_by_name('capsfilter')
@@ -96,7 +99,7 @@ class Mixer(InputOutputOverlay):
             self.session().overlays.ensure_overlays_are_correctly_connected(self)
 
         if config.enable_audio():
-            self.audio_mixer = self.pipeline.get_by_name('audio_mixer')
+            self.mixer_element['audio'] = self.pipeline.get_by_name('audio_mixer')
             self.audio_mixer_output_queue = self.pipeline.get_by_name('audio_mixer_output_queue')
             self.final_audio_tee = self.pipeline.get_by_name('final_audio_tee')
 
@@ -109,14 +112,12 @@ class Mixer(InputOutputOverlay):
         # Tell each output to unblock its intervideosrc as content is now coming through
         for name, output in self.session().outputs.items():
             if output.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]:
-                output.unblock_intervideosrc_src_pad()
-                output.unblock_interaudiosrc_src_pad()
+                unblock_pad(output, 'intervideosrc_src_pad')
+                unblock_pad(output, 'interaudiosrc_src_pad')
 
         # Likewise, tell each input
         for source in self.sources:
-            if source.input_or_mixer.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]:
-                source.input_or_mixer.unblock_intervideosrc_src_pad()
-                source.input_or_mixer.unblock_interaudiosrc_src_pad()
+            source.unblock_intersrc_if_ready()
 
     def get_dimensions(self):
         '''
@@ -124,19 +125,12 @@ class Mixer(InputOutputOverlay):
         '''
         return self.props['width'], self.props['height']
 
-    def get_video_mixer_request_pad(self, input):
-        if hasattr(self, 'video_mixer_request_pad_count'):
-            self.video_mixer_request_pad_count += 1
-        else:
-            self.video_mixer_request_pad_count = 1
-        return self.video_mixer.get_request_pad('sink_' + str(self.video_mixer_request_pad_count))
-
-    def get_audio_mixer_request_pad(self, input):
-        if hasattr(self, 'audio_mixer_request_pad_count'):
-            self.audio_mixer_request_pad_count += 1
-        else:
-            self.audio_mixer_request_pad_count = 1
-        return self.audio_mixer.get_request_pad('sink_' + str(self.audio_mixer_request_pad_count))
+    def get_new_pad_for_source(self, audio_or_video):
+        '''
+        Get a new pad from the mixer, to add a new source
+        '''
+        self.request_pad_count[audio_or_video] += 1
+        return self.mixer_element[audio_or_video].get_request_pad('sink_%d' % self.request_pad_count[audio_or_video])
 
     def handle_updated_props(self):
         if 'pattern' in self.props:

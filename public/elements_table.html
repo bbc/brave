@@ -74,8 +74,8 @@ function makeElementRowWithPads(table, element) {
         }
 
         var messages = []
-        if (pad.blocked) messages.push('<em>BLOCKED!</em>')
-        if (pad.blocking) messages.push('<em>BLOCKING!</em>')
+        if (pad.blocked) messages.push('<span class="badge badge-warning">BLOCKED!</span>')
+        if (pad.blocking) messages.push('<span class="badge badge-danger">BLOCKING!</span>')
         cells.push($('<td></td>').append(messages.join(' ')))
 
         cells.push($('<td></td>').append(pad.caps))
@@ -100,6 +100,7 @@ var tableHeader =  '<tr>' +
 
 
 function refresh() {
+    const show_inside_bin_elements = (new window.URLSearchParams(window.location.search)).get('show_inside_bin_elements') !== null
     $.ajax({
         url: 'api/elements' + (show_inside_bin_elements ? '?show_inside_bin_elements=yes' : '')
     }).then(function(data) {

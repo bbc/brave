@@ -1,7 +1,6 @@
 import logging
 logger = logging.getLogger('brave.rest_api')
 import sanic
-import brave.session
 import sanic.response
 from brave.helpers import state_string_to_constant, run_on_master_thread_when_idle
 
@@ -84,7 +83,7 @@ async def cut_to_source(request, id):
         return _user_error_response('No such input ID')
 
     mixer = request['session'].mixers[id]
-    source = mixer.sources.add(request['session'].inputs[input_id])
+    source = mixer.sources.get_or_create(request['session'].inputs[input_id])
     if not source:
         return _user_error_response('Input is not source on mixer')
 
@@ -107,7 +106,7 @@ async def overlay_source(request, id):
         return _user_error_response('No such input ID')
 
     mixer = request['session'].mixers[id]
-    source = mixer.sources.add(request['session'].inputs[input_id])
+    source = mixer.sources.get_or_create(request['session'].inputs[input_id])
     if not source:
         return _user_error_response('Input is not source on mixer')
 
@@ -185,8 +184,12 @@ async def update_mixer(request, id):
 
 async def create_input(request):
     input = request['session'].inputs.add(**request.json)
-    # TODO not hard-code mixer 0:
-    run_on_master_thread_when_idle(input.sources()[0].add_to_mix)
+    # When an input is created, which mixers should it be added to?
+    # For now, it's added to the first mixer.
+    # TODO find a better way
+    mixer = request['session'].mixers[0]
+    source = mixer.sources.get_or_create(input)
+    run_on_master_thread_when_idle(source.add_to_mix)
     logger.info('Created input #%d with details %s' % (input.id, request.json))
     return sanic.response.json({'id': input.id})
 

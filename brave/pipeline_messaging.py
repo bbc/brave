@@ -5,8 +5,6 @@ from gi.repository import Gst
 
 
 def setup_messaging(pipe, parent_object):
-    bus = pipe.get_bus()
-    bus.add_signal_watch()
     logger = parent_object.logger
 
     # Some docs on parsing the message can be found at
@@ -26,7 +24,7 @@ def setup_messaging(pipe, parent_object):
         elif t == Gst.MessageType.ERROR:
             pipe.set_state(Gst.State.NULL)
             err, debug = message.parse_error()
-            logger.error(f'GStreamer error: {str(err)}')
+            logger.error('GStreamer error from %s: %s' % (message.src.name, err))
             logger.error(f'GStreamer error debug: {str(debug)}')
             logger.error(f'GStreamer error message: {str(err.message)}')
             parent_object.error_message = err.message
@@ -34,9 +32,9 @@ def setup_messaging(pipe, parent_object):
         elif t == Gst.MessageType.WARNING:
             pipe.set_state(Gst.State.NULL)
             err, debug = message.parse_warning()
-            logger.warn(f'GStreamer error: {str(err)}')
-            logger.warn(f'GStreamer error debug: {str(debug)}')
-            logger.warn(f'GStreamer error message: {str(err.message)}')
+            logger.warn('GStreamer warning from %s: %s' % (message.src.name, err))
+            logger.warn(f'GStreamer warning debug: {str(debug)}')
+            logger.warn(f'GStreamer warning message: {str(err.message)}')
             parent_object.error_message = err.message
             parent_object.report_update_to_user()
         elif t == Gst.MessageType.TAG:
@@ -52,7 +50,6 @@ def setup_messaging(pipe, parent_object):
             # logger.info('MESSAGE PARSED:' + message.get_structure().to_string())
         elif t == Gst.MessageType.STREAM_STATUS:
             pass
-            # logger.info(f'TEMP Stream status: {str(message.parse_stream_status().type)}')
         elif t == Gst.MessageType.ELEMENT:
             logger.debug(f'{str(message.src.get_name())} has a message:' + str(message.get_structure().to_string()))
         elif t == Gst.MessageType.DURATION_CHANGED:
@@ -63,8 +60,6 @@ def setup_messaging(pipe, parent_object):
             # logger.debug(f'Message from GStreamer: Async done')
         elif t == Gst.MessageType.STREAM_START:
             logger.debug('Message from GStreamer: Stream has now started.')
-            if hasattr(parent_object, 'on_pipeline_start'):
-                parent_object.on_pipeline_start()
         elif t == Gst.MessageType.NEW_CLOCK:
             pass
             # logger.debug(f'Message from GStreamer: New clock.')
@@ -85,9 +80,16 @@ def setup_messaging(pipe, parent_object):
             #               'has sent QOS: {str(message.parse_qos())}')
         elif t == Gst.MessageType.PROPERTY_NOTIFY:
             parsed = message.parse_property_notify()
-            logger.info('Property notify: object="%s", property_name="%s", property_value="%s"' %
-                        (parsed.object.name, parsed.property_name, parsed.property_value))
+            logger.debug('Property notify: object="%s", property_name="%s", property_value="%s"' %
+                         (parsed.object.name, parsed.property_name, parsed.property_value))
+        elif t == Gst.MessageType.APPLICATION:
+            # parsed = message.parse_application()
+            struct = message.get_structure()
+            logger.debug('parse_application: %s' % struct.get_value('text'))
+            logger.debug('parse_application: %s' % struct.get_value('tex2t'))
         else:
             logger.info(f'GST UNHANDLED MESSAGE: {str(t)}: {str(message.src)}')
 
+    bus = pipe.get_bus()
+    bus.add_signal_watch()
     bus.connect('message', _on_message)

@@ -110,7 +110,7 @@ class WebRTCOutput(Output):
         def on_message(bus, message):
             t = message.type
             if t == Gst.MessageType.ELEMENT:
-                if  message.get_structure().get_name() == 'level':
+                if message.get_structure().get_name() == 'level':
                     channels = len(message.get_structure().get_value('peak'))
                     data = []
 

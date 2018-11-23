@@ -32,7 +32,7 @@ def test_initial_state_option_on_startup(run_brave, create_config_file):
     }
     config_file = create_config_file(config)
     run_brave(config_file.name)
-    time.sleep(2)
+    time.sleep(3)
     check_brave_is_running()
     response = api_get('/api/all')
     assert response.status_code == 200
@@ -68,11 +68,10 @@ def test_initial_state_option_via_api(run_brave):
     add_input({'type': 'test_audio', 'props': {'initial_state': 'PAUSED'}})
     add_input({'type': 'test_audio', 'props': {'initial_state': 'PLAYING'}})
 
-    # TODO Uncomment when the API adds support for creating new mixers
-    # add_mixer({'props': {'initial_state': 'NULL'}})
-    # add_mixer({'props': {'initial_state': 'READY'}})
-    # add_mixer({'props': {'initial_state': 'PAUSED'}})
-    # add_mixer({'props': {'initial_state': 'PLAYING'}})
+    add_mixer({'props': {'initial_state': 'NULL'}})
+    add_mixer({'props': {'initial_state': 'READY'}})
+    add_mixer({'props': {'initial_state': 'PAUSED'}})
+    add_mixer({'props': {'initial_state': 'PLAYING'}})
 
     add_output({'type': 'image', 'props': {'location': output_image_location0, 'initial_state': 'NULL'}})
     add_output({'type': 'image', 'props': {'location': output_image_location0, 'initial_state': 'READY'}})
@@ -84,7 +83,6 @@ def test_initial_state_option_via_api(run_brave):
     response = api_get('/api/all')
     assert response.status_code == 200
     details = response.json()
-    print(response.json())
     assert details['inputs'][0]['state'] == 'NULL'
     assert details['inputs'][1]['state'] == 'READY'
     assert details['inputs'][2]['state'] == 'PAUSED'
@@ -93,11 +91,10 @@ def test_initial_state_option_via_api(run_brave):
     # Mixer 0 is the default:
     assert details['mixers'][0]['state'] == 'PLAYING'
 
-    # TODO Uncomment when the API adds support for creating new mixers
-    # assert details['mixers'][1]['state'] == 'NULL'
-    # assert details['mixers'][2]['state'] == 'READY'
-    # assert details['mixers'][3]['state'] == 'PAUSED'
-    # assert details['mixers'][4]['state'] == 'PLAYING'
+    assert details['mixers'][1]['state'] == 'NULL'
+    assert details['mixers'][2]['state'] == 'READY'
+    assert details['mixers'][3]['state'] == 'PAUSED'
+    assert details['mixers'][4]['state'] == 'PLAYING'
 
     assert details['outputs'][0]['state'] == 'NULL'
     assert details['outputs'][1]['state'] == 'READY'

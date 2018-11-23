@@ -62,18 +62,19 @@ class Session(object):
             self.mixers.add(**mixer_config)
 
         for output_config in config.default_outputs():
-            output = self.outputs.add(**output_config)
-
-        for name, output in self.outputs.items():
-            output.link_from_source()
+            self.outputs.add(**output_config)
 
         if config.enable_video():
             for overlay_config in config.default_overlays():
                 self.overlays.add(**overlay_config)
 
+        for name, mixer in self.mixers.items():
+            mixer.set_state(Gst.State.PLAYING)
+
         for input_config in config.default_inputs():
             input = self.inputs.add(**input_config)
-            for source in input.sources():
+            for id, mixer in self.mixers.items():
+                source = mixer.sources.get_or_create(input)
                 source.add_to_mix()
 
     def print_state_summary(self):

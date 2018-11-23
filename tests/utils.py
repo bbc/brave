@@ -143,6 +143,19 @@ def add_output(details, status_code=200):
     response = api_put('/api/outputs', details)
     assert response.status_code == status_code
     time.sleep(0.5)
+    return response.json()
+
+
+def delete_output(id, expected_status_code=200):
+    response = api_delete('/api/outputs/' + str(id))
+    assert response.status_code == expected_status_code
+    time.sleep(0.2)
+
+
+def update_output(id, updates, expected_status_code=200):
+    response = api_post('/api/outputs/' + str(id), updates)
+    assert response.status_code == expected_status_code
+    time.sleep(0.2)
 
 
 def add_overlay(details, status_code=200):
