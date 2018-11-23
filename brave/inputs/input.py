@@ -121,7 +121,9 @@ class Input(InputOutputOverlay):
             source.on_input_pipeline_start()
 
     def default_video_pipeline_string_end(self):
+        # A tee is used so that we can connect this input to multiple mixers/outputs
         return ' ! tee name=final_video_tee allow-not-linked=true'
 
     def default_audio_pipeline_string_end(self):
+        # A tee is used so that we can connect this input to multiple mixers/outputs
         return ' ! tee name=final_audio_tee allow-not-linked=true'

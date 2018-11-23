@@ -184,7 +184,9 @@ async def update_mixer(request, id):
 
 async def create_input(request):
     input = request['session'].inputs.add(**request.json)
-    # TODO find a better way to decide which mixers this new input should be added to
+    # When an input is created, which mixers should it be added to?
+    # For now, it's added to the first mixer.
+    # TODO find a better way
     mixer = request['session'].mixers[0]
     source = mixer.sources.get_or_create(input)
     run_on_master_thread_when_idle(source.add_to_mix)
