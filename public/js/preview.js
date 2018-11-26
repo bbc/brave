@@ -2,24 +2,45 @@
 // This web interface has been quickly thrown together. It's not production code.
 //
 
-preview = {}
+preview = {
+    outputId: null,
+    mixerId: null,
+    type: null
+}
 
 preview.init = () => {
     $('#preview-bar-dropdown').click((change) => {
-        preview._handlePreviewRequest($(change.target).data('val'))
+        preview._handlePreviewRequest($(change.target).data('type'), $(change.target).data('id'))
     })
     setInterval(preview._refreshImage, 1000)
 }
 
-preview.previewOutput = (type, outputId) => {
-    if (preview.currentlyPreviewingOutputId === outputId) return
-    preview.currentlyPreviewingOutputId = outputId
-    preview.drawPreviewMenu()
+preview.handleOutputsUpdate = () => {
+    preview._checkWeAreShowingTheRightOutput()
+}
+
+preview._checkWeAreShowingTheRightOutput = () => {
+    outputId = preview._findRightOutputId()
+    if (outputId !== preview.outputId) {
+        preview._previewOutputId(preview.type, outputId)
+    }
+    preview._drawPreviewMenu()
+}
+
+preview._findRightOutputId = () => {
+    if (preview.type === null || preview.mixerId == null) return null
+    const details = outputsHandler.findByDetails({type: preview.type, mixer_id: preview.mixerId})
+    return details ? details.id : null
+}
+
+preview._previewOutputId = (type, outputId) => {
+    preview.outputId = outputId
+    // preview._drawPreviewMenu()
     preview._delete()
-    if (type === null) {
+    if (type === null || outputId === null) {
         // Do nothing
     }
-    if (type === 'webrtc') {
+    else if (type === 'webrtc') {
         webrtc.requestConnection(outputId)
     }
     else if (type === 'image') {
@@ -30,39 +51,35 @@ preview.previewOutput = (type, outputId) => {
     }
 }
 
-preview.drawPreviewMenu = function() {
+preview._drawPreviewMenu = () => {
     let previewMsg = 'Off'
     const dropdownMenu = $('#preview-bar-dropdown')
     dropdownMenu.empty()
     const items = []
-    items.push($('<a />').html('No preview'))
+    const noPreviewOption = $('<a />').html('No preview')
+    if (preview.mixerId === null) {
+        noPreviewOption.addClass('active')
+    }
+    items.push(noPreviewOption)
 
-    var webrtcOutputs = outputsHandler.items.filter(o => o.type === 'webrtc')
-    if (!webrtcOutputs.length) {
-        items.push($('<a />').data('val', 'webrtc').html('WebRTC'))
-    }
-    else {
-        webrtcOutputs.forEach(o => {
-            items.push($('<a />').data('val', o.id).html('Output ' + o.id + ' (WebRTC stream)'))
-        })
-    }
-
-    var imageOutputs = outputsHandler.items.filter(o => o.type === 'image')
-    if (!imageOutputs.length) {
-        items.push($('<a />').data('val', 'image').html('Updating image'))
-    }
-    else {
-        imageOutputs.forEach(o => {
-            items.push($('<a />').data('val', o.id).html('Output ' + o.id + ' (updating image)'))
-        })
-    }
+    mixersHandler.items.forEach(mixer => {
+        const webrtcPreview = $('<a />').data('id', mixer.id).data('type', 'webrtc').html('Mixer ' + mixer.id + ' (as a WebRTC stream)')
+        const imagePreview = $('<a />').data('id', mixer.id).data('type', 'image').html('Mixer ' + mixer.id + ' (as an updating image)')
+        if (preview.mixerId === mixer.id) {
+            if (preview.type === 'webrtc') {
+                webrtcPreview.addClass('active')
+                previewMsg = webrtcPreview.html()
+            }
+            else if (preview.type === 'image') {
+                imagePreview.addClass('active')
+                previewMsg = imagePreview.html()
+            }
+        }
+        items.push(webrtcPreview, imagePreview)
+    })
 
     items.forEach(i => {
         i.addClass('dropdown-item').attr('href', '#')
-        if (preview.currentlyPreviewingOutputId === i.data('val')) {
-            i.addClass('active')
-            previewMsg = i.html()
-        }
     })
 
     dropdownMenu.append(items)
@@ -88,26 +105,13 @@ preview._removeMuteButton = () => {
     if (currentButton && currentButton.length) currentButton.remove()
 }
 
-preview._handlePreviewRequest = function(request) {
-    if (request === 'webrtc') {
-        outputsHandler._requestNewWebRtcOutput()
+preview._handlePreviewRequest = (type, mixerId) => {
+    preview.mixerId = mixerId
+    preview.type = type
+    if (preview._findRightOutputId() === null && type !== null && mixerId !== null) {
+        outputsHandler._requestNewOutput(type, {mixer_id: mixerId})
     }
-    else if (request === 'image') {
-        outputsHandler._requestNewImageOutput()
-    }
-    else if (!isNaN(parseInt(request))) {
-        const outputId = parseInt(request)
-        const output = outputsHandler.findById(outputId)
-        if (!output) {
-            console.error('Cannot find output ID', outputId, 'in output list:', outputsHandler.items)
-            return
-        }
-        const type = output.type
-        preview.previewOutput(type, outputId)
-    }
-    else {
-        preview.previewOutput(null, null)
-    }
+    preview._checkWeAreShowingTheRightOutput()
 }
 
 preview._clamp = function(value, min = 0, max = 1) {
@@ -137,7 +141,9 @@ preview._gradient = function(context, brightness, darkness, height) {
 }
 
 preview.updateAudioLevels = function() {
-    var context = document.getElementById("audio_levels").getContext("2d");
+    var audioLevels = document.getElementById("audio_levels");
+    if (audioLevels === null) return;
+    var context = audioLevels.getContext("2d");
     var channels = websocket.volume.channels;
     var channel;
     var margin = 2;
@@ -201,7 +207,7 @@ preview.updateAudioLevels = function() {
         } else {
             context.fillStyle= "black";
         }
- 
+
         context.fillText(text, (width - textwidth) - 2, height - y - textheight);
     });
 
