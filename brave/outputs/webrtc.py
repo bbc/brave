@@ -96,13 +96,12 @@ class WebRTCOutput(Output):
 
         self.peers[ws] = {}
         self._update_current_num_peers()
-        self.peer_ws = ws
         await ws.send(json.dumps({'msg_type': 'webrtc-initialising', 'ice_servers': config.ice_servers()}))
 
         self._create_webrtc_element_for_new_connection(ws)
 
-        self.peers[ws]['webrtcbin'].connect('on-negotiation-needed', self._on_negotiation_needed)
-        self.peers[ws]['webrtcbin'].connect('on-ice-candidate', self._send_ice_candidate_message)
+        self.peers[ws]['webrtcbin'].connect('on-negotiation-needed', self._on_negotiation_needed, ws)
+        self.peers[ws]['webrtcbin'].connect('on-ice-candidate', self._send_ice_candidate_message, ws)
         # In the future, use connect('pad-added' here if the client's return video is wanted
 
         loop = asyncio.get_event_loop()
@@ -224,27 +223,30 @@ class WebRTCOutput(Output):
         '''
         self.peers[ws]['webrtcbin'].emit('add-ice-candidate', ice['sdpMLineIndex'], ice['candidate'])
 
-    def _send_sdp_offer(self, offer):
+    def _send_sdp_offer(self, offer, ws):
         text = offer.sdp.as_text()
         self.logger.debug('Sending SDP offer to client (%d chars in length)' % len(text))
         msg = json.dumps({'sdp': {'type': 'offer', 'sdp': text}})
         loop = asyncio.new_event_loop()
-        loop.run_until_complete(self.peer_ws.send(msg))
+        loop.run_until_complete(ws.send(msg))
 
-    def _on_offer_created(self, promise, webrtcbin, _):
+    def _on_offer_created(self, promise, webrtcbin, ws):
         promise.wait()
         reply = promise.get_reply()
         offer = reply.get_value('offer')
         promise = Gst.Promise.new()
         webrtcbin.emit('set-local-description', offer, promise)
         promise.interrupt()
-        self._send_sdp_offer(offer)
+        self._send_sdp_offer(offer, ws)
 
-    def _on_negotiation_needed(self, element):
-        promise = Gst.Promise.new_with_change_func(self._on_offer_created, element, None)
+    def _on_negotiation_needed(self, element, ws):
+        promise = Gst.Promise.new_with_change_func(self._on_offer_created, element, ws)
         element.emit('create-offer', None, promise)
 
-    def _send_ice_candidate_message(self, _, mlineindex, candidate):
+    def _send_ice_candidate_message(self, _, mlineindex, candidate, ws):
+        '''
+        Called when this server wishes to propose an ICE candidate to the client.
+        '''
         icemsg = json.dumps({'ice': {'candidate': candidate, 'sdpMLineIndex': mlineindex}})
         loop = asyncio.new_event_loop()
-        loop.run_until_complete(self.peer_ws.send(icemsg))
+        loop.run_until_complete(ws.send(icemsg))

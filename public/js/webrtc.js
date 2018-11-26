@@ -17,8 +17,12 @@ webrtc.requestConnection = (outputId) => {
 
 webrtc.close = () => {
     if (webrtc.peerConnection) {
+        console.log('Closing webrtc connection')
         webrtc.peerConnection.close();
         webrtc.peerConnection = null;
+
+        // webrtcbin does not catch a close connection, so we tell Brave directly:
+        websocket.socket.send(JSON.stringify({msg_type:'webrtc-close'}))
     }
 }
 

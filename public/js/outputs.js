@@ -7,11 +7,19 @@ outputsHandler = {}
 outputsHandler.findById = (id) => {
     return outputsHandler.items.find(i => i.id === id)
 }
+outputsHandler.findByDetails = (details) => {
+    return outputsHandler.items.find(i => {
+        if (details.type && details.type !== i.type) return false
+        if (details.hasOwnProperty('mixer_id') && i.props.hasOwnProperty('mixer_id') &&
+            details.mixer_id !== i.props.mixer_id) return false
+        return true
+    })
+}
 
 outputsHandler.draw = function() {
     if (!outputsHandler.items) outputsHandler.items = []
     outputsHandler._drawCards()
-    preview.drawPreviewMenu()
+    preview.handleOutputsUpdate()
 }
 
 outputsHandler.showFormToAdd = function() {
@@ -59,10 +67,14 @@ outputsHandler._outputCardBody = (output) => {
     }
 
     if (output.props.hasOwnProperty('width') &&
-        output.props.hasOwnProperty('height')) details.push('<strong>Ouput size:</strong> ' + prettyDimensions(output.props))
+        output.props.hasOwnProperty('height')) details.push('<strong>Output size:</strong> ' + prettyDimensions(output.props))
 
     if (output.props.audio_bitrate) {
         details.push('<strong>Audio bitrate:</strong> ' + output.props.audio_bitrate)
+    }
+
+    if (output.props.hasOwnProperty('mixer_id')) {
+        details.push('<strong>Source:</strong> Mixer ' + output.props.mixer_id)
     }
 
     if (output.hasOwnProperty('error_message')) details.push('<strong>ERROR:</strong> <span style="color:red">' + output.error_message + '</span>')
@@ -70,21 +82,13 @@ outputsHandler._outputCardBody = (output) => {
     return details.map(d => $('<div></div>').append(d))
 }
 
-outputsHandler._requestNewWebRtcOutput = function() {
-    outputsHandler._submitCreateOrEdit(null, {type: 'webrtc'},(response) => {
+outputsHandler._requestNewOutput = function(type, props) {
+    outputsHandler._submitCreateOrEdit(null, {type, props}, (response) => {
         if (response && response.hasOwnProperty('id')) {
-            preview.previewOutput('webrtc', response.id)
-        }
-    })
-}
-
-outputsHandler._requestNewImageOutput = function() {
-    outputsHandler._submitCreateOrEdit(null, {type: 'image'}, (response) => {
-        if (response && response.hasOwnProperty('id')) {
-            preview.previewOutput('image', response.id)
+            // preview.previewOutput(type, response.id)
         }
         else {
-            showMessage('Unable to create image output', 'warning')
+            showMessage('Unable to create output', 'warning')
         }
     })
 }
