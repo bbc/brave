@@ -133,6 +133,7 @@ outputsHandler._populateForm = function(output) {
     form.empty()
     if (!output.props) output.props = {}
     form.append(outputsHandler._getOutputsSelect(output))
+    form.append(getSourceSelect(output.props))
     if (!output.type) {
     }
     else if (output.type === 'local') {
@@ -236,6 +237,7 @@ outputsHandler._handleFormSubmit = function() {
     if (newProps.audio_bitrate === '') newProps.audio_bitrate = null
 
     splitDimensionsIntoWidthAndHeight(newProps)
+    handleSource(newProps)
 
     var type = newProps.type || output.type
 

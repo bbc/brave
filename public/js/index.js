@@ -98,6 +98,26 @@ function getDimensionsSelect(name, width, height) {
     })
 }
 
+function getSourceSelect(currentProps) {
+    if (currentProps.hasOwnProperty('mixer_id')) {
+        value = 'mixer-' + currentProps.mixer_id
+    }
+    else {
+        value = 'mixer-0'
+    }
+    const sourceOptions = {}
+    mixersHandler.items.forEach(m => {
+        sourceOptions['mixer-' + m.id] = 'Mixer ' + m.id
+    })
+    return formGroup({
+        id: 'source',
+        label: 'Source',
+        name: 'source',
+        value,
+        options: sourceOptions
+    })
+}
+
 function splitXyString(s) {
     matches = s.match(/^(\d+)x(\d+)$/)
     if (matches) return [matches[1], matches[2]]
@@ -126,6 +146,21 @@ function splitDimensionsIntoWidthAndHeight(obj) {
         }
     }
     delete obj.dimensions // also deletes if empty string
+    return true
+}
+
+function handleSource(obj) {
+    if (obj.source) {
+        const matches = obj.source.match(/^mixer-(\d+)$/)
+        if (matches) {
+            obj.mixer_id = parseInt(matches[1])
+        }
+        else {
+            showMessage('Cannot understand source ' + obj.source, 'warning')
+            return false
+        }
+    }
+    delete obj.source // also deletes if empty string
     return true
 }
 
