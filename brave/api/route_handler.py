@@ -3,6 +3,7 @@ logger = logging.getLogger('brave.rest_api')
 import sanic
 import sanic.response
 from brave.helpers import state_string_to_constant, run_on_master_thread_when_idle
+from brave.outputs.image import ImageOutput
 
 
 async def all(request):
@@ -210,6 +211,25 @@ async def create_mixer(request):
     mixer = request['session'].mixers.add(**request.json)
     logger.info('Created mixer #%d with details %s' % (mixer.id, request.json))
     return sanic.response.json({'id': mixer.id})
+
+
+async def get_body(request, id):
+    '''
+    Returns the body (image contents) of a JPEG output
+    '''
+    if id not in request['session'].outputs or request['session'].outputs[id] is None:
+        return _user_error_response('no such output id')
+    output = request['session'].outputs[id]
+    if type(output) != ImageOutput:
+        return _user_error_response('Output is not an image')
+
+    try:
+        return await sanic.response.file_stream(
+            output.props['location'],
+            headers={'Cache-Control': 'max-age=1'}
+        )
+    except FileNotFoundError:
+        return _user_error_response('No such body')
 
 
 async def restart(request):

@@ -74,6 +74,8 @@ class RestApi(object):
         app.add_route(route_handler.overlay_source, '/api/mixers/<id:int>/overlay_source', methods=['POST'])
         app.add_route(route_handler.remove_source, '/api/mixers/<id:int>/remove_source', methods=['POST'])
 
+        app.add_route(route_handler.get_body, '/api/outputs/<id:int>/body')
+
         app.add_route(route_handler.restart, '/api/restart', methods=['POST'])
 
         @app.websocket('/socket')
