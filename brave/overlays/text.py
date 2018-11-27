@@ -8,10 +8,7 @@ class TextOverlay(Overlay):
 
     def permitted_props(self):
         return {
-            'mixer_id': {
-                'type': 'int',
-                'default': 0
-            },
+            **super().permitted_props(),
             'text': {
                 'type': 'str',
                 'default': 'Default text'
