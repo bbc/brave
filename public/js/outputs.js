@@ -129,6 +129,7 @@ outputsHandler._populateForm = function(output) {
     form.empty()
     if (!output.props) output.props = {}
     form.append(outputsHandler._getOutputsSelect(output))
+    form.append(getSourceSelect(output.props))
     if (!output.type) {
     }
     else if (output.type === 'local') {
@@ -211,18 +212,16 @@ outputsHandler._handleFormSubmit = function() {
     var output = (id != null) ? outputsHandler.findById(id) : {}
     var newProps = {}
 
-    fields = ['type', 'uri', 'host', 'port', 'container', 'location', 'audio_bitrate', 'dimensions']
-    fields.forEach(function(f) {
-        var outputOrSelect = (f === 'type' || f === 'container' || f === 'dimensions') ? 'select' : 'input'
-        var output = form.find(outputOrSelect + '[name="' + f + '"]')
-        if (output && output.val() != null) {
-            newProps[f] = output.val()
-        }
+    const fields = ['type', 'uri', 'host', 'port', 'container', 'location', 'audio_bitrate', 'dimensions', 'source']
+    fields.forEach(f => {
+        var input = form.find('[name="' + f + '"]')
+        if (input && input.val() != null) newProps[f] = input.val()
     })
 
     if (newProps.audio_bitrate === '') newProps.audio_bitrate = null
 
     splitDimensionsIntoWidthAndHeight(newProps)
+    handleSource(newProps)
 
     var type = newProps.type || output.type
 

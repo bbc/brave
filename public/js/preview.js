@@ -248,7 +248,6 @@ preview._createVideoPlayer = function() {
 preview._createImage = function() {
     const image = document.createElement('img')
     image.id = 'image-preview'
-    $(image).attr('src', 'output_images/img.jpg?' + Math.floor(Date.now()/1000) )
     $('#preview-bar').append(image)
 }
 
@@ -274,7 +273,7 @@ preview._deleteVideoPlayer = () => {
 preview._refreshImage = () => {
     const image = preview._getImage()
     if (!image || !image.length) return
-    $(image).attr('src', 'output_images/img.jpg?' + Math.floor(Date.now()/1000) )
+    $(image).attr('src', '/api/outputs/' + preview.outputId + '/body?' + Math.floor(Date.now()/1000))
 }
 
 preview.init()

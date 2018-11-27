@@ -75,7 +75,7 @@ overlaysHandler._getMixOptions = (overlay) => {
         var buttons = $('<div class="option-icons"></div>').append(overlayButton)
         div.append(buttons)
     }
-    div.append('<strong>Mixer ' + overlay.mixer_id + ':</strong> ' + showingOrHidden)
+    div.append('<strong>Mixer ' + overlay.props.mixer_id + ':</strong> ' + showingOrHidden)
     return div
 
     return mixersHandler.items.map(mixer => {
@@ -160,10 +160,10 @@ overlaysHandler._populateForm = function(overlay) {
         form.append('<input type="hidden" name="id" value="' + overlay.id + '">')
     }
 
-
     if (!overlay.type) {
     }
     else if (overlay.type === 'text' || overlay.type === 'clock') {
+        form.append(getSourceSelect(overlay.props))
         form.append(formGroup({
             id: 'overlay-text',
             label: 'Text',
@@ -181,6 +181,7 @@ overlaysHandler._populateForm = function(overlay) {
         }))
     }
     else if (overlay.type === 'effect') {
+        form.append(getSourceSelect(overlay.props))
         form.append(formGroup({
             id: 'overlay-effect',
             label: 'Effect',
@@ -205,14 +206,15 @@ overlaysHandler._handleFormSubmit = function() {
     var overlay = (id != null) ? overlaysHandler.findById(id) : {}
     var newProps = {}
 
-    fields = ['type', 'text', 'valignment', 'effect_name']
-    fields.forEach(function(f) {
+    const fields = ['type', 'text', 'valignment', 'effect_name', 'source']
+    fields.forEach(f => {
         var overlay = form.find('[name="' + f + '"]')
         if (overlay && overlay.val() != null) {
             newProps[f] = overlay.val()
         }
     })
 
+    handleSource(newProps)
     var type = newProps.type || overlay.type
 
     if (!type) {
