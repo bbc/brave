@@ -80,7 +80,13 @@ class WebRTCOutput(Output):
                                 'rtpopuspay ! application/x-rtp,media=audio,encoding-name=OPUS,payload=96 ! '
                                 'tee name=webrtc_audio_tee webrtc_audio_tee. ! fakesink')
 
-        return self.create_pipeline_from_string(pipeline_string)
+        if not self.create_pipeline_from_string(pipeline_string):
+            return False
+
+        self.pipeline.get_bus().add_signal_watch()
+        self.pipeline.get_bus().connect('message::element', self._on_element_message)
+        self.event_loop = asyncio.get_event_loop()
+        return True
 
     def _update_current_num_peers(self):
         self.current_num_peers = len(self.peers)
@@ -104,39 +110,36 @@ class WebRTCOutput(Output):
         self.peers[ws]['webrtcbin'].connect('on-ice-candidate', self._send_ice_candidate_message, ws)
         # In the future, use connect('pad-added' here if the client's return video is wanted
 
-        loop = asyncio.get_event_loop()
-
-        def on_message(bus, message):
-            t = message.type
-            if t == Gst.MessageType.ELEMENT:
-                if message.get_structure().get_name() == 'level':
-                    channels = len(message.get_structure().get_value('peak'))
-                    data = []
-
-                    for i in range(0, channels):
-                        data.append(json.dumps({
-                            'peak': message.get_structure().get_value('peak')[i],
-                            'rms': message.get_structure().get_value('rms')[i],
-                            'decay': message.get_structure().get_value('decay')[i]
-                        }))
-
-                    jsonData = json.dumps({'msg_type': 'volume', 'channels': channels, 'data': data})
-
-                    async def _send_data():
-                        try:
-                            await ws.send(jsonData)
-                        except websockets.ConnectionClosed:
-                            pass
-
-                    loop.create_task(_send_data())
-
-        self.pipeline.get_bus().add_signal_watch()
-        self.pipeline.get_bus().connect('message::element', on_message)
-
         if not self.pipeline.set_state(Gst.State.PLAYING):
             self.logger.warn('Unable to enter PLAYING state now that we have a peer')
         else:
             self.logger.debug('Successfully added a new peer request')
+
+    def _on_element_message(self, bus, message):
+        if len(self.peers) == 0:
+            return
+        t = message.type
+        if t == Gst.MessageType.ELEMENT:
+            if message.get_structure().get_name() == 'level':
+                channels = len(message.get_structure().get_value('peak'))
+                data = []
+
+                for i in range(0, channels):
+                    data.append(json.dumps({
+                        'peak': message.get_structure().get_value('peak')[i],
+                        'rms': message.get_structure().get_value('rms')[i],
+                        'decay': message.get_structure().get_value('decay')[i]
+                    }))
+
+                jsonData = json.dumps({'msg_type': 'volume', 'channels': channels, 'data': data})
+                self.event_loop.create_task(self._send_data_to_all_peers(jsonData))
+
+    async def _send_data_to_all_peers(self, jsonData):
+        for ws in self.peers:
+            try:
+                await ws.send(jsonData)
+            except websockets.ConnectionClosed:
+                pass
 
     async def remove_peer_request(self, ws):
         '''
