@@ -75,6 +75,9 @@ Supported output types:
  * Writing of a JPEG file every second
 * WebRTC
  * For near-realtime previewing of the video (and audio)
+* [AWS Kinesis Video Stream](https://aws.amazon.com/kinesis/video-streams/)
+ * Video only (not audio)
+ * See the specific [installation instructions](docs/install_kvs.md)
 * Local playback
  * For video, a window appears to view the video
  * Because Brave has been designed to work remotely
@@ -103,17 +106,12 @@ First, install the dependencies, and then clone this repo.
 ### Dependencies
 * Python 3.6 (or higher)
 * GStreamer 1.14.3 or higher (including the good/bad/ugly packages)
-* Python libraries from pip:
- * To run: `pyyaml gbulb sanic websockets psutil`
- * In addition, to test: `pytest`
-* The GStreamer Python libraries
-* IF you want to send or receive RTMP: librtmp and openh264
+* Multiple Python libraries (installed by pipenv)
 
-### How to install the dependencies
-* On MacOS, see [How to install on MacOS](./docs/install_macos.md)
-* On CentOS 7, see [How to install on CentOS 7](./docs/install_centos7.md)
-* On Ubuntu/Debian, it should be possible to install all depedencies using APT. (Though at the time of writing, you'll need to use _unstable_ to get GStreamer 1.14)
-
+### Install guides
+* [How to install on MacOS](./docs/install_macos.md)
+* [How to install on Ubuntu](./docs/install_ubuntu.md)
+* [How to install on CentOS 7](./docs/install_centos7.md)
 
 ## How to use
 To start:

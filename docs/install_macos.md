@@ -6,11 +6,11 @@ First up, make sure you have Homebrew.
 
 ## Installing Dependancies
 
-Brave uses from of the newier features of Python. As such we recomend python 3.6 (or higher).
+Brave uses from of the newer features of Python. As such we recomend python 3.6 (or higher).
 
 ### Managing Dependencies
 
-Brave uses [Pipeenv](https://packaging.python.org/tutorials/managing-dependencies/#managing-dependencies) to manage an isolate its dependencies 
+Brave uses [Pipeenv](https://packaging.python.org/tutorials/managing-dependencies/#managing-dependencies) to manage an isolate its dependencies
 
 If not installed please install using:
 
