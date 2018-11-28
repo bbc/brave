@@ -4,6 +4,7 @@ from brave.outputs.tcp import TCPOutput
 from brave.outputs.image import ImageOutput
 from brave.outputs.file import FileOutput
 from brave.outputs.webrtc import WebRTCOutput
+from brave.outputs.kvs import KvsOutput
 from brave.abstract_collection import AbstractCollection
 import brave.exceptions
 
@@ -26,6 +27,8 @@ class OutputCollection(AbstractCollection):
             output = FileOutput(**args, collection=self)
         elif args['type'] == 'webrtc':
             output = WebRTCOutput(**args, collection=self)
+        elif args['type'] == 'kvs':
+            output = KvsOutput(**args, collection=self)
         else:
             raise brave.exceptions.InvalidConfiguration("Invalid output type '%s'" % args['type'])
 
