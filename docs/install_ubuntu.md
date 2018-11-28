@@ -55,6 +55,6 @@ pipenv run ./brave.py
 
 That's it!
 
-## Optional: Support fort AWS KInesis Video
+## Optional: Support fort AWS Kinesis Video
 
 If you wish to output to a Kinesis Video Stream, there are [separate instructions](./install_kvs.md) on installing the necessary GStreamer element.
