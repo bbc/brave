@@ -112,16 +112,9 @@ make && sudo make install
 
 ## Faac
 
-No sign of this in Centos 7 Yum.
-I've gone for the latest version at the time of writing (1.19.9.2). There is a problem with building 1.28.
+NOTE: We've removed the need for the `faac` element and replaced it with `avenc_aac`.
 
-```
-wget http://downloads.sourceforge.net/faac/faac-1.29.9.2.tar.gz
-tar xf faac-1.29.9.2.tar.gz
-cd faac-1.29.9.2
-./configure --libdir=/usr/lib64
-make && sudo make install
-```
+We've not yet shown whether or not this needs an additional installation on CentOS.
 
 
 ## SRT
@@ -173,7 +166,7 @@ cd $REPO_NAME
 git checkout tags/$GSTREAMER_VERSION
 # Or: git checkout remotes/origin/1.14
 libtoolize
-./autogen.sh --disable-gtk-doc --enable-introspection=yes --libdir=/usr/lib64 --enable-rtmp=yes --enable-dash=yes --enable-webrtc=yes --enable-srt=yes --enable-faac=yes
+./autogen.sh --disable-gtk-doc --enable-introspection=yes --libdir=/usr/lib64 --enable-rtmp=yes --enable-dash=yes --enable-webrtc=yes --enable-srt=yes
 make
 sudo make install
 ```

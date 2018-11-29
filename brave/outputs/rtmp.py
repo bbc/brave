@@ -44,7 +44,7 @@ class RTMPOutput(Output):
                                ' ! h264parse ! queue ! mux.')
         if config.enable_audio():
             pipeline_string = pipeline_string + \
-                ' interaudiosrc name=interaudiosrc ! faac name=audio_encoder ! ' + \
+                ' interaudiosrc name=interaudiosrc ! avenc_aac name=audio_encoder ! ' + \
                 'aacparse ! audio/mpeg, mpegversion=4 ! queue ! mux.'
 
         self.logger.debug('Creating RTMP output with this pipeline: ' + pipeline_string)
