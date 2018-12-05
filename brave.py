@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 '''
 Runs Brave as a daemon with RestAPI interface
 '''

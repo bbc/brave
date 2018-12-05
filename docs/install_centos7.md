@@ -109,14 +109,6 @@ opus-1.2.1
 make && sudo make install
 ```
 
-
-## Faac
-
-NOTE: We've removed the need for the `faac` element and replaced it with `avenc_aac`.
-
-We've not yet shown whether or not this needs an additional installation on CentOS.
-
-
 ## SRT
 
 This is optional, if you wish to use SRT. It's definitely not available via yum (don't get confused with SRTP!)
