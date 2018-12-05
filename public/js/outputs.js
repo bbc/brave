@@ -59,10 +59,14 @@ outputsHandler._outputCardBody = (output) => {
     }
 
     if (output.props.hasOwnProperty('width') &&
-        output.props.hasOwnProperty('height')) details.push('<strong>Ouput size:</strong> ' + prettyDimensions(output.props))
+        output.props.hasOwnProperty('height')) details.push('<strong>Output size:</strong> ' + prettyDimensions(output.props))
 
     if (output.props.audio_bitrate) {
         details.push('<strong>Audio bitrate:</strong> ' + output.props.audio_bitrate)
+    }
+
+    if (output.props.hasOwnProperty('stream_name')) {
+        details.push('<strong>Stream name:</strong> ' + output.props.stream_name)
     }
 
     if (output.hasOwnProperty('error_message')) details.push('<strong>ERROR:</strong> <span style="color:red">' + output.error_message + '</span>')
@@ -173,6 +177,16 @@ outputsHandler._populateForm = function(output) {
             help: 'Example: <code>/tmp/foo.mp4</code>',
         }));
     }
+    else if (output.type === 'kvs') {
+        form.append(formGroup({
+            id: 'output-stream-name',
+            label: 'Stream name',
+            name: 'stream_name',
+            type: 'text',
+            value: output.location || '',
+            help: 'You can create one on the <a href="https://us-west-2.console.aws.amazon.com/kinesisvideo/streams">AWS KVS console</a>',
+        }));
+    }
 
     form.find('select[name="type"]').change(outputsHandler._handleNewFormType);
 }
@@ -184,6 +198,7 @@ outputsHandler._getOutputsSelect = function(output) {
         'image' : 'JPEG image every 1 second',
         'file' : 'File (Write audio/video to a local file)',
         'webrtc' : 'WebRTC for web preview',
+        'kvs' : 'AWS Kinesis Video',
         'local': 'Local (pop-up audio/video on this server, for debugging)',
     }
     return formGroup({
@@ -207,13 +222,11 @@ outputsHandler._handleFormSubmit = function() {
     var output = (id != null) ? outputsHandler.findById(id) : {}
     var newProps = {}
 
-    fields = ['type', 'uri', 'host', 'port', 'container', 'location', 'audio_bitrate', 'dimensions']
-    fields.forEach(function(f) {
-        var outputOrSelect = (f === 'type' || f === 'container' || f === 'dimensions') ? 'select' : 'input'
-        var output = form.find(outputOrSelect + '[name="' + f + '"]')
-        if (output && output.val() != null) {
-            newProps[f] = output.val()
-        }
+    const fields = ['type', 'uri', 'host', 'port', 'container', 'location',
+                    'audio_bitrate', 'dimensions', 'source', 'stream_name']
+    fields.forEach(f => {
+        var input = form.find('[name="' + f + '"]')
+        if (input && input.val() != null) newProps[f] = input.val()
     })
 
     if (newProps.audio_bitrate === '') newProps.audio_bitrate = null
@@ -226,20 +239,20 @@ outputsHandler._handleFormSubmit = function() {
         showMessage('Please select a type')
         return
     }
-    else if (type === 'rtmp') {
+
+    const VALID_TYPES = ['local', 'tcp', 'image', 'file', 'webrtc', 'kvs', 'rtmp']
+    if (VALID_TYPES.indexOf(type) === -1) {
+        showMessage('Invalid type ' + type)
+        return
+    }
+
+    if (type === 'rtmp') {
         var uri = newProps.uri || output.uri
         good_uri_regexp = '^rtmp(s?)://'
         if (!uri || !uri.match(good_uri_regexp)) {
             showMessage('uri must start with ' + good_uri_regexp)
             return
         }
-    }
-    else if (type === 'local' || type === 'tcp' || type === 'image' || type === 'file' || type === 'webrtc') {
-        // GREAT
-    }
-    else {
-        showMessage('Invalid type ' + type)
-        return
     }
 
     if (!Object.keys(newProps).length) {
