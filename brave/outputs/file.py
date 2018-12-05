@@ -38,7 +38,7 @@ class FileOutput(Output):
 
         if config.enable_audio():
             audio_pipeline_string = ('interaudiosrc name=interaudiosrc ! '
-                                     'audioconvert ! audioresample ! faac name=audio_encoder')
+                                     'audioconvert ! audioresample ! avenc_aac name=audio_encoder')
 
             # A larger queue size enables the video encoder to take longer
             audio_pipeline_string += f' ! queue max-size-bytes={10*(3 ** 20)} ! mux.'

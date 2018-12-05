@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 '''
 Runs Brave as a daemon with RestAPI interface
 '''
@@ -33,7 +33,7 @@ def setup_config(args):
 
 
 def check_gstreamer_plugins():
-    needed = ['opus', 'vpx', 'nice', 'webrtc', 'dtls', 'x264', 'faac', 'srtp',
+    needed = ['opus', 'vpx', 'nice', 'webrtc', 'dtls', 'x264', 'srtp',
               'multifile', 'tcp', 'rtmp', 'rtpmanager', 'videotestsrc', 'audiotestsrc']
     missing = list(filter(lambda p: Gst.Registry.get().find_plugin(p) is None, needed))
     if len(missing):
