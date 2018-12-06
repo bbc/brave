@@ -21,7 +21,6 @@ def test_can_create_video_file_output(run_brave, create_config_file):
     response = api_get('/api/all')
     assert response.status_code == 200
     assert_everything_in_playing_state(response.json())
-    stop_output(0)
     assert os.path.exists(output_video_location)
 
 
@@ -45,8 +44,11 @@ def assert_valid_output_file(output_video_location):
     Gst.init(None)
     mainloop = GLib.MainLoop()
 
+    # We create a pipeline so that we can read the file and check it:
     pipeline = Gst.ElementFactory.make("playbin")
     pipeline.set_property('uri','file://'+output_video_location)
+    playsink = pipeline.get_by_name('playsink')
+    playsink.set_property('video-sink', Gst.ElementFactory.make('fakesink'))
     pipeline.set_state(Gst.State.PAUSED)
 
     def after_a_second():
@@ -57,7 +59,7 @@ def assert_valid_output_file(output_video_location):
 
         element = pipeline.get_by_name('inputselector0')
         caps = element.get_static_pad('src').get_current_caps()
-        assert caps.to_string() == 'video/x-raw, format=(string)Y444, width=(int)640, height=(int)360, interlace-mode=(string)progressive, multiview-mode=(string)mono, multiview-flags=(GstVideoMultiviewFlagsSet)0:ffffffff:/right-view-first/left-flipped/left-flopped/right-flipped/right-flopped/half-aspect/mixed-mono, pixel-aspect-ratio=(fraction)1/1, chroma-site=(string)mpeg2, colorimetry=(string)bt601, framerate=(fraction)30/1'
+        assert caps.to_string() == 'video/x-raw, format=(string)NV12, width=(int)640, height=(int)360, interlace-mode=(string)progressive, multiview-mode=(string)mono, multiview-flags=(GstVideoMultiviewFlagsSet)0:ffffffff:/right-view-first/left-flipped/left-flopped/right-flipped/right-flopped/half-aspect/mixed-mono, pixel-aspect-ratio=(fraction)1/1, chroma-site=(string)jpeg, colorimetry=(string)bt601, framerate=(fraction)30/1'
 
         pipeline.set_state(Gst.State.NULL)
         mainloop.quit()
