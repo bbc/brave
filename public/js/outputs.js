@@ -88,10 +88,7 @@ outputsHandler._outputCardBody = (output) => {
 
 outputsHandler._requestNewOutput = function(type, props) {
     outputsHandler._submitCreateOrEdit(null, {type, props}, (response) => {
-        if (response && response.hasOwnProperty('id')) {
-            // preview.previewOutput(type, response.id)
-        }
-        else {
+        if (!response || !response.hasOwnProperty('id')) {
             showMessage('Unable to create output', 'warning')
         }
     })
