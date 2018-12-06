@@ -51,7 +51,9 @@ def setup_messaging(pipe, parent_object):
         elif t == Gst.MessageType.STREAM_STATUS:
             pass
         elif t == Gst.MessageType.ELEMENT:
-            logger.debug(f'{str(message.src.get_name())} has a message:' + str(message.get_structure().to_string()))
+            # Omit audio from 'level' element as it is very noisy:
+            if message.src.get_name() != 'level0':
+                logger.debug(f'{str(message.src.get_name())} has a message:' + str(message.get_structure().to_string()))
         elif t == Gst.MessageType.DURATION_CHANGED:
             logger.debug(f'Duration changed to ' + str(pipe.query_duration(Gst.Format.TIME).duration) + 'ns')
             parent_object.report_update_to_user()

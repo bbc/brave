@@ -38,7 +38,7 @@ class TestVideoInput(Input):
         pipeline_string = ('videotestsrc is-live=true name=videotestsrc'
                            ' ! videoconvert ! videoscale ! capsfilter name=capsfilter' +
                            self.default_video_pipeline_string_end())
-        # FOR TESTING TO VIEW LOCALLY, APPEND: + ' final_video_tee. ! queue ! autovideosink ')
+        # FOR TESTING TO VIEW LOCALLY, APPEND: + ' final_video_tee. ! queue ! glimagesink ')
         if not self.create_pipeline_from_string(pipeline_string):
             return False
 

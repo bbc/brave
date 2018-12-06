@@ -90,10 +90,9 @@ class Input(InputOutputOverlay):
         if mixer:
             mix_width, mix_height = mixer.get_dimensions()
 
-        if not width or not height:
-            caps_string = 'video/x-raw,pixel-aspect-ratio=1/1'
-        else:
-            caps_string = 'video/x-raw,width=%d,height=%d,pixel-aspect-ratio=1/1' % (width, height)
+        caps_string = 'video/x-raw,pixel-aspect-ratio=1/1,format=RGBA'
+        if width and height:
+            caps_string += ',width=%d,height=%d' % (width, height)
 
         self.logger.debug('caps_string=%s' % caps_string)
         return caps_string

@@ -35,7 +35,7 @@ class ImageOutput(Output):
         return False
 
     def create_caps_string(self):
-        return super().create_caps_string() + ',framerate=1/' + str(self.props['update_frequency'])
+        return super().create_caps_string() + ',format=RGB,framerate=1/' + str(self.props['update_frequency'])
 
     def create_elements(self):
         if not config.enable_video():

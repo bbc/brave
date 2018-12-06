@@ -74,12 +74,12 @@ class FileOutput(Output):
                 if hasattr(self, encoder_name):
                     encoder = getattr(self, encoder_name)
                     encoder_state = encoder.get_state(0).state
-                    if encoder_state == Gst.State.PAUSED or encoder_state == Gst.State.PLAYING:
+                    if encoder_state in [Gst.State.PAUSED, Gst.State.PLAYING]:
                         if encoder.send_event(Gst.Event.new_eos()):
                             self.logger.debug('Successfully send EOS event to the ' + encoder_name)
                             sent_eos = True
                         else:
-                            self.logger.warn('Failed to send EOS event')
+                            self.logger.warn('Failed to send EOS event to the %s' % encoder_name)
 
         # If we've sent an EOS, allow that to propogate the pipeline.
         # (Separate code will then catch the EOS successful message and cause a state change.)
@@ -89,5 +89,6 @@ class FileOutput(Output):
 
         return super().set_state(new_state)
 
-    # def create_caps_string(self):
-    #     return super().create_caps_string() + ',format=YUV'
+    def create_caps_string(self):
+        # format=I420 ensures the mp4 is playable with QuickTime.
+        return super().create_caps_string() + ',format=I420'

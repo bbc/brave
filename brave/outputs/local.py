@@ -34,7 +34,7 @@ class LocalOutput(Output):
 
         pipeline_string = ''
         if config.enable_video():
-            # format=RGB removes the alpha channel which can crash autovideosink
+            # format=RGB removes the alpha channel which can crash glimagesink
             video_caps = 'video/x-raw,format=RGB,width=%d,height=%d,pixel-aspect-ratio=1/1' % \
                 (self.props['width'], self.props['height'])
 
