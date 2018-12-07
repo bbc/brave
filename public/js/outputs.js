@@ -7,11 +7,19 @@ outputsHandler = {}
 outputsHandler.findById = (id) => {
     return outputsHandler.items.find(i => i.id === id)
 }
+outputsHandler.findByDetails = (details) => {
+    return outputsHandler.items.find(i => {
+        if (details.type && details.type !== i.type) return false
+        if (details.hasOwnProperty('mixer_id') && i.props.hasOwnProperty('mixer_id') &&
+            details.mixer_id !== i.props.mixer_id) return false
+        return true
+    })
+}
 
 outputsHandler.draw = function() {
     if (!outputsHandler.items) outputsHandler.items = []
     outputsHandler._drawCards()
-    preview.drawPreviewMenu()
+    preview.handleOutputsUpdate()
 }
 
 outputsHandler.showFormToAdd = function() {
@@ -69,26 +77,19 @@ outputsHandler._outputCardBody = (output) => {
         details.push('<strong>Stream name:</strong> ' + output.props.stream_name)
     }
 
+    if (output.props.hasOwnProperty('mixer_id')) {
+        details.push('<strong>Source:</strong> Mixer ' + output.props.mixer_id)
+    }
+
     if (output.hasOwnProperty('error_message')) details.push('<strong>ERROR:</strong> <span style="color:red">' + output.error_message + '</span>')
 
     return details.map(d => $('<div></div>').append(d))
 }
 
-outputsHandler._requestNewWebRtcOutput = function() {
-    outputsHandler._submitCreateOrEdit(null, {type: 'webrtc'},(response) => {
-        if (response && response.hasOwnProperty('id')) {
-            preview.previewOutput('webrtc', response.id)
-        }
-    })
-}
-
-outputsHandler._requestNewImageOutput = function() {
-    outputsHandler._submitCreateOrEdit(null, {type: 'image'}, (response) => {
-        if (response && response.hasOwnProperty('id')) {
-            preview.previewOutput('image', response.id)
-        }
-        else {
-            showMessage('Unable to create image output', 'warning')
+outputsHandler._requestNewOutput = function(type, props) {
+    outputsHandler._submitCreateOrEdit(null, {type, props}, (response) => {
+        if (!response || !response.hasOwnProperty('id')) {
+            showMessage('Unable to create output', 'warning')
         }
     })
 }
@@ -129,6 +130,7 @@ outputsHandler._populateForm = function(output) {
     form.empty()
     if (!output.props) output.props = {}
     form.append(outputsHandler._getOutputsSelect(output))
+    form.append(getSourceSelect(output.props))
     if (!output.type) {
     }
     else if (output.type === 'local') {
@@ -232,6 +234,7 @@ outputsHandler._handleFormSubmit = function() {
     if (newProps.audio_bitrate === '') newProps.audio_bitrate = null
 
     splitDimensionsIntoWidthAndHeight(newProps)
+    handleSource(newProps)
 
     var type = newProps.type || output.type
 

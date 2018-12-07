@@ -1,6 +1,7 @@
 from brave.outputs.output import Output
 import brave.config as config
 import os
+import random
 
 
 class ImageOutput(Output):
@@ -26,7 +27,7 @@ class ImageOutput(Output):
             'location': {
                 'type': 'str',
                 # TODO reconsider this default:
-                'default': '/usr/local/share/brave/output_images/img.jpg'
+                'default': '/usr/local/share/brave/output_images/img_%d.jpg' % random.randint(10000, 20000)
             }
         }
 
@@ -34,7 +35,7 @@ class ImageOutput(Output):
         return False
 
     def create_caps_string(self):
-        return super().create_caps_string() + ',framerate=1/' + str(self.props['update_frequency'])
+        return super().create_caps_string() + ',format=RGB,framerate=1/' + str(self.props['update_frequency'])
 
     def create_elements(self):
         if not config.enable_video():

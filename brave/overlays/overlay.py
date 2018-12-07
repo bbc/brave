@@ -10,8 +10,6 @@ class Overlay(InputOutputOverlay):
 
     def __init__(self, **args):
         super().__init__(**args)
-        # self.__validate_provided_mixer()
-
         self.visible = self.props['visible']
         self.create_elements()
         if self.visible:
@@ -19,6 +17,15 @@ class Overlay(InputOutputOverlay):
 
     def input_output_overlay_or_mixer(self):
         return 'overlay'
+
+    def permitted_props(self):
+        return {
+            **super().permitted_props(),
+            'mixer_id': {
+                'type': 'int',
+                'default': 0
+            }
+        }
 
     def has_audio(self):
         return False   # no such thing as audio on overlays

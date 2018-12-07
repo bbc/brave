@@ -80,7 +80,13 @@ class WebRTCOutput(Output):
                                 'rtpopuspay ! application/x-rtp,media=audio,encoding-name=OPUS,payload=96 ! '
                                 'tee name=webrtc_audio_tee webrtc_audio_tee. ! fakesink')
 
-        return self.create_pipeline_from_string(pipeline_string)
+        if not self.create_pipeline_from_string(pipeline_string):
+            return False
+
+        self.pipeline.get_bus().add_signal_watch()
+        self.pipeline.get_bus().connect('message::element', self._on_element_message)
+        self.event_loop = asyncio.get_event_loop()
+        return True
 
     def _update_current_num_peers(self):
         self.current_num_peers = len(self.peers)
@@ -96,48 +102,44 @@ class WebRTCOutput(Output):
 
         self.peers[ws] = {}
         self._update_current_num_peers()
-        self.peer_ws = ws
         await ws.send(json.dumps({'msg_type': 'webrtc-initialising', 'ice_servers': config.ice_servers()}))
 
         self._create_webrtc_element_for_new_connection(ws)
 
-        self.peers[ws]['webrtcbin'].connect('on-negotiation-needed', self._on_negotiation_needed)
-        self.peers[ws]['webrtcbin'].connect('on-ice-candidate', self._send_ice_candidate_message)
+        self.peers[ws]['webrtcbin'].connect('on-negotiation-needed', self._on_negotiation_needed, ws)
+        self.peers[ws]['webrtcbin'].connect('on-ice-candidate', self._send_ice_candidate_message, ws)
         # In the future, use connect('pad-added' here if the client's return video is wanted
-
-        loop = asyncio.get_event_loop()
-
-        def on_message(bus, message):
-            t = message.type
-            if t == Gst.MessageType.ELEMENT:
-                if message.get_structure().get_name() == 'level':
-                    channels = len(message.get_structure().get_value('peak'))
-                    data = []
-
-                    for i in range(0, channels):
-                        data.append(json.dumps({
-                            'peak': message.get_structure().get_value('peak')[i],
-                            'rms': message.get_structure().get_value('rms')[i],
-                            'decay': message.get_structure().get_value('decay')[i]
-                        }))
-
-                    jsonData = json.dumps({'msg_type': 'volume', 'channels': channels, 'data': data})
-
-                    async def _send_data():
-                        try:
-                            await ws.send(jsonData)
-                        except websockets.ConnectionClosed:
-                            pass
-
-                    loop.create_task(_send_data())
-
-        self.pipeline.get_bus().add_signal_watch()
-        self.pipeline.get_bus().connect('message::element', on_message)
 
         if not self.pipeline.set_state(Gst.State.PLAYING):
             self.logger.warn('Unable to enter PLAYING state now that we have a peer')
         else:
             self.logger.debug('Successfully added a new peer request')
+
+    def _on_element_message(self, bus, message):
+        if len(self.peers) == 0:
+            return
+        t = message.type
+        if t == Gst.MessageType.ELEMENT:
+            if message.get_structure().get_name() == 'level':
+                channels = len(message.get_structure().get_value('peak'))
+                data = []
+
+                for i in range(0, channels):
+                    data.append(json.dumps({
+                        'peak': message.get_structure().get_value('peak')[i],
+                        'rms': message.get_structure().get_value('rms')[i],
+                        'decay': message.get_structure().get_value('decay')[i]
+                    }))
+
+                jsonData = json.dumps({'msg_type': 'volume', 'channels': channels, 'data': data})
+                self.event_loop.create_task(self._send_data_to_all_peers(jsonData))
+
+    async def _send_data_to_all_peers(self, jsonData):
+        for ws in self.peers:
+            try:
+                await ws.send(jsonData)
+            except websockets.ConnectionClosed:
+                pass
 
     async def remove_peer_request(self, ws):
         '''
@@ -224,27 +226,30 @@ class WebRTCOutput(Output):
         '''
         self.peers[ws]['webrtcbin'].emit('add-ice-candidate', ice['sdpMLineIndex'], ice['candidate'])
 
-    def _send_sdp_offer(self, offer):
+    def _send_sdp_offer(self, offer, ws):
         text = offer.sdp.as_text()
         self.logger.debug('Sending SDP offer to client (%d chars in length)' % len(text))
         msg = json.dumps({'sdp': {'type': 'offer', 'sdp': text}})
         loop = asyncio.new_event_loop()
-        loop.run_until_complete(self.peer_ws.send(msg))
+        loop.run_until_complete(ws.send(msg))
 
-    def _on_offer_created(self, promise, webrtcbin, _):
+    def _on_offer_created(self, promise, webrtcbin, ws):
         promise.wait()
         reply = promise.get_reply()
         offer = reply.get_value('offer')
         promise = Gst.Promise.new()
         webrtcbin.emit('set-local-description', offer, promise)
         promise.interrupt()
-        self._send_sdp_offer(offer)
+        self._send_sdp_offer(offer, ws)
 
-    def _on_negotiation_needed(self, element):
-        promise = Gst.Promise.new_with_change_func(self._on_offer_created, element, None)
+    def _on_negotiation_needed(self, element, ws):
+        promise = Gst.Promise.new_with_change_func(self._on_offer_created, element, ws)
         element.emit('create-offer', None, promise)
 
-    def _send_ice_candidate_message(self, _, mlineindex, candidate):
+    def _send_ice_candidate_message(self, _, mlineindex, candidate, ws):
+        '''
+        Called when this server wishes to propose an ICE candidate to the client.
+        '''
         icemsg = json.dumps({'ice': {'candidate': candidate, 'sdpMLineIndex': mlineindex}})
         loop = asyncio.new_event_loop()
-        loop.run_until_complete(self.peer_ws.send(icemsg))
+        loop.run_until_complete(ws.send(icemsg))

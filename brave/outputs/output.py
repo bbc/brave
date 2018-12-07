@@ -146,6 +146,8 @@ class Output(InputOutputOverlay):
         '''
         Returns the preferred caps (a string defining things such as width, height and framerate)
         '''
+
+        # Don't set 'format' here... output types set their own.
         caps = 'video/x-raw'
 
         # If only one dimension is provided, we calculate the other.

@@ -16,7 +16,7 @@ def start_with_multiple_outputs(run_brave, create_config_file, output_image_loca
     }
     config_file = create_config_file(config)
     run_brave(config_file.name)
-    time.sleep(1)
+    time.sleep(2)
     check_brave_is_running()
 
 

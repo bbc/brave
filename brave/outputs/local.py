@@ -34,12 +34,13 @@ class LocalOutput(Output):
 
         pipeline_string = ''
         if config.enable_video():
-            # format=RGB removes the alpha channel which can crash autovideosink
+            # format=RGB removes the alpha channel which can crash glimagesink
             video_caps = 'video/x-raw,format=RGB,width=%d,height=%d,pixel-aspect-ratio=1/1' % \
                 (self.props['width'], self.props['height'])
 
+            # Using glimagesink rather than autovideosink ensures this does not go to kvssink (if installed)
             pipeline_string += ('intervideosrc name=intervideosrc ! videoconvert ! videoscale ! ' +
-                                video_caps + ' ! queue ! autovideosink')
+                                video_caps + ' ! queue ! glimagesink')
         if config.enable_audio():
             pipeline_string += ' interaudiosrc name=interaudiosrc ! queue ! autoaudiosink'
 

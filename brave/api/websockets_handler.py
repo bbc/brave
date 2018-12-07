@@ -46,7 +46,7 @@ class WebsocketsHandler():
             if ('msg_type' in data and data['msg_type'] == 'pong'):
                 pass
             elif ('msg_type' in data and data['msg_type'] == 'webrtc-init'):
-                if 'output_id' not in data:
+                if 'output_id' not in data or data['output_id'] is None:
                     await ws.send(json.dumps({'error': 'no output_id'}))
                     return
 
@@ -66,6 +66,13 @@ class WebsocketsHandler():
                     await ws.send(json.dumps({'error': 'no such id'}))
                     return
                 await ws.webrtc_output.new_peer_request(ws)
+
+            # Allow the client to report when it does not want webrtc anymore:
+            elif ('msg_type' in data and data['msg_type'] == 'webrtc-close'):
+                if hasattr(ws, 'webrtc_output'):
+                    await ws.webrtc_output.remove_peer_request(ws)
+                    delattr(ws, 'webrtc_output')
+
             elif 'sdp' in data:
                 await ws.webrtc_output.sdp_message_from_peer(ws, data['sdp'])
             elif 'ice' in data:

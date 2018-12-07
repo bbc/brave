@@ -19,7 +19,6 @@ websocket.setup = function() {
 }
 
 websocket._onSocketOpen = event => {
-    console.log('Websocket open')
     websocket.setupErrorCount = 0
 }
 

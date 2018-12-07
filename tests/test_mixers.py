@@ -26,6 +26,7 @@ def subtest_start_brave_with_mixers(run_brave, create_config_file):
     config = {'default_mixers': [{'props': MIXER0}, {'props': MIXER1}]}
     config_file = create_config_file(config)
     run_brave(config_file.name)
+    time.sleep(1)
     check_brave_is_running()
 
 
