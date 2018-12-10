@@ -52,7 +52,7 @@ def setup_messaging(pipe, parent_object):
             pass
         elif t == Gst.MessageType.ELEMENT:
             # Omit audio from 'level' element as it is very noisy:
-            if message.src.get_name() != 'level0':
+            if message.src.get_factory().name != 'level':
                 logger.debug(f'{str(message.src.get_name())} has a message:' + str(message.get_structure().to_string()))
         elif t == Gst.MessageType.DURATION_CHANGED:
             logger.debug(f'Duration changed to ' + str(pipe.query_duration(Gst.Format.TIME).duration) + 'ns')

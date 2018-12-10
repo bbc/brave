@@ -53,6 +53,8 @@ def get_pipeline_details(pipeline, show_inside_bin_elements=True):
             inter_elements = ['interaudiosrc', 'interaudiosink', 'intervideosrc', 'intervideosink']
             if details['type'] in inter_elements:
                 details['channel'] = element.get_property('channel')
+            if details['type'] == 'queue':
+                details['current-level-time'] = element.get_property('current-level-time')
 
         def handle_pad(pad):
             details['pads'][pad.name] = {
@@ -107,7 +109,8 @@ def run_on_master_thread_when_idle(func, **func_args):
             func_args = args['func_args']
             f(**func_args)
         except Exception as e:
-            print("ERROR: Unexpected error whilst running in master thread:", e)
+            print('------------ UNCAUGHT EXCEPTION ON MASTER THREAD: %s ------------' % e)
+
         return False
 
     if func is None:

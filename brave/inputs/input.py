@@ -90,6 +90,8 @@ class Input(InputOutputOverlay):
         if mixer:
             mix_width, mix_height = mixer.get_dimensions()
 
+        # An internal format of 'RGBA' ensures alpha support and no color variation.
+        # It then may be set to something else on output (e.g. I420)
         caps_string = 'video/x-raw,pixel-aspect-ratio=1/1,format=RGBA'
         if width and height:
             caps_string += ',width=%d,height=%d' % (width, height)

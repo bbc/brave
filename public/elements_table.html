@@ -29,6 +29,7 @@ function elementColumns(element) {
     cells.push($('<td></td>').append(element.state).addClass(element.state))
     var properties = []
     if (element.channel) properties.push('Channel: "' + element.channel + '"')
+    if (element.hasOwnProperty('current-level-time')) properties.push('Current level time: ' + element['current-level-time']/1000000 + 'ms')
     cells.push($('<td></td>').append(properties.join('<br />')))
     return cells
 }

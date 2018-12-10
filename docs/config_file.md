@@ -58,7 +58,7 @@ default_mixers:
     - props:
         width: 640
         height: 360
-        pattern: 6	
+        pattern: 6
 ```
 
 Unlike inputs and outputs, mixers do not have a type.
@@ -94,9 +94,10 @@ Each output can then, optionally, have `props` containing key-values pairs of th
 * `width` - the width of the output.
 * `height` - the height of the output.
 * `intial_state` - the state that the output should enter. Permitted values: 'PLAYING', 'PAUSED', 'READY', 'NULL. Defaults to PLAYING.
+* `mixer_id` - the ID of the mixer that the output should treat as a source. If not set, defaults to mixer 0.
 
 ### `default_overlays`
-`default_overlays` is an array of overlays that should be created when 
+`default_overlays` is an array of overlays that should be created when
 Brave starts.
 
 Example:
@@ -137,4 +138,3 @@ Note that audio and video cannot be enabled/disabled via the API.
 ### `default_mixer_height` and `default_mixer_width`
 These allow you to set the default width and height for a mixer.
 The default is a width of 640 and a height of 360.
-

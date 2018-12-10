@@ -32,7 +32,7 @@ def test_initial_state_option_on_startup(run_brave, create_config_file):
     }
     config_file = create_config_file(config)
     run_brave(config_file.name)
-    time.sleep(3)
+    time.sleep(4)
     check_brave_is_running()
     response = api_get('/api/all')
     assert response.status_code == 200

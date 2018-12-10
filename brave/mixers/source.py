@@ -20,6 +20,7 @@ class Source():
         self.tee_pad = {}
         self.tee = {}
         self.mix_request_pad = {}
+        self.queue_into_intersink = {}
 
     def mixer(self):
         '''
@@ -214,7 +215,6 @@ class Source():
         Create the 'intervideosrc' element, which accepts the video input that's come from a separate pipeline.
         Then connects intervideosrc to the convert/scale/queue elements, ready for mixing.
         '''
-
         intervideosrc, intervideosink = self._create_inter_elements('video')
         videoscale = self._add_element_to_mixer_pipeline('videoscale')
         if not intervideosrc.link(videoscale):
@@ -310,16 +310,13 @@ class Source():
         '''
         assert(audio_or_video in ['audio', 'video'])
         element_name = 'inter%ssink' % audio_or_video
-        if audio_or_video == 'video':
-            input_bin = self.input_or_mixer.final_video_tee.parent
-            tee = self.input_or_mixer.final_video_tee
-        else:
-            input_bin = self.input_or_mixer.final_audio_tee.parent
-            tee = self.input_or_mixer.final_audio_tee
+        input_bin = getattr(self.input_or_mixer, 'final_' + audio_or_video + '_tee').parent
         element = self._add_element_to_input_pipeline(element_name, input_bin=input_bin)
         queue = self._add_element_to_input_pipeline('queue', input_bin=input_bin)
         if not element or not queue:
             return
+
+        self.queue_into_intersink[audio_or_video] = queue
 
         # Increasing to 3 seconds allows different encoders to share a pipeline.
         # This can be reconsidered if/when outputs are put on different pipelines.
@@ -327,19 +324,32 @@ class Source():
         queue.set_property('max-size-time', MAX_SIZE_IN_SECONDS * 1000000000)
         queue.set_property('max-size-bytes', MAX_SIZE_IN_SECONDS * 10485760)
 
-        # async=False is important for when adding PLAYING inputs to PLAYING mixers:
-        element.set_property('async', False)
+        if not queue.link(element):
+            self.logger.error('Failed to connect queue to %s' % element_name)
+
+        return element
+
+    def _connect_tee_to_intersink(self, audio_or_video):
+        '''
+        The tee allows a source to have multiple connections.
+        This connects the tee to an intersink (via a queue) so that it can be sent to a mixer.
+        '''
+        tee = getattr(self.input_or_mixer, 'final_' + audio_or_video + '_tee')
+        if not tee:
+            self.logger.error('Failed to connect tee to queue: cannot find tee')
+            return
+
+        queue = self.queue_into_intersink[audio_or_video]
+        if not queue:
+            self.logger.error('Failed to connect tee to queue: cannot find queue')
+            return
 
         tee_src_pad_template = tee.get_pad_template("src_%u")
         tee_src_pad = tee.request_pad(tee_src_pad_template, None, None)
 
         sink = queue.get_static_pad('sink')
         if tee_src_pad.link(sink) != Gst.PadLinkReturn.OK:
-            self.logger.error('Failed to connect tee to queue before %s' % element_name)
-
-        if not queue.link(element):
-            self.logger.error('Failed to connect queue to %s' % element_name)
-        return element
+            self.logger.error('Failed to connect tee to queue')
 
     def _remove_from_mix(self, audio_or_video):
         if (not self.mix_request_pad[audio_or_video].is_linked()):
@@ -401,14 +411,24 @@ class Source():
                (not self.input_or_mixer.has_audio() or hasattr(self, 'audio_is_linked'))
 
     def _ensure_elements_are_created(self):
-        # Connect the input (or source mixer) and the mixer, unless that's already been done
+        # STEP 1: Connect the input (or source mixer) and the mixer, unless that's already been done
         if self.input_or_mixer.has_video() and not hasattr(self, 'video_is_linked'):
             self._create_video_elements()
-            self.video_is_linked = True
         if self.input_or_mixer.has_audio() and not hasattr(self, 'audio_is_linked'):
             self._create_audio_elements()
-            self.audio_is_linked = True
+
+        # STEP 2: Get the new elements in the same state as their pipelines:
         self._sync_element_states()
+
+        # STEP 3: Connect the input's tee to these new elements
+        # (It's important we don't do this earlier, as if the elements were not
+        #  ready we could disrupt the existing pipeline.)
+        if self.input_or_mixer.has_video() and not hasattr(self, 'video_is_linked'):
+            self._connect_tee_to_intersink('video')
+            self.video_is_linked = True
+        if self.input_or_mixer.has_audio() and not hasattr(self, 'audio_is_linked'):
+            self._connect_tee_to_intersink('audio')
+            self.audio_is_linked = True
 
         # If input and mixer have already started, we need to unblock straightaway:
         self.unblock_intersrc_if_ready()
