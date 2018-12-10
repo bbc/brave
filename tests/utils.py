@@ -22,9 +22,9 @@ def run_brave(config_file=None, port=None):
     brave_processes = {}
 
 
-def api_get(path, port=5000):
+def api_get(path, port=5000, stream=False):
     url = 'http://localhost:%d%s' % (port, path)
-    return requests.get(url)
+    return requests.get(url, stream=stream)
 
 
 def api_post(path, data):
@@ -310,13 +310,26 @@ def delete_mixer(id, expected_status_code=200):
     time.sleep(0.2)
 
 
-def assert_image_color(output_image_location, expected_color):
+def cut_to_source(input_id, mixer_id):
+    response = api_post('/api/mixers/%d/cut_to_source' % mixer_id, {'id': input_id, 'type': 'input'})
+    assert response.status_code == 200
+    time.sleep(0.5)
+
+
+def assert_image_file_color(output_image_location, expected_color):
     im = Image.open(output_image_location)
+    assert_image_color(im, expected_color)
+
+
+def assert_image_output_color(output_id, expected_color):
+    im = Image.open(api_get('/api/outputs/%d/body' % output_id, stream = True).raw)
+    assert_image_color(im, expected_color)
+
+
+def assert_image_color(im, expected_color):
     assert im.format == 'JPEG'
-    assert im.size[0] == 640
-    assert im.size[1] == 360
+    assert im.size == (640, 360)
     assert im.mode == 'RGB'
-    print('format/size/node=', im.format, im.size, im.mode)
     __assert_image_color(im, expected_color)
 
 def __assert_image_color(im, expected):

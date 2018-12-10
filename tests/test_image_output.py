@@ -23,4 +23,4 @@ def test_image_output(run_brave, create_config_file):
     assert_everything_in_playing_state(response.json())
 
 
-    assert_image_color(output_image_location, (255,0,0))
+    assert_image_file_color(output_image_location, (255,0,0))

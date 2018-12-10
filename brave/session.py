@@ -50,7 +50,8 @@ class Session(object):
             output.set_state(Gst.State.NULL)
         for name, mixer in self.mixers.items():
             mixer.set_state(Gst.State.NULL)
-        self.mainloop.quit()
+        if hasattr(self, 'mainloop'):
+            self.mainloop.quit()
         if restart:
             os.execl(sys.executable, sys.executable, *sys.argv)
 

@@ -35,8 +35,8 @@ def test_multiple_outputs_at_startup(run_brave, create_config_file):
 
     # If they've linked right, one will be red and the other will be green
     time.sleep(2)
-    assert_image_color(output_image_location0, (0,255,0))
-    assert_image_color(output_image_location1, (255,0,0))
+    assert_image_file_color(output_image_location0, (0,255,0))
+    assert_image_file_color(output_image_location1, (255,0,0))
 
 def test_output_at_startup_to_missing_mixer(run_brave, create_config_file):
     config = {

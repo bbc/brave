@@ -8,10 +8,7 @@ class EffectOverlay(Overlay):
 
     def permitted_props(self):
         return {
-            'mixer_id': {
-                'type': 'int',
-                'default': 0
-            },
+            **super().permitted_props(),
             'effect_name': {
                 'type': 'str',
                 'default': 'edgetv',

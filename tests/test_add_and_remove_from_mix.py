@@ -31,11 +31,11 @@ def test_removing_input_whilst_in_a_mix(run_brave, create_config_file):
 def test_switching(run_brave, create_config_file):
     set_up_two_sources(run_brave, create_config_file)
     assert_api_returns_right_mixer_sources([{'id': 0, 'type': 'input', 'in_mix': True}, {'id': 1, 'type': 'input', 'in_mix': True}])
-    cut_to_source(1)
+    cut_to_source(1, 0)
     assert_api_returns_right_mixer_sources([{'id': 0, 'type': 'input', 'in_mix': False}, {'id': 1, 'type': 'input', 'in_mix': True}])
-    cut_to_source(0)
+    cut_to_source(0, 0)
     assert_api_returns_right_mixer_sources([{'id': 0, 'type': 'input', 'in_mix': True}, {'id': 1, 'type': 'input', 'in_mix': False}])
-    cut_to_source(0)
+    cut_to_source(0, 0)
     assert_api_returns_right_mixer_sources([{'id': 0, 'type': 'input', 'in_mix': True}, {'id': 1, 'type': 'input', 'in_mix': False}])
 
 def set_up_two_sources(run_brave, create_config_file):
@@ -75,12 +75,6 @@ def remove_source(input_id):
 
 def overlay_source(input_id):
     response = api_post('/api/mixers/0/overlay_source', {'id': input_id, 'type': 'input'})
-    assert response.status_code == 200
-    time.sleep(0.5)
-
-
-def cut_to_source(input_id):
-    response = api_post('/api/mixers/0/cut_to_source', {'id': input_id, 'type': 'input'})
     assert response.status_code == 200
     time.sleep(0.5)
 
