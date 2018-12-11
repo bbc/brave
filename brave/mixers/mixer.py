@@ -1,6 +1,6 @@
 from gi.repository import Gst
 from brave.inputoutputoverlay import InputOutputOverlay
-from brave.mixers.source_collection import SourceCollection
+# from brave.mixers.source_collection import SourceCollection
 import brave.config as config
 from brave.helpers import unblock_pad
 
@@ -17,7 +17,7 @@ class Mixer(InputOutputOverlay):
         super().__init__(**args)
         self.mixer_element = {}
         self.request_pad_count = {'video': 0, 'audio': 0}
-        self.sources = SourceCollection(self)
+        # self.sources = SourceCollection(self)
         self.create_elements()
 
         # Set initially to READY, and when there we set to self.props['initial_state']
@@ -43,9 +43,42 @@ class Mixer(InputOutputOverlay):
     def input_output_overlay_or_mixer(self):
         return 'mixer'
 
+    def dest_connections(self):
+        '''
+        Returns an array of Connections, describing what this mixer is connected to.
+        (An mixer can have any number of outward connections, each going to a Mixer or an Output.)
+        '''
+        return self.session().connections.get_all_collections_for_src(self)
+
+    def src_connections(self):
+        '''
+        Returns an array of Connections, describing the sources (inputs) to this mixer.
+        (An mixer can have any number of inward connections, each from an Input or Mixer.)
+        '''
+        return self.session().connections.get_all_collections_for_dest(self)
+
+    def connection_for_src(self, input_or_mixer, create_if_not_made=False):
+        '''
+        Given an input or mixer, gets the Connection from it to this mixer.
+        If such a Connection has not been made before, makes it.
+        '''
+        if create_if_not_made:
+            return self.session().connections.get_or_add_connection_between_src_and_dest(input_or_mixer, self)
+        else:
+            return self.session().connections.get_connection_between_src_and_dest(input_or_mixer, self)
+
     def summarise(self):
         s = super().summarise()
-        s['sources'] = self.sources.get_as_pretty_object()
+
+        s['sources'] = []
+        for connection in self.src_connections():
+            pretty = {
+                'id': connection.src.id,
+                'type': connection.src.input_output_overlay_or_mixer(),
+                'in_mix': connection.in_mix()
+            }
+            s['sources'].append(pretty)
+
         return s
 
     def add_element(self, factory_name, who_its_for, name=None):
@@ -116,8 +149,8 @@ class Mixer(InputOutputOverlay):
                 unblock_pad(output, 'interaudiosrc_src_pad')
 
         # Likewise, tell each input
-        for source in self.sources:
-            source.unblock_intersrc_if_ready()
+        for connection in self.src_connections():
+            connection.unblock_intersrc_if_ready()
 
     def get_dimensions(self):
         '''

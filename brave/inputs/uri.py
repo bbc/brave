@@ -57,8 +57,6 @@ class UriInput(Input):
         else:
             self._create_fake_audio()
 
-        self.handle_updated_props()
-
     def _create_fake_video(self):
         fakesink = Gst.ElementFactory.make('fakesink')
         self.playsink.set_property('video-sink', fakesink)

@@ -45,7 +45,6 @@ class TestVideoInput(Input):
         self.final_video_tee = self.pipeline.get_by_name('final_video_tee')
         self.videotestsrc = self.pipeline.get_by_name('videotestsrc')
         self.capsfilter = self.pipeline.get_by_name('capsfilter')
-        self.handle_updated_props()
 
     def handle_updated_props(self):
         super().handle_updated_props()

@@ -3,11 +3,14 @@ import sys
 import logging
 logging.basicConfig(level=os.environ.get('LOG_LEVEL', 'INFO').upper())
 logger = logging.getLogger('brave.session')
+import gi
+gi.require_version('Gst', '1.0')
 from gi.repository import Gst, GObject
 from brave.inputs import InputCollection
 from brave.outputs import OutputCollection
 from brave.overlays import OverlayCollection
 from brave.mixers import MixerCollection
+from brave.connections import ConnectionCollection
 import brave.config as config
 assert Gst.VERSION_MINOR > 13, f'GStreamer is version 1.{Gst.VERSION_MINOR}, must be 1.14 or higher'
 PERIODIC_MESSAGE_FREQUENCY = 60
@@ -32,6 +35,7 @@ class Session(object):
         self.outputs = OutputCollection(self)
         self.overlays = OverlayCollection(self)
         self.mixers = MixerCollection(self)
+        self.connections = ConnectionCollection(self)
 
     def start(self):
         self._setup_initial_inputs_outputs_mixers_and_overlays()
@@ -74,9 +78,10 @@ class Session(object):
 
         for input_config in config.default_inputs():
             input = self.inputs.add(**input_config)
+            input.setup()
             for id, mixer in self.mixers.items():
-                source = mixer.sources.get_or_create(input)
-                source.add_to_mix()
+                connection = mixer.connection_for_src(input, create_if_not_made=True)
+                connection.add_to_mix()
 
     def print_state_summary(self):
         '''

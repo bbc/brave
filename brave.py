@@ -7,11 +7,9 @@ import sys
 import threading
 import signal
 import argparse
-import gi
-gi.require_version('Gst', '1.0')
+import brave.session
 from gi.repository import Gst
 assert sys.version_info >= (3, 6)
-import brave.session
 import brave.api
 import brave.config
 from brave.helpers import run_on_master_thread_when_idle

@@ -84,11 +84,9 @@ async def cut_to_source(request, id):
         return _user_error_response('No such input ID')
 
     mixer = request['session'].mixers[id]
-    source = mixer.sources.get_or_create(request['session'].inputs[input_id])
-    if not source:
-        return _user_error_response('Input is not source on mixer')
+    connection = mixer.connection_for_src(request['session'].inputs[input_id], create_if_not_made=True)
 
-    run_on_master_thread_when_idle(source.cut)
+    run_on_master_thread_when_idle(connection.cut)
     return _status_ok_response()
 
 
@@ -107,11 +105,9 @@ async def overlay_source(request, id):
         return _user_error_response('No such input ID')
 
     mixer = request['session'].mixers[id]
-    source = mixer.sources.get_or_create(request['session'].inputs[input_id])
-    if not source:
-        return _user_error_response('Input is not source on mixer')
+    connection = mixer.connection_for_src(request['session'].inputs[input_id], create_if_not_made=True)
 
-    run_on_master_thread_when_idle(source.add_to_mix)
+    run_on_master_thread_when_idle(connection.add_to_mix)
     return _status_ok_response()
 
 
@@ -130,11 +126,11 @@ async def remove_source(request, id):
         return _user_error_response('No such input ID')
 
     mixer = request['session'].mixers[id]
-    source = mixer.sources.get_for_input_or_mixer(request['session'].inputs[input_id])
-    if not source:
-        return _user_error_response('Input is not source on mixer')
+    connection = mixer.connection_for_src(request['session'].inputs[input_id])
+    if not connection:
+        return _user_error_response('Not a source of mixer')
 
-    run_on_master_thread_when_idle(source.remove_from_mix)
+    run_on_master_thread_when_idle(connection.remove_from_mix)
     return _status_ok_response()
 
 
@@ -185,12 +181,13 @@ async def update_mixer(request, id):
 
 async def create_input(request):
     input = request['session'].inputs.add(**request.json)
+    input.setup()
     # When an input is created, which mixers should it be added to?
     # For now, it's added to the first mixer.
     # TODO find a better way
     mixer = request['session'].mixers[0]
-    source = mixer.sources.get_or_create(input)
-    run_on_master_thread_when_idle(source.add_to_mix)
+    connection = mixer.connection_for_src(input, create_if_not_made=True)
+    run_on_master_thread_when_idle(connection.add_to_mix)
     logger.info('Created input #%d with details %s' % (input.id, request.json))
     return sanic.response.json({'id': input.id})
 

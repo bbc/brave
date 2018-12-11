@@ -32,7 +32,6 @@ class TestAudioInput(Input):
 
         self.final_audio_tee = self.pipeline.get_by_name('final_audio_tee')
         self.audiotestsrc = self.pipeline.get_by_name('audiotestsrc')
-        self.handle_updated_props()
 
     def handle_updated_props(self):
         super().handle_updated_props()

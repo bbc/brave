@@ -49,7 +49,6 @@ class ImageInput(Input):
             return False
         self.final_video_tee = self.pipeline.get_by_name('final_video_tee')
         self.uridecodebin = self.pipeline.get_by_name('uridecodebin')
-        self.handle_updated_props()
 
     def get_input_cap_props(self):
         '''

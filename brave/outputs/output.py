@@ -41,6 +41,31 @@ class Output(InputOutputOverlay):
             }
         }
 
+    def src_connection(self):
+        '''
+        Returns an the Connection object which describes what this output is connected to.
+        If this output is not connected to anything, returns None.
+        An output can be the destination to exactly one connection.
+        The source of a connection will be either an Input or a Mixer.
+        '''
+        return self.session().connections.get_first_collection_for_dest(self)
+
+    def src_connections(self):
+        '''
+        As src_connection() but returns an array of the 1 connected source, or an empty array if no attached source.
+        '''
+        return self.session().connections.get_all_collections_for_src(self)
+
+    def connection_for_src(self, input_or_mixer, create_if_not_made=False):
+        '''
+        Given an input or mixer, gets the Connection from it to this.
+        If such a Connection has not been made before, makes it.
+        '''
+        if create_if_not_made:
+            return self.session().connections.get_or_add_connection_between_src_and_dest(input_or_mixer, self)
+        else:
+            return self.session().connections.get_connection_between_src_and_dest(input_or_mixer, self)
+
     def _create_initial_multiqueue(self):
         '''
         Every output has a multiqueue on the the source (mixer) pipeline.
