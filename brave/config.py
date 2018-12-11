@@ -78,7 +78,15 @@ def default_audio_caps():
     return 'audio/x-raw,channels=2,layout=interleaved,rate=48000,format=S16LE'
 
 
-def ice_servers():
-    return [
-        {'urls': 'stun:stun.services.mozilla.com'}
-    ]
+def stun_server():
+    'Should be in the format <host>:<port>'
+    if 'STUN_SERVER' in os.environ:
+        return os.environ['STUN_SERVER']
+    return c['stun_server'] if 'stun_server' in c else 'stun.l.google.com:19302'
+
+
+def turn_server():
+    'Should be in the format <username>:<credential>@<host>:<port>'
+    if 'TURN_SERVER' in os.environ:
+        return os.environ['TURN_SERVER']
+    return c['turn_server'] if 'turn_server' in c else None
