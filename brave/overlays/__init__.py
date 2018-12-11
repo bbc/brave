@@ -4,9 +4,8 @@ from brave.overlays.clock import ClockOverlay
 from brave.abstract_collection import AbstractCollection
 from gi.repository import Gst
 import brave.exceptions
-import logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger('brave.overlays')
+import brave.helpers
+logger = brave.helpers.get_logger('brave.overlays')
 
 
 class OverlayCollection(AbstractCollection):

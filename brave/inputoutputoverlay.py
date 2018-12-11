@@ -1,5 +1,5 @@
+import brave.helpers
 from gi.repository import Gst, GLib, GObject
-import logging
 from brave.pipeline_messaging import setup_messaging
 import brave.config as config
 import brave.exceptions
@@ -11,13 +11,9 @@ class InputOutputOverlay():
     An abstract superclass representing an input, output, overlay, and mixer.
     '''
     def __init__(self, **args):
-        self.logger = logging.getLogger('brave.{}.{}.{}'.format(self.input_output_overlay_or_mixer(),
-                                        args['type'], args['id']))
-        handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter('%(levelname)s:\033[32m[' + self.input_output_overlay_or_mixer() +
-                                               ' ' + str(args['id']) + ']\033[0m %(message)s'))
-        self.logger.addHandler(handler)
-        self.logger.propagate = False
+        logger_name = 'brave.%s.%s.%d' % (self.input_output_overlay_or_mixer(), args['type'], args['id'])
+        logger_format = '%%(levelname)s:\033[32m[%s %d]\033[0m %%(message)s' % (self.input_output_overlay_or_mixer(), args['id'])
+        self.logger = brave.helpers.get_logger(logger_name, logger_format)
         self.elements = {}
         self.probes = {}
 

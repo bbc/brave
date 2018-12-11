@@ -1,10 +1,10 @@
 import websockets
 import asyncio
 import json
-import logging
+import brave.helpers
 import psutil
 from brave.outputs.webrtc import WebRTCOutput
-logger = logging.getLogger('brave.websockets')
+logger = brave.helpers.get_logger('brave.websockets')
 
 
 class WebsocketsHandler():

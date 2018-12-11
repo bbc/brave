@@ -1,4 +1,17 @@
 from gi.repository import Gst, GLib
+import logging
+import os
+
+
+def get_logger(name, format=None):
+    logger = logging.getLogger(name)
+    logger.propagate = False
+    logger.setLevel(os.environ.get('LOG_LEVEL', 'INFO').upper())
+    if format:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter(format))
+        logger.addHandler(handler)
+    return logger
 
 
 def state_string_to_constant(str):
