@@ -92,6 +92,13 @@ class WebRTCOutput(Output):
         self.current_num_peers = len(self.peers)
         self.logger.info('I now have %d peers', self.current_num_peers)
 
+    def _ice_servers(self):
+        servers = []
+        if config.stun_server():
+            servers.append({'urls': 'stun:' + config.stun_server()})
+        # turn server not communicated to client, as the server (this element) knowing about it is sufficient.
+        return servers
+
     async def new_peer_request(self, ws):
         '''
         Called when a peer (client) would like to connect via webrtc
@@ -102,7 +109,7 @@ class WebRTCOutput(Output):
 
         self.peers[ws] = {}
         self._update_current_num_peers()
-        await ws.send(json.dumps({'msg_type': 'webrtc-initialising', 'ice_servers': config.ice_servers()}))
+        await ws.send(json.dumps({'msg_type': 'webrtc-initialising', 'ice_servers': self._ice_servers()}))
 
         self._create_webrtc_element_for_new_connection(ws)
 
@@ -163,9 +170,10 @@ class WebRTCOutput(Output):
         self.peers[ws]['webrtcbin'] = Gst.ElementFactory.make('webrtcbin')
         self.pipeline.add(self.peers[ws]['webrtcbin'])
         self.peers[ws]['webrtcbin'].add_property_notify_watch(None, True)
-        if len(config.ice_servers()) > 0:
-            ice_server_url = config.ice_servers()[0]['urls']
-            self.peers[ws]['webrtcbin'].set_property('stun-server', ice_server_url)
+        if config.stun_server():
+            self.peers[ws]['webrtcbin'].set_property('stun-server', 'stun://' + config.stun_server())
+        if config.turn_server():
+            self.peers[ws]['webrtcbin'].set_property('turn-server', 'turn://' + config.turn_server())
 
         if config.enable_video():
             self.peers[ws]['video_queue'] = Gst.ElementFactory.make('queue')
