@@ -41,6 +41,9 @@ webrtc.createCall = function() {
     webrtc.peerConnection.oniceconnectionstatechange = () => {
         if (webrtc.peerConnection) {
             console.log('New ICE connection state:', webrtc.peerConnection.iceConnectionState)
+            if (webrtc.peerConnection.iceConnectionState === 'failed') {
+                preview.showErrorMessage('Failed to connect WebRTC with server')
+            }
         }
     }
 
