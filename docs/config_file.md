@@ -138,3 +138,11 @@ Note that audio and video cannot be enabled/disabled via the API.
 ### `default_mixer_height` and `default_mixer_width`
 These allow you to set the default width and height for a mixer.
 The default is a width of 640 and a height of 360.
+
+### `stun_server` and `turn_server`
+Up to one STUN server and/or one TURN server can be provided. Example:
+
+```
+stun_server: stun.l.google.com:19302
+turn_server: my_name:my_password@my_turn_server_hostname
+```
