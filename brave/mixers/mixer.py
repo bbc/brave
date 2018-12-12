@@ -139,7 +139,8 @@ class Mixer(InputOutputOverlay):
     def _set_dimensions(self):
         # An internal format of 'RGBA' ensures alpha support and no color variation.
         # It then may be set to something else on output (e.g. I420)
-        dimensions_caps_string = 'video/x-raw,pixel-aspect-ratio=1/1,format=RGBA,width=%s,height=%s' % (self.props['width'], self.props['height'])
+        dimensions_caps_string = 'video/x-raw,pixel-aspect-ratio=1/1,format=RGBA,width=%s,height=%s' % \
+            (self.props['width'], self.props['height'])
         self.logger.debug('Dimensions caps: ' + dimensions_caps_string)
         dimensions_caps = Gst.Caps.from_string(dimensions_caps_string)
         self.capsfilter.set_property('caps', dimensions_caps)
