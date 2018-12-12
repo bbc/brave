@@ -1,5 +1,5 @@
+import brave.helpers
 from gi.repository import Gst, GLib, GObject
-import logging
 from brave.pipeline_messaging import setup_messaging
 import brave.config as config
 import brave.exceptions
@@ -11,13 +11,10 @@ class InputOutputOverlay():
     An abstract superclass representing an input, output, overlay, and mixer.
     '''
     def __init__(self, **args):
-        self.logger = logging.getLogger('brave.{}.{}.{}'.format(self.input_output_overlay_or_mixer(),
-                                        args['type'], args['id']))
-        handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter('%(levelname)s:\033[32m[' + self.input_output_overlay_or_mixer() +
-                                               ' ' + str(args['id']) + ']\033[0m %(message)s'))
-        self.logger.addHandler(handler)
-        self.logger.propagate = False
+        logger_name = 'brave.%s.%s.%d' % (self.input_output_overlay_or_mixer(), args['type'], args['id'])
+        logger_format = '%%(levelname)s:\033[32m[%s %d]\033[0m %%(message)s' % \
+            (self.input_output_overlay_or_mixer(), args['id'])
+        self.logger = brave.helpers.get_logger(logger_name, logger_format)
         self.elements = {}
         self.probes = {}
 
@@ -136,7 +133,7 @@ class InputOutputOverlay():
 
     def delete(self):
         if not self.pipeline.set_state(Gst.State.NULL):
-            self.logger.warn('Unable to set private pipe to NULL before attempting to delete')
+            self.logger.warning('Unable to set private pipe to NULL before attempting to delete')
 
         def remove_element(element):
             self.pipeline.remove(element)
@@ -153,7 +150,7 @@ class InputOutputOverlay():
         Only works for inputs and outputs that have their own pipeline.
         '''
         if not hasattr(self, 'pipeline'):
-            self.logger.warn('set_state() called but no pipeline')
+            self.logger.warning('set_state() called but no pipeline')
             return False
 
         response = self.pipeline.set_state(state)
@@ -167,7 +164,7 @@ class InputOutputOverlay():
             self.logger.debug(f"Move to state {state.value_nick.upper()} has completed but no data yet")
             return True
         else:
-            self.logger.warn(f'Unable to set pipeline to \'{str(state.value_nick.upper())}\' state: {str(response)}')
+            self.logger.warning(f'Unable to set pipeline to \'{str(state.value_nick.upper())}\' state: {str(response)}')
             return False
 
     def on_state_change(self, old_state, new_state):
@@ -237,15 +234,15 @@ class InputOutputOverlay():
                             value = str(value)
                         elif permitted[key]['type'] == 'bool':
                             if type(value) is not bool:
-                                self.logger.warn(f'Property not boolean: "{str(value)}"')
+                                self.logger.warning(f'Property not boolean: "{str(value)}"')
                         else:
-                            self.logger.warn(f'Do not know of type "{permitted[key]["type"]}"')
+                            self.logger.warning(f'Do not know of type "{permitted[key]["type"]}"')
                     except ValueError:
-                        self.logger.warn(f'Updated property "{str(value)}" is not a valid {type}, ignoring')
+                        self.logger.warning(f'Updated property "{str(value)}" is not a valid {type}, ignoring')
 
                 if 'permitted_values' in permitted[key]:
                     if value not in permitted[key]['permitted_values']:
-                        self.logger.warn('%s not in [%s]' % (value, permitted[key]['permitted_values']))
+                        self.logger.warning('%s not in [%s]' % (value, permitted[key]['permitted_values']))
                         continue
 
                 self.props[key] = value
@@ -262,7 +259,7 @@ class InputOutputOverlay():
             if state_to_change_to:
                 self.set_state(state_to_change_to)
             else:
-                self.logger.warn('Unable to set to initial unknown state "%s"' % self.props['initial_state'])
+                self.logger.warning('Unable to set to initial unknown state "%s"' % self.props['initial_state'])
             self.initial_state_initiated = True
 
         return False
