@@ -4,9 +4,8 @@ from brave.overlays.clock import ClockOverlay
 from brave.abstract_collection import AbstractCollection
 from gi.repository import Gst
 import brave.exceptions
-import logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger('brave.overlays')
+import brave.helpers
+logger = brave.helpers.get_logger('brave.overlays')
 
 
 class OverlayCollection(AbstractCollection):
@@ -50,22 +49,22 @@ class OverlayCollection(AbstractCollection):
             if len(overlays) == 0:
                 if not _link_if_not_already_linked(mixer.video_mixer_output_queue,
                                                    mixer.end_capsfilter):
-                    mixer.logger.warn('Unable to connect from video mixer output queue to me')
+                    mixer.logger.warning('Unable to connect from video mixer output queue to me')
             else:
                 # The first should be linked to from the video mixer
                 if not _link_if_not_already_linked(mixer.video_mixer_output_queue,
                                                    overlays[0].element):
-                    overlays[0].logger.warn('Unable to connect from video mixer to me')
+                    overlays[0].logger.warning('Unable to connect from video mixer to me')
 
                 # Connect the middle ones together:
                 for n in range(len(overlays) - 1):
                     if not _link_if_not_already_linked(overlays[n].element, overlays[n + 1].element):
-                        overlays[n].logger.warn('Unable to connect to the next overlay ' + str(overlays[n + 1]))
+                        overlays[n].logger.warning('Unable to connect to the next overlay ' + str(overlays[n + 1]))
 
                 # The last should be linked to the video mixer tee
                 logger.debug('Now linking overlay %s to the video mixer tee' % overlays[-1].id)
                 if not _link_if_not_already_linked(overlays[-1].element, mixer.end_capsfilter):
-                    overlays[-1].logger.warn('Unable to connect to the video mixer tee')
+                    overlays[-1].logger.warning('Unable to connect to the video mixer tee')
 
             #  Unblock everything
             for overlay in overlays:
@@ -103,7 +102,7 @@ def _link_if_not_already_linked(element1, element2):
     # Finally, do the link
     logger.debug('Linking %s to %s' % (element1.get_name(), element2.get_name()))
     if not element1.link(element2):
-        logger.warn('Cannot link %s to %s' % (element1.get_name(), element2.get_name()))
+        logger.warning('Cannot link %s to %s' % (element1.get_name(), element2.get_name()))
         return False
     return True
 
@@ -120,7 +119,7 @@ def ensure_pad_not_linked(element, pad_name, correct_linked_element=None):
         pad = element.get_static_pad('video_sink')
 
     if not pad:
-        logger.warn('Cannot get %s pad of element %s to confirm it is not linked' % (pad_name, element.get_name()))
+        logger.warning('Cannot get %s pad of element %s to confirm it is not linked' % (pad_name, element.get_name()))
         return {'success': False}
 
     if not pad.is_linked():
@@ -128,7 +127,7 @@ def ensure_pad_not_linked(element, pad_name, correct_linked_element=None):
 
     peer = pad.get_peer()
     if not peer:
-        logger.warn('Cannot unlink %s of %s, no peer pad' % (pad_name, element.get_name()))
+        logger.warning('Cannot unlink %s of %s, no peer pad' % (pad_name, element.get_name()))
         return {'success': False}
 
     if correct_linked_element:
@@ -147,5 +146,5 @@ def ensure_pad_not_linked(element, pad_name, correct_linked_element=None):
                      (pad_name, element.get_name(), peer.get_parent_element().get_name()))
         return {'success': True, 'already_linked': False}
 
-    logger.warn('Unable to unlink %s pad of %s' % (pad_name, element.get_name()))
+    logger.warning('Unable to unlink %s pad of %s' % (pad_name, element.get_name()))
     return {'success': False}

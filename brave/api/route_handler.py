@@ -1,5 +1,5 @@
-import logging
-logger = logging.getLogger('brave.rest_api')
+import brave.helpers
+logger = brave.helpers.get_logger('brave.rest_api')
 import sanic
 import sanic.response
 from brave.helpers import state_string_to_constant, run_on_master_thread_when_idle

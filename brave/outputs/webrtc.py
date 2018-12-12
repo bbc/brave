@@ -111,7 +111,7 @@ class WebRTCOutput(Output):
         # In the future, use connect('pad-added' here if the client's return video is wanted
 
         if not self.pipeline.set_state(Gst.State.PLAYING):
-            self.logger.warn('Unable to enter PLAYING state now that we have a peer')
+            self.logger.warning('Unable to enter PLAYING state now that we have a peer')
         else:
             self.logger.debug('Successfully added a new peer request')
 
@@ -146,7 +146,7 @@ class WebRTCOutput(Output):
         Called when a peer (client) disconnects.
         '''
         if ws not in self.peers:
-            self.logger.warn('remove_peer_request called but this is not a peer')
+            self.logger.warning('remove_peer_request called but this is not a peer')
             return
 
         self._remove_no_longer_needed_tee_pads(ws)
@@ -189,7 +189,7 @@ class WebRTCOutput(Output):
                 element = self.peers[ws][element_name]
                 if not element.set_state(Gst.State.NULL) or not hasattr(self, 'pipeline') \
                    or not self.pipeline.remove(element):
-                    self.logger.warn('Cannot remove ' + element_name)
+                    self.logger.warning('Cannot remove ' + element_name)
 
     def _remove_no_longer_needed_tee_pads(self, ws):
         '''
@@ -205,7 +205,7 @@ class WebRTCOutput(Output):
                 if tee_pad_to_remove:
                     tee = getattr(self, 'webrtc_%s_tee' % av)
                     if not tee.remove_pad(tee_pad_to_remove):
-                        self.logger.warn('Unable to remove pad from %s tee' % av)
+                        self.logger.warning('Unable to remove pad from %s tee' % av)
 
     async def sdp_message_from_peer(self, ws, sdp):
         '''

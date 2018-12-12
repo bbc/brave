@@ -1,8 +1,7 @@
 import os
 import sys
-import logging
-logging.basicConfig(level=os.environ.get('LOG_LEVEL', 'INFO').upper())
-logger = logging.getLogger('brave.session')
+from brave.helpers import get_logger
+logger = get_logger('brave.session')
 from gi.repository import Gst, GObject
 from brave.inputs import InputCollection
 from brave.outputs import OutputCollection
@@ -20,11 +19,7 @@ class Session(object):
     '''
 
     def __init__(self):
-        self.logger = logging.getLogger('brave.session')
-        handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter('%(levelname)s:\033[32m[session]\033[0m %(message)s'))
-        self.logger.addHandler(handler)
-        self.logger.propagate = False
+        self.logger = get_logger('brave.session', '%(levelname)s:\033[32m[session]\033[0m %(message)s')
         self.items_recently_updated = []
         self.items_recently_deleted = []
 
