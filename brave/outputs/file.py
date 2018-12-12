@@ -79,7 +79,7 @@ class FileOutput(Output):
                             self.logger.debug('Successfully send EOS event to the ' + encoder_name)
                             sent_eos = True
                         else:
-                            self.logger.warn('Failed to send EOS event to the %s' % encoder_name)
+                            self.logger.warning('Failed to send EOS event to the %s' % encoder_name)
 
         # If we've sent an EOS, allow that to propogate the pipeline.
         # (Separate code will then catch the EOS successful message and cause a state change.)

@@ -78,7 +78,7 @@ class WebsocketsHandler():
             elif 'ice' in data:
                 await ws.webrtc_output.ice_message_from_peer(ws, data['ice'])
             else:
-                logger.warn('Unknown websocket message from client:' + data_json)
+                logger.warning('Unknown websocket message from client:' + data_json)
 
     async def periodic_check(self):
         while True:
@@ -88,7 +88,7 @@ class WebsocketsHandler():
                 messages_to_send.extend(await self.check_for_items_recently_deleted())
                 await self.send_to_all_clients(messages_to_send)
             except Exception as e:
-                logger.warn('Error on periodic websocket check:' + str(e))
+                logger.warning('Error on periodic websocket check:' + str(e))
             await asyncio.sleep(UPDATE_PERIOD)
 
     async def check_for_items_recently_updated(self):

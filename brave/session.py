@@ -1,3 +1,4 @@
+import os
 import sys
 from brave.helpers import get_logger
 logger = get_logger('brave.session')

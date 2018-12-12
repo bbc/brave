@@ -94,9 +94,9 @@ class UriInput(Input):
                 if self.pipeline.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, new_position):
                     self.logger.debug('Successfully updated position to %s' % new_position)
                 else:
-                    self.logger.warn('Unable to est position to %s' % new_position)
+                    self.logger.warning('Unable to est position to %s' % new_position)
             except ValueError:
-                self.logger.warn('Invalid position %s provided' % updates['position'])
+                self.logger.warning('Invalid position %s provided' % updates['position'])
 
     def get_input_cap_props(self):
         '''

@@ -32,9 +32,9 @@ def setup_messaging(pipe, parent_object):
         elif t == Gst.MessageType.WARNING:
             pipe.set_state(Gst.State.NULL)
             err, debug = message.parse_warning()
-            logger.warn('GStreamer warning from %s: %s' % (message.src.name, err))
-            logger.warn(f'GStreamer warning debug: {str(debug)}')
-            logger.warn(f'GStreamer warning message: {str(err.message)}')
+            logger.warning('GStreamer warning from %s: %s' % (message.src.name, err))
+            logger.warning(f'GStreamer warning debug: %s' % debug)
+            logger.warning(f'GStreamer warning message: %s' % err.message)
             parent_object.error_message = err.message
             parent_object.report_update_to_user()
         elif t == Gst.MessageType.TAG:

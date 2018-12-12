@@ -144,7 +144,7 @@ def unblock_pad(block, name):
 def block_pad(block, name):
     if hasattr(block, name):
         if name in block.probes:
-            block.logger.warn('Attempting to block %s but already blocked' % name)
+            block.logger.warning('Attempting to block %s but already blocked' % name)
         else:
             block.probes[name] = getattr(block, name).add_probe(
                 Gst.PadProbeType.BLOCK_DOWNSTREAM, _blocked_probe_callback, block)

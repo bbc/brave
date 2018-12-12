@@ -45,7 +45,7 @@ class Source():
         '''
         for e in self.elements_on_mixer_pipeline:
             if e.set_state(state) != Gst.StateChangeReturn.SUCCESS:
-                self.logger.warn('Unable to set mixer element %s to %s state' % (e.name, state.value_nick.upper()))
+                self.logger.warning('Unable to set mixer element %s to %s state' % (e.name, state.value_nick.upper()))
 
     def set_input_element_state(self, state):
         '''
@@ -53,7 +53,7 @@ class Source():
         '''
         for e in self.elements_on_input_pipeline:
             if e.set_state(state) != Gst.StateChangeReturn.SUCCESS:
-                self.logger.warn('Unable to set input element %s to %s state' % (e.name, state.value_nick.upper()))
+                self.logger.warning('Unable to set input element %s to %s state' % (e.name, state.value_nick.upper()))
 
     def delete(self, callback=None):
         '''
@@ -369,12 +369,12 @@ class Source():
         self.set_mixer_element_state(Gst.State.NULL)
         for e in self.elements_on_mixer_pipeline:
             if not e.get_parent().remove(e):
-                self.collection.mixer.logger.warn('Unable to remove %s' % e.name)
+                self.collection.mixer.logger.warning('Unable to remove %s' % e.name)
 
         self.set_input_element_state(Gst.State.NULL)
         for e in self.elements_on_input_pipeline:
             if not e.get_parent().remove(e):
-                self.logger.warn('Unable to remove %s' % e.name)
+                self.logger.warning('Unable to remove %s' % e.name)
 
     def _add_element_to_mixer_pipeline(self, factory_name, name=None):
         '''
@@ -401,10 +401,10 @@ class Source():
         '''
         for e in self.elements_on_mixer_pipeline:
             if not e.sync_state_with_parent():
-                self.logger.warn('Unable to set %s to state of parent source' % e.name)
+                self.logger.warning('Unable to set %s to state of parent source' % e.name)
         for e in self.elements_on_input_pipeline:
             if not e.sync_state_with_parent():
-                self.logger.warn('Unable to set %s to state of parent source' % e.name)
+                self.logger.warning('Unable to set %s to state of parent source' % e.name)
 
     def _elements_are_created(self):
         return (not self.input_or_mixer.has_video() or hasattr(self, 'video_is_linked')) and \

@@ -76,7 +76,7 @@ class Output(InputOutputOverlay):
                     if tee_src_pad.unlink(pad_tee_is_connected_to):
                         self.logger.debug('Disconnected from tee')
                     else:
-                        self.logger.warn('FAILED to disconnect from tee')
+                        self.logger.warning('FAILED to disconnect from tee')
 
     def _sync_elements_on_source_pipeline(self):
         '''
@@ -88,7 +88,7 @@ class Output(InputOutputOverlay):
             if hasattr(self, element_name):
                 element = getattr(self, element_name)
                 if not element.sync_state_with_parent():
-                    self.logger.warn('Unable to set %s to state of parent source' % element.name)
+                    self.logger.warning('Unable to set %s to state of parent source' % element.name)
 
     def delete(self):
         self.logger.info('Being deleted')
@@ -101,7 +101,7 @@ class Output(InputOutputOverlay):
             if hasattr(self, element_name):
                 element = getattr(self, element_name)
                 if not self.source.pipeline.remove(element):
-                    self.logger.warn('Unable to remove %s' % element.name)
+                    self.logger.warning('Unable to remove %s' % element.name)
         # TODO remove src from the source (mixer) tee
 
     def create_intervideosink_and_connections(self):
@@ -202,14 +202,14 @@ class Output(InputOutputOverlay):
         if video_or_audio == 'video':
             sink_pad_to_link_to = self.video_element_multiqueue_should_connect_to.get_static_pad('sink')
             if pad.link(sink_pad_to_link_to) != Gst.PadLinkReturn.OK:
-                self.logger.warn('Failed to connect multiqueue (video) to',
-                                 self.video_element_multiqueue_should_connect_to)
+                self.logger.warning('Failed to connect multiqueue (video) to',
+                                    self.video_element_multiqueue_should_connect_to)
 
         elif video_or_audio == 'audio':
             sink_pad_to_link_to = self.audio_element_multiqueue_should_connect_to.get_static_pad('sink')
             if pad.link(sink_pad_to_link_to) != Gst.PadLinkReturn.OK:
-                self.logger.warn('Failed to connect multiqueue (audio) to',
-                                 self.audio_element_multiqueue_should_connect_to)
+                self.logger.warning('Failed to connect multiqueue (audio) to',
+                                    self.audio_element_multiqueue_should_connect_to)
 
     def _connect_tee_to_element(self, tee, video_or_audio):
         '''

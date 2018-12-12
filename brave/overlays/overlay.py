@@ -60,7 +60,7 @@ class Overlay(InputOutputOverlay):
         '''
         self._make_invisible()
         if not self.mixer().pipeline.remove(self.element):
-            self.logger.warn('Whilst deleting me, unable to remove element')
+            self.logger.warning('Whilst deleting me, unable to remove element')
         self.collection.pop(self.id)
         return True
 
