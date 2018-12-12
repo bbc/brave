@@ -251,6 +251,11 @@ preview._createImage = function() {
     $('#preview-bar').append(image)
 }
 
+preview.showErrorMessage = msg => {
+    preview._delete()
+    $('#preview-bar').append($('<p />').html('ERROR: ' + msg))
+}
+
 preview._delete = () => {
     preview._deleteVideoPlayer()
     $('#preview-bar').empty()

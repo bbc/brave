@@ -167,6 +167,10 @@ Provide another config with the `-c` parameter, e.g.
 
 See the [Config File](./docs/config_file.md) documentation for more.
 
+#### STUN and TURN servers for WebRTC
+A STUN or TURN server is likely required for Brave's WebRTC to work between remote connections.
+Brave defaults to Google's public STUN server; this can be overridden in the [config file](./docs/config_file.md), or by setting the `STUN_SERVER` environment variable. Likewise, a `TURN_SERVER` environment variable can be set if a TURN server is required. Its value should be in the format `<usernane>:<credential>@<host>:<port>`.
+
 ## Tests
 Brave has functional black-box tests that ensure the config file and API is working correctly.
 To run them:
