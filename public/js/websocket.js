@@ -66,7 +66,7 @@ websocket._onMessageReceived = event => {
     } else if (dataParsed.ice != null) {
         webrtc.onIncomingICE(dataParsed.ice);
     } else {
-        console.warn("Unexpected websocket message:", dataParsed);
+        console.warning("Unexpected websocket message:", dataParsed);
     }
 }
 

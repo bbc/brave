@@ -215,12 +215,12 @@ class Connection():
         self._set_dest_element_state(Gst.State.NULL)
         for e in self._elements_on_dest_pipeline:
             if not e.get_parent().remove(e):
-                self.dest.logger.warn('Unable to remove %s' % e.name)
+                self.dest.logger.warning('Unable to remove %s' % e.name)
 
         self._set_src_element_state(Gst.State.NULL)
         for e in self._elements_on_src_pipeline:
             if not e.get_parent().remove(e):
-                self.logger.warn('Unable to remove %s' % e.name)
+                self.logger.warning('Unable to remove %s' % e.name)
 
     def _add_element_to_dest_pipeline(self, factory_name, name=None):
         '''
@@ -247,10 +247,10 @@ class Connection():
         '''
         for e in self._elements_on_dest_pipeline:
             if not e.sync_state_with_parent():
-                self.logger.warn('Unable to set %s to state of parent source' % e.name)
+                self.logger.warning('Unable to set %s to state of parent source' % e.name)
         for e in self._elements_on_src_pipeline:
             if not e.sync_state_with_parent():
-                self.logger.warn('Unable to set %s to state of parent source' % e.name)
+                self.logger.warning('Unable to set %s to state of parent source' % e.name)
 
     def _elements_are_created(self):
         return (not self.src.has_video() or hasattr(self, 'video_is_linked')) and \
@@ -301,4 +301,4 @@ class Connection():
         '''
         for e in self._elements_on_src_pipeline:
             if e.set_state(state) != Gst.StateChangeReturn.SUCCESS:
-                self.logger.warn('Unable to set input element %s to %s state' % (e.name, state.value_nick.upper()))
+                self.logger.warning('Unable to set input element %s to %s state' % (e.name, state.value_nick.upper()))
