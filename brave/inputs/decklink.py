@@ -5,8 +5,8 @@ import brave.config as config
 
 class DecklinkInput(Input):
     '''
-    Handles input via URI.
-    This can be anything Playbin accepts, including local files and remote streams.
+    Handles input via a deckoink card/device.
+    This can allow SDI/HDMI singals to be localy mixed with brave
     '''
     def permitted_props(self):
         return {
@@ -60,20 +60,6 @@ class DecklinkInput(Input):
         self.final_video_tee = self.pipeline.get_by_name('final_video_tee')
         self.final_audio_tee = self.pipeline.get_by_name('final_audio_tee')
         self.handle_updated_props()
-
-    def update(self, updates):
-        super().update(updates)
-
-        # Special case: allow seeking
-        if self.has_video() and 'position' in updates:
-            try:
-                new_position = float(updates['position'])
-                if self.pipeline.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, new_position):
-                    self.logger.debug('Successfully updated position to %s' % new_position)
-                else:
-                    self.logger.warning('Unable to est position to %s' % new_position)
-            except ValueError:
-                self.logger.warning('Invalid position %s provided' % updates['position'])
 
     def get_input_cap_props(self):
         '''
