@@ -3,6 +3,7 @@ from brave.inputs.test_video import TestVideoInput
 from brave.inputs.test_audio import TestAudioInput
 from brave.inputs.image import ImageInput
 from brave.inputs.html import HTMLInput
+from brave.inputs.decklink import DecklinkInput
 from brave.abstract_collection import AbstractCollection
 import brave.exceptions
 
@@ -23,6 +24,8 @@ class InputCollection(AbstractCollection):
             input = ImageInput(**args, collection=self)
         elif args['type'] == 'html':
             input = HTMLInput(**args, collection=self)
+        elif args['type'] == 'decklink':
+            input = DecklinkInput(**args, collection=self)
         else:
             raise brave.exceptions.InvalidConfiguration(f"Invalid input type '{str(args['type'])}'")
 
