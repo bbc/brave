@@ -64,6 +64,9 @@ inputsHandler._inputCardBody = (input) => {
     if (input.props.hasOwnProperty('freq')) details.push('<div><strong>Frequency:</strong> ' + input.props.freq + 'Hz</div>')
     if (input.props.hasOwnProperty('pattern')) details.push('<div><strong>Pattern:</strong> ' + inputsHandler.patternTypes[input.props.pattern] + '</div>')
     if (input.props.hasOwnProperty('wave')) details.push('<div><strong>Wave:</strong> ' + inputsHandler.waveTypes[input.props.wave] + '</div>')
+    if (input.props.hasOwnProperty('device')) details.push('<div><strong>Device Num:</strong> ' + input.props.device + '</div>')
+    if (input.props.hasOwnProperty('connection')) details.push('<div><strong>Connection Type:</strong> ' + inputsHandler.decklinkConnection[input.props.connection] + '</div>')
+    if (input.props.hasOwnProperty('mode')) details.push('<div><strong>Input Mode:</strong> ' + inputsHandler.decklinkModes[input.props.mode] + '</div>')
 
     if (input.hasOwnProperty('duration')) {
         var duration = prettyDuration(input.duration)
@@ -186,12 +189,41 @@ inputsHandler._populateForm = function(input) {
         max: 20000
     })
 
+    var device = formGroup({
+        id: 'input-device',
+        label: 'Device Num',
+        name: 'device',
+        type: 'number',
+        value: input.props.device || 0
+    })
+
+    var connection = formGroup({
+        id: 'connection-device',
+        label: 'Connection Type',
+        name: 'connection',
+        type: 'number',
+        options: inputsHandler.decklinkConnection,
+        initialOption: 'Select connection type',
+        value: input.props.connection || inputsHandler.decklinkConnection[1]
+    })
+
+    var mode = formGroup({
+        id: 'mode-device',
+        label: 'Input Mode',
+        name: 'mode',
+        type: 'number',
+        options: inputsHandler.decklinkModes,
+        initialOption: 'Select input mode',
+        value: input.props.mode || inputsHandler.decklinkModes[17]
+    })
+
     var isNew = !input.hasOwnProperty('id')
     if (isNew) {
         var options = {
             'uri': 'URI (for files, RTMP, RTSP and HLS)',
             'image': 'Image',
             'html': 'HTML (for showing a web page)',
+            'decklink': 'Decklink Device',
             'test_video': 'Test video stream',
             'test_audio': 'Test audio stream',
         }
@@ -241,7 +273,14 @@ inputsHandler._populateForm = function(input) {
         form.append(sizeBox);
         form.append(zOrderBox);
     }
-
+    else if (input.type === 'decklink') {
+        if (isNew) form.append(device);
+        if (isNew) form.append(mode);
+        if (isNew) form.append(connection);
+        form.append(positionBox);
+        form.append(sizeBox);
+        form.append(zOrderBox);
+    }
     form.find('select[name="type"]').change(inputsHandler._handleNewFormType);
 }
 
@@ -395,6 +434,50 @@ inputsHandler.waveTypes = [
     'Red (brownian) noise',
     'Blue noise',
     'Violet noise'
+]
+
+inputsHandler.decklinkModes = [
+    'Automatic detection (Hardware Dependant)',
+    'NTSC SD 60i',
+    'NTSC SD 60i (24 fps)',
+    'PAL SD 50i',
+    'NTSC SD 60p',
+    'PAL SD 50p',
+    'HD1080 23.98p',
+    'HD1080 24p',
+    'HD1080 25p',
+    'HD1080 29.97p',
+    'HD1080 30p',
+    'HD1080 50i',
+    'HD1080 59.94i',
+    'HD1080 60i',
+    'HD1080 50p',
+    'HD1080 59.94p',
+    'HD1080 60p',
+    'HD720 50p',
+    'HD720 59.94p',
+    'HD720 60p',
+    '2k 23.98p',
+    '2k 24p',
+    '2k 25p',
+    '4k 23.98p',
+    '4k 24p',
+    '4k 25p',
+    '4k 29.97p',
+    '4k 30p',
+    '4k 50p',
+    '4k 59.94p',
+    '4k 60p',
+]
+
+inputsHandler.decklinkConnection = [
+    'Auto (Hardware Dependant)',
+    'SDI',
+    'HDMI',
+    'Optical SDI',
+    'Component',
+    'Composite',
+    'S-Video',
 ]
 
 function prettyDuration(d) {
