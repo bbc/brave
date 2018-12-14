@@ -48,6 +48,10 @@ class RestApi(object):
             logger.debug(msg)
             return sanic.response.json({'error': msg}, 400)
 
+        @app.exception(brave.exceptions.PipelineFailure)
+        async def pipeline_creation_failure(request, exception):
+            return sanic.response.json({'error': str(exception)}, 500)
+
         app.add_route(route_handler.all, "/api/all")
         app.add_route(route_handler.inputs, "/api/inputs")
         app.add_route(route_handler.outputs, "/api/outputs")

@@ -27,8 +27,7 @@ class TestAudioInput(Input):
         pipeline_string = 'audiotestsrc is-live=true name=audiotestsrc volume=0.2 ! ' + \
             config.default_audio_caps() + self.default_audio_pipeline_string_end()
 
-        if not self.create_pipeline_from_string(pipeline_string):
-            return False
+        self.create_pipeline_from_string(pipeline_string)
 
         self.final_audio_tee = self.pipeline.get_by_name('final_audio_tee')
         self.audiotestsrc = self.pipeline.get_by_name('audiotestsrc')

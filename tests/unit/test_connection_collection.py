@@ -9,9 +9,9 @@ def test_connection_collection():
     session = brave.session.init()
     cc = session.connections
     input = session.inputs.add(type='test_video')
-    mixer = session.mixers.add()
     output1 = session.outputs.add(type='local')
     output2 = session.outputs.add(type='image')
+    mixer = session.mixers.add()
 
     connection1 = cc.add(input, mixer)
     assert connection1.src == input

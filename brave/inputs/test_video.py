@@ -39,8 +39,7 @@ class TestVideoInput(Input):
                            ' ! videoconvert ! videoscale ! capsfilter name=capsfilter' +
                            self.default_video_pipeline_string_end())
         # FOR TESTING TO VIEW LOCALLY, APPEND: + ' final_video_tee. ! queue ! glimagesink ')
-        if not self.create_pipeline_from_string(pipeline_string):
-            return False
+        self.create_pipeline_from_string(pipeline_string)
 
         self.final_video_tee = self.pipeline.get_by_name('final_video_tee')
         self.videotestsrc = self.pipeline.get_by_name('videotestsrc')

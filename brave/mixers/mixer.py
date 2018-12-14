@@ -81,14 +81,16 @@ class Mixer(InputOutputOverlay):
 
         return s
 
-    def add_element(self, factory_name, who_its_for, name=None):
+    def add_element(self, factory_name, who_its_for, audio_or_video=None, name=None):
         '''
         Add an element on the pipeline belonging to this mixer.
+        Note: this method's interface matches input.add_element()
         '''
+        assert audio_or_video in ['audio', 'video']
         if name is None:
             name = factory_name
-        e = Gst.ElementFactory.make(factory_name, who_its_for.input_output_overlay_or_mixer() +
-                                    '_' + str(who_its_for.id) + '_' + name)
+        name = who_its_for.input_output_overlay_or_mixer() + '_' + str(who_its_for.id) + '_' + name
+        e = Gst.ElementFactory.make(factory_name, name)
         if not e:
             raise Exception('Unable to make GStreamer element "' + str(factory_name) +
                             '" - the most likely reason is it is not installed.')
@@ -116,8 +118,7 @@ class Mixer(InputOutputOverlay):
                 'queue name=audio_queue ! audiomixer name=audio_mixer ! ' + \
                 'tee name=final_audio_tee allow-not-linked=true'
 
-        if not self.create_pipeline_from_string(pipeline_string):
-            return False
+        self.create_pipeline_from_string(pipeline_string)
 
         self.end_capsfilter = self.pipeline.get_by_name('end_capsfilter')
 
@@ -151,12 +152,6 @@ class Mixer(InputOutputOverlay):
         # Likewise, tell each input
         for connection in self.src_connections():
             connection.unblock_intersrc_if_ready()
-
-    def get_dimensions(self):
-        '''
-        Get the width and height of this mix.
-        '''
-        return self.props['width'], self.props['height']
 
     def get_new_pad_for_source(self, audio_or_video):
         '''

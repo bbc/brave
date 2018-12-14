@@ -30,29 +30,14 @@ class LocalOutput(Output):
             raise brave.exceptions.InvalidConfiguration('There cannot be more than one local output')
 
     def create_elements(self):
-        self._create_initial_multiqueue()
-
         pipeline_string = ''
         if config.enable_video():
-            # format=RGB removes the alpha channel which can crash glimagesink
-            video_caps = 'video/x-raw,format=RGB,width=%d,height=%d,pixel-aspect-ratio=1/1' % \
-                (self.props['width'], self.props['height'])
-
-            # Using glimagesink rather than autovideosink ensures this does not go to kvssink (if installed)
-            pipeline_string += ('intervideosrc name=intervideosrc ! videoconvert ! videoscale ! ' +
-                                video_caps + ' ! queue ! glimagesink')
+            pipeline_string += self._video_pipeline_start() + 'queue ! glimagesink'
         if config.enable_audio():
             pipeline_string += ' interaudiosrc name=interaudiosrc ! queue ! autoaudiosink'
 
-        if not self.create_pipeline_from_string(pipeline_string):
-            return False
+        self.create_pipeline_from_string(pipeline_string)
 
-        if config.enable_video():
-            self.intervideosrc = self.pipeline.get_by_name('intervideosrc')
-            self.intervideosrc_src_pad = self.intervideosrc.get_static_pad('src')
-            self.create_intervideosink_and_connections()
-
-        if config.enable_audio():
-            self.interaudiosrc = self.pipeline.get_by_name('interaudiosrc')
-            self.interaudiosrc_src_pad = self.interaudiosrc.get_static_pad('src')
-            self.create_interaudiosink_and_connections()
+    def create_caps_string(self):
+        # format=RGB removes the alpha channel which can crash glimagesink
+        return super().create_caps_string() + ',pixel-aspect-ratio=1/1,format=RGB'

@@ -41,8 +41,7 @@ class UriInput(Input):
 
     def create_elements(self):
         # Playbin does all the hard work
-        if not self.create_pipeline_from_string("playbin uri=\"" + self.props['uri'] + "\""):
-            return False
+        self.create_pipeline_from_string("playbin uri=\"" + self.props['uri'] + "\"")
 
         # playbin appears as 'playsink' (because it's a bin with elements inside)
         self.playsink = self.pipeline.get_by_name('playsink')

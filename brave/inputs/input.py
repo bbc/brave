@@ -128,3 +128,18 @@ class Input(InputOutputOverlay):
     def default_audio_pipeline_string_end(self):
         # A tee is used so that we can connect this input to multiple mixers/outputs
         return ' ! tee name=final_audio_tee allow-not-linked=true'
+
+    def add_element(self, factory_name, who_its_for, audio_or_video, name=None):
+        '''
+        Add an element on the pipeline belonging to this mixer.
+        Note: this method's interface matches mixer.add_element()
+        '''
+        if name is None:
+            name = factory_name
+        name = who_its_for.input_output_overlay_or_mixer() + '_' + str(who_its_for.id) + '_' + name
+        input_bin = getattr(self, 'final_' + audio_or_video + '_tee').parent
+        e = Gst.ElementFactory.make(factory_name, name)
+        if not input_bin.add(e):
+            self.logger.error('Unable to add element %s' % factory_name)
+            return None
+        return e

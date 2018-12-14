@@ -46,9 +46,8 @@ class InputOutputOverlay():
             setup_messaging(pipe=self.pipeline, parent_object=self)
         except GLib.GError as e:
             self.error_message = str(e)
-            self.logger.error('Failed to create pipeline [' + pipeline_string + ']:' + self.error_message)
-            return False
-        return True
+            self.logger.error('Failed to create pipeline [%s]: %s' % (pipeline_string, self.error_message))
+            raise brave.exceptions.PipelineFailure(self.error_message)
 
     def permitted_props(self):
         '''
@@ -190,6 +189,15 @@ class InputOutputOverlay():
         and the update should be sent to the user via websocket.
         '''
         self.session().items_recently_updated.append(self)
+
+    def get_dimensions(self):
+        '''
+        Get the width and height of this block.
+        '''
+        if 'width' in self.props and 'height' in self.props:
+            return self.props['width'], self.props['height']
+        else:
+            return None, None
 
     def _set_default_props(self):
         '''

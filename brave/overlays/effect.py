@@ -40,7 +40,7 @@ class EffectOverlay(Overlay):
         }
 
     def create_elements(self):
-        self.element = self.mixer().add_element(self.props['effect_name'], self)
+        self.element = self.mixer().add_element(self.props['effect_name'], self, audio_or_video='video')
 
     def set_element_values_from_props(self):
         pass

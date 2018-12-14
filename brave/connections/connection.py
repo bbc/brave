@@ -1,6 +1,6 @@
 from gi.repository import Gst
 from brave.helpers import create_intersink_channel_name
-from brave.mixers.mixer import Mixer
+
 
 class Connection():
     '''
@@ -68,12 +68,19 @@ class Connection():
 
     def _create_video_elements(self):
         '''
-        Create the 'intervideosrc' element on the destination pipeline.
-        This will accept the video input that's come from the source pipeline.
-        The intervideosrc is connected to convert/scale/queue elements.
+        Create the elements to connect the src and dest pipelines.
+        Src pipeline looks like: tee -> queue -> intervideosink
+        Dest pipeline looks like: intervideosrc -> videoscale -> videoconvert -> capsfilter -> queue -> tee
         '''
         intervideosrc, intervideosink = self._create_inter_elements('video')
-        videoscale = self._add_element_to_dest_pipeline('videoscale')
+        self._create_dest_elements_after_intervideosrc(intervideosrc)
+
+    def _create_dest_elements_after_intervideosrc(self, intervideosrc):
+        '''
+        On the destination pipeline, after the intervideosrc, we scale/convert the video so that we can
+        set the relevant caps. This method provides theose elements.
+        '''
+        videoscale = self._add_element_to_dest_pipeline('videoscale', 'video')
         if not intervideosrc.link(videoscale):
             self.logger.error('Cannot link intervideosrc to videoscale')
 
@@ -81,20 +88,20 @@ class Connection():
         videoscale.set_property('method', 3)
         videoscale.set_property('dither', True)
 
-        videoconvert = self._add_element_to_dest_pipeline('videoconvert')
+        videoconvert = self._add_element_to_dest_pipeline('videoconvert', 'video')
         if not videoscale.link(videoconvert):
             self.logger.error('Cannot link videoscale to videoconvert')
 
-        self.capsfilter_after_intervideosrc = self._add_element_to_dest_pipeline('capsfilter')
+        self.capsfilter_after_intervideosrc = self._add_element_to_dest_pipeline('capsfilter', 'video')
         if not videoconvert.link(self.capsfilter_after_intervideosrc):
             self.logger.error('Cannot link videoconvert to capsfilter')
 
-        queue = self._add_element_to_dest_pipeline('queue', name='video_queue')
+        queue = self._add_element_to_dest_pipeline('queue', 'video', name='video_queue')
 
         # We use a tee even though we only have one output because then we can use
         # allow-not-linked which means this bit of the pipeline does not fail when it's disconnected.
         # TODO reconsider this
-        self._tee['video'] = self._add_element_to_dest_pipeline('tee', name='video_tee_after_queue')
+        self._tee['video'] = self._add_element_to_dest_pipeline('tee', 'video', name='video_tee_after_queue')
         self._tee['video'].set_property('allow-not-linked', True)
 
         if not self.capsfilter_after_intervideosrc.link(queue):
@@ -109,11 +116,11 @@ class Connection():
         interaudiosrc, interaudiosink = self._create_inter_elements('audio')
 
         # A queue ensures that disconnection from the audiomixer does not result in a pipeline failure:
-        queue = self._add_element_to_dest_pipeline('queue', name='audio_queue')
+        queue = self._add_element_to_dest_pipeline('queue', 'audio', name='audio_queue')
 
         # We use a tee even though we only have one output because then we can use
         # allow-not-linked which means this bit of the pipeline does not fail when it's disconnected.
-        self._tee['audio'] = self._add_element_to_dest_pipeline('tee', name='audio_tee_after_queue')
+        self._tee['audio'] = self._add_element_to_dest_pipeline('tee', 'audio', name='audio_tee_after_queue')
         self._tee['audio'].set_property('allow-not-linked', True)
 
         if not interaudiosrc.link(queue):
@@ -142,7 +149,7 @@ class Connection():
         assert(audio_or_video in ['audio', 'video'])
 
         # Create the receiving 'inter' element to accept the AV into the main pipeline
-        intersrc_element = self._add_element_to_dest_pipeline('inter%ssrc' % audio_or_video)
+        intersrc_element = self._add_element_to_dest_pipeline('inter%ssrc' % audio_or_video, audio_or_video)
         self._intersrc_src_pad[audio_or_video] = intersrc_element.get_static_pad('src')
 
         # We ask the src to hold the frame for 24 hours (basically, a very long time)
@@ -167,9 +174,8 @@ class Connection():
         '''
         assert(audio_or_video in ['audio', 'video'])
         element_name = 'inter%ssink' % audio_or_video
-        input_bin = getattr(self.src, 'final_' + audio_or_video + '_tee').parent
-        element = self._add_element_to_src_pipeline(element_name, input_bin=input_bin)
-        queue = self._add_element_to_src_pipeline('queue', input_bin=input_bin)
+        element = self._add_element_to_src_pipeline(element_name, audio_or_video=audio_or_video)
+        queue = self._add_element_to_src_pipeline('queue', audio_or_video=audio_or_video, name=audio_or_video+'_queue')
         if not element or not queue:
             return
 
@@ -222,22 +228,19 @@ class Connection():
             if not e.get_parent().remove(e):
                 self.logger.warning('Unable to remove %s' % e.name)
 
-    def _add_element_to_dest_pipeline(self, factory_name, name=None):
+    def _add_element_to_dest_pipeline(self, factory_name, audio_or_video, name=None):
         '''
         Add an element on the destination pipeline
         '''
-        e = self.dest.add_element(factory_name, self.src, name)
+        e = self.dest.add_element(factory_name, self.src, audio_or_video=audio_or_video, name=name)
         self._elements_on_dest_pipeline.append(e)
         return e
 
-    def _add_element_to_src_pipeline(self, factory_name, input_bin, name=None):
+    def _add_element_to_src_pipeline(self, factory_name, audio_or_video, name=None):
         '''
         Add an element on the source pipeline
         '''
-        e = Gst.ElementFactory.make(factory_name, name)
-        if not input_bin.add(e):
-            self.logger.error('Unable to add element %s' % factory_name)
-            return None
+        e = self.src.add_element(factory_name, self.dest, audio_or_video=audio_or_video, name=name)
         self._elements_on_src_pipeline.append(e)
         return e
 
@@ -278,14 +281,6 @@ class Connection():
 
         # If source and destination have already started, we need to unblock straightaway:
         self.unblock_intersrc_if_ready()
-
-    def _get_or_create_tee_pad(self, audio_or_video):
-        if audio_or_video in self._tee_pad:
-            return self._tee_pad[audio_or_video]
-        else:
-            tee_src_pad_template = self._tee[audio_or_video].get_pad_template("src_%u")
-            self._tee_pad[audio_or_video] = self._tee[audio_or_video].request_pad(tee_src_pad_template, None, None)
-            return self._tee_pad[audio_or_video]
 
     def _set_dest_element_state(self, state):
         '''

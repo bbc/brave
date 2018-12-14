@@ -1,7 +1,6 @@
 from gi.repository import Gst
-from brave.helpers import create_intersink_channel_name
-from brave.mixers.mixer import Mixer
 from brave.connections import Connection
+
 
 class ConnectionToMixer(Connection):
     '''
@@ -157,3 +156,11 @@ class ConnectionToMixer(Connection):
             # After unlinking, if we don't remove the pad, the final frame remains in the mix:
             self.dest.mixer_element[audio_or_video].release_request_pad(self._mix_request_pad[audio_or_video])
             del self._mix_request_pad[audio_or_video]
+
+    def _get_or_create_tee_pad(self, audio_or_video):
+        if audio_or_video in self._tee_pad:
+            return self._tee_pad[audio_or_video]
+        else:
+            tee_src_pad_template = self._tee[audio_or_video].get_pad_template("src_%u")
+            self._tee_pad[audio_or_video] = self._tee[audio_or_video].request_pad(tee_src_pad_template, None, None)
+            return self._tee_pad[audio_or_video]

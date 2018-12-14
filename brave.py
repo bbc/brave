@@ -63,6 +63,9 @@ def start_brave():
     except brave.exceptions.InvalidConfiguration as e:
         print('Invalid configuration: %s' % e)
         sys.exit(1)
+    except brave.exceptions.PipelineFailure as e:
+        print('Failed to create GStreamer pipeline: %s' % e)
+        sys.exit(1)
 
 
 if __name__ == '__main__':

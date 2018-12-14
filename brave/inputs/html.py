@@ -44,10 +44,9 @@ class HTMLInput(Input):
         if not config.enable_video():
             return
 
-        if not self.create_pipeline_from_string('cef url="' + self.props['uri'] + '" ! '
-                                                ' videoconvert ! video/x-raw,format=ARGB ! '
-                                                'queue' + self.default_video_pipeline_string_end()):
-            return False
+        self.create_pipeline_from_string('cef url="' + self.props['uri'] + '" ! '
+                                         ' videoconvert ! video/x-raw,format=ARGB ! '
+                                         'queue' + self.default_video_pipeline_string_end())
 
         self.intervideosink = self.pipeline.get_by_name('intervideosink')
         self.final_video_tee = self.pipeline.get_by_name('final_video_tee')

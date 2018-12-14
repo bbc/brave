@@ -41,18 +41,11 @@ class ImageOutput(Output):
         if not config.enable_video():
             return
         self.__delete_file_if_exists()
-        self._create_initial_multiqueue()
-        pipeline_string = 'intervideosrc name=src ! videoconvert ! videoscale ! videorate ! ' + \
-            self.create_caps_string() + ' ! jpegenc ! multifilesink name=sink'
-        if not self.create_pipeline_from_string(pipeline_string):
-            return False
-
-        self.intervideosrc = self.pipeline.get_by_name('src')
-        self.intervideosrc_src_pad = self.intervideosrc.get_static_pad('src')
+        pipeline_string = self._video_pipeline_start() + 'jpegenc ! multifilesink name=sink'
+        self.create_pipeline_from_string(pipeline_string)
         sink = self.pipeline.get_by_name('sink')
         sink.set_property('location', self.props['location'])
 
-        self.create_intervideosink_and_connections()
 
     def __delete_file_if_exists(self):
         try:

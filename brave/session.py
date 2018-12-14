@@ -59,6 +59,13 @@ class Session(object):
         for mixer_config in config.default_mixers():
             self.mixers.add(**mixer_config)
 
+        for input_config in config.default_inputs():
+            input = self.inputs.add(**input_config)
+            input.setup()
+            for id, mixer in self.mixers.items():
+                connection = mixer.connection_for_src(input, create_if_not_made=True)
+                connection.add_to_mix()
+
         for output_config in config.default_outputs():
             self.outputs.add(**output_config)
 
@@ -68,13 +75,6 @@ class Session(object):
 
         for name, mixer in self.mixers.items():
             mixer.set_state(Gst.State.PLAYING)
-
-        for input_config in config.default_inputs():
-            input = self.inputs.add(**input_config)
-            input.setup()
-            for id, mixer in self.mixers.items():
-                connection = mixer.connection_for_src(input, create_if_not_made=True)
-                connection.add_to_mix()
 
     def print_state_summary(self):
         '''

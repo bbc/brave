@@ -35,25 +35,13 @@ class WebRTCOutput(Output):
         }
 
     def create_elements(self):
-        self._create_initial_multiqueue()
-
-        if not self._create_pipeline():
-            return False
+        self._create_pipeline()
 
         if config.enable_video():
-            self.intervideosrc = self.pipeline.get_by_name('intervideosrc')
-            self.intervideosrc_src_pad = self.intervideosrc.get_static_pad('src')
-            self.create_intervideosink_and_connections()
+            self.webrtc_video_tee = self.pipeline.get_by_name('webrtc_video_tee')
 
         if config.enable_audio():
-            self.interaudiosrc = self.pipeline.get_by_name('interaudiosrc')
-            self.interaudiosrc_src_pad = self.interaudiosrc.get_static_pad('src')
-            self.create_interaudiosink_and_connections()
-
-        self.webrtc_video_tee = self.pipeline.get_by_name('webrtc_video_tee')
-        self.webrtc_audio_tee = self.pipeline.get_by_name('webrtc_audio_tee')
-
-        return True
+            self.webrtc_audio_tee = self.pipeline.get_by_name('webrtc_audio_tee')
 
     def _create_pipeline(self):
         '''
@@ -63,15 +51,16 @@ class WebRTCOutput(Output):
         '''
         pipeline_string = ''
         if config.enable_video():
-            # format=RGB is required to remove alpha channels which can upset the encoder
+
             video_caps = 'application/x-rtp,format=RGB,media=video,encoding-name=VP8,payload=97,width=%d,height=%d' % \
                 (self.props['width'], self.props['height'])
 
             # vp8enc has 'target-bitrate' which can be reduced from its default (256000)
             # Setting keyframe-max-dist lower reduces impact of packet loss on dodgy networks
-            pipeline_string += ('intervideosrc name=intervideosrc ! queue ! videoconvert ! videoscale ! '
+            pipeline_string += (self._video_pipeline_start() +
                                 'vp8enc deadline=1 keyframe-max-dist=30 ! rtpvp8pay ! ' + video_caps +
                                 ' ! tee name=webrtc_video_tee webrtc_video_tee. ! fakesink')
+
         if config.enable_audio():
             # bandwidth=superwideband allows the encoder to focus a little more on the important audio
             # (Basic testing showed 'wideband' to be quite poor poor)
@@ -80,13 +69,11 @@ class WebRTCOutput(Output):
                                 'rtpopuspay ! application/x-rtp,media=audio,encoding-name=OPUS,payload=96 ! '
                                 'tee name=webrtc_audio_tee webrtc_audio_tee. ! fakesink')
 
-        if not self.create_pipeline_from_string(pipeline_string):
-            return False
+        self.create_pipeline_from_string(pipeline_string)
 
         self.pipeline.get_bus().add_signal_watch()
         self.pipeline.get_bus().connect('message::element', self._on_element_message)
         self.event_loop = asyncio.get_event_loop()
-        return True
 
     def _update_current_num_peers(self):
         self.current_num_peers = len(self.peers)
@@ -261,3 +248,7 @@ class WebRTCOutput(Output):
         icemsg = json.dumps({'ice': {'candidate': candidate, 'sdpMLineIndex': mlineindex}})
         loop = asyncio.new_event_loop()
         loop.run_until_complete(ws.send(icemsg))
+
+    def create_caps_string(self):
+        # Only basic caps set here as we set it more later in the pipeline
+        return 'video/x-raw'

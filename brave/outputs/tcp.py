@@ -41,8 +41,6 @@ class TCPOutput(Output):
         '''
         Create the elements needed whether this is audio, video, or both
         '''
-
-        self._create_initial_multiqueue()
         mux_type = 'oggmux' if self.props['container'] == 'ogg' else 'mpegtsmux'
         video_encoder_type = 'theoraenc' if self.props['container'] == 'ogg' else 'x264enc'
         audio_encoder_type = 'vorbisenc' if self.props['container'] == 'ogg' else 'avenc_ac3'
@@ -55,12 +53,7 @@ class TCPOutput(Output):
             pipeline_string = f'{mux_type} name=mux ! {pipeline_string}'
 
         if config.enable_video():
-            video_pipeline_string = (f'intervideosrc name=intervideosrc ! videoconvert ! '
-                                     f'videoscale ! videorate ! '
-                                     f'{self.create_caps_string()} ! '
-                                     f'{video_encoder_type} name=encoder ! queue ! mux.')
-
-            pipeline_string = pipeline_string + ' ' + video_pipeline_string
+            pipeline_string += ' ' + self._video_pipeline_start() + video_encoder_type + ' name=encoder ! queue ! mux.'
 
         if config.enable_audio():
             audio_bitrate = self.props['audio_bitrate']
@@ -75,28 +68,14 @@ class TCPOutput(Output):
 
             pipeline_string = pipeline_string + ' ' + audio_pipeline_string
 
-        if not self.create_pipeline_from_string(pipeline_string):
-            return False
+        self.create_pipeline_from_string(pipeline_string)
 
         if config.enable_video():
-            encoder = self.pipeline.get_by_name('encoder')
-            self.intervideosrc = self.pipeline.get_by_name('intervideosrc')
-            self.intervideosrc_src_pad = self.intervideosrc.get_static_pad('src')
-
             if self.props['container'] == 'mpeg':
-                encoder.set_property('key-int-max', 120)  # 4x 30fps TODO not hard-code
+                self.pipeline.get_by_name('encoder').set_property('key-int-max', 120)  # 4x 30fps TODO not hard-code
 
             # tune=zerolatency reduces the delay of TCP output
             # encoder.set_property('tune', 'zerolatency')
-
-            self.create_intervideosink_and_connections()
-
-        if config.enable_audio():
-            self.interaudiosrc = self.pipeline.get_by_name('interaudiosrc')
-            self.interaudiosrc_src_pad = self.interaudiosrc.get_static_pad('src')
-            # audio_encoder = self.pipeline.get_by_name('audio_encoder')
-            # audio_encoder.set_property('bitrate', 48000)
-            self.create_interaudiosink_and_connections()
 
         if 'host' not in self.props:
             self.props['host'] = socket.gethostbyname(socket.gethostname())
