@@ -46,13 +46,14 @@ class DecklinkInput(Input):
         }
 
     def create_elements(self):
+        #TODO: Audio is currently lcoked to HDI/HDMI mode may need to figure a btter way to auto select the best one
         if not self.create_pipeline_from_string('decklinkvideosrc'
                                         ' device-number=' + str(self.props['device']) +
                                         ' connection=' + str(self.props['connection']) +
                                         ' mode=' + str(self.props['mode']) +
                                         ' ! videoconvert'
                                         + self.default_video_pipeline_string_end() +
-                                        ' decklinkaudiosrc device-number=0 connection=1 ! audioconvert'
+                                        ' decklinkaudiosrc device-number=' + str(self.props['device']) + ' connection=1 ! audioconvert'
                                         + self.default_audio_pipeline_string_end()):
             return False
 
