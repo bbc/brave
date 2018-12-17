@@ -23,7 +23,7 @@ RUN apt-get update && \
     pkg-config \
     python3-dev python3-wheel python3-gst-1.0 python3-pip python3-gi
 
-RUN git clone --depth 1 git://github.com/bbc/brave.git && \
+RUN git clone --depth 1 https://github.com/bbc/brave.git && \
     cd brave && \
     pip3 install pipenv && \
     pipenv install --ignore-pipfile && \
