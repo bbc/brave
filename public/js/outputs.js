@@ -5,13 +5,13 @@
 outputsHandler = {}
 
 outputsHandler.findById = (id) => {
-    return outputsHandler.items.find(i => i.id === id)
+    return outputsHandler.items.find(i => i.id == id)
 }
 outputsHandler.findByDetails = (details) => {
     return outputsHandler.items.find(i => {
         if (details.type && details.type !== i.type) return false
-        if (details.hasOwnProperty('mixer_id') && i.props.hasOwnProperty('mixer_id') &&
-            details.mixer_id !== i.props.mixer_id) return false
+        if (details.hasOwnProperty('source') && i.props.hasOwnProperty('source') &&
+            details.source !== i.props.source) return false
         return true
     })
 }
@@ -44,7 +44,9 @@ outputsHandler._asCard = (output) => {
 }
 
 outputsHandler._optionButtonsForOutput = (output) => {
-    return components.deleteButton().click(() => { outputsHandler.delete(output); return false })
+    const editButton = components.editButton().click(() => { outputsHandler.showFormToEdit(output); return false })
+    const deleteButton = components.deleteButton().click(() => { outputsHandler.delete(output); return false })
+    return [editButton, deleteButton]
 }
 
 outputsHandler._outputCardBody = (output) => {
@@ -77,8 +79,8 @@ outputsHandler._outputCardBody = (output) => {
         details.push('<strong>Stream name:</strong> ' + output.props.stream_name)
     }
 
-    if (output.props.hasOwnProperty('mixer_id')) {
-        details.push('<strong>Source:</strong> Mixer ' + output.props.mixer_id)
+    if (output.props.hasOwnProperty('source')) {
+        details.push('<strong>Source:</strong> ' + output.props.source)
     }
 
     if (output.hasOwnProperty('error_message')) details.push('<strong>ERROR:</strong> <span style="color:red">' + output.error_message + '</span>')
@@ -129,7 +131,13 @@ outputsHandler._populateForm = function(output) {
     var form = outputsHandler.currentForm
     form.empty()
     if (!output.props) output.props = {}
-    form.append(outputsHandler._getOutputsSelect(output))
+    var isNew = !output.hasOwnProperty('id')
+    if (isNew) {
+        form.append(outputsHandler._getOutputsSelect(output))
+    }
+    else {
+        form.append('<input type="hidden" name="id" value="' + output.id + '">')
+    }
     form.append(getSourceSelect(output.props))
     if (!output.type) {
     }
@@ -234,7 +242,6 @@ outputsHandler._handleFormSubmit = function() {
     if (newProps.audio_bitrate === '') newProps.audio_bitrate = null
 
     splitDimensionsIntoWidthAndHeight(newProps)
-    handleSource(newProps)
 
     var type = newProps.type || output.type
 
@@ -263,9 +270,8 @@ outputsHandler._handleFormSubmit = function() {
         return
     }
 
-    console.log('Submitting new output with values', newProps)
     delete newProps.type
-    outputsHandler._submitCreateOrEdit(null, {type: type, props: newProps}, outputsHandler._onNewOutputSuccess)
+    outputsHandler._submitCreateOrEdit(output.id, {type: type, props: newProps}, outputsHandler._onNewOutputSuccess)
     hideModal();
 }
 

@@ -214,7 +214,6 @@ overlaysHandler._handleFormSubmit = function() {
         }
     })
 
-    handleSource(newProps)
     var type = newProps.type || overlay.type
 
     if (!type) {

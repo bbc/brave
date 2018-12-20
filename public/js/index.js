@@ -57,7 +57,7 @@ function showMessage(m, level) {
     $("#top-message").removeClass('alert-warning alert-success alert-danger alert-info')
     $("#top-message").addClass('alert-' + level)
     if (topMessageInterval) clearInterval(topMessageInterval)
-    topMessageInterval = setInterval(hideMessage, 4000);
+    topMessageInterval = setInterval(hideMessage, 8000);
 }
 
 function hideMessage() {
@@ -99,23 +99,26 @@ function getDimensionsSelect(name, width, height) {
 }
 
 function getSourceSelect(currentProps) {
-    if (currentProps.hasOwnProperty('mixer_id')) {
-        value = 'mixer-' + currentProps.mixer_id
-    }
-    else {
-        value = 'mixer-0'
-    }
-    const sourceOptions = {}
-    mixersHandler.items.forEach(m => {
-        sourceOptions['mixer-' + m.id] = 'Mixer ' + m.id
-    })
-    return formGroup({
+    const options = {
         id: 'source',
         label: 'Source',
         name: 'source',
-        value,
-        options: sourceOptions
+        options: {'none': 'None'},
+    }
+    if (currentProps.hasOwnProperty('source')) options.value = currentProps.source
+    mixersHandler.items.forEach(m => {
+        options.options['mixer' + m.id] = 'Mixer ' + m.id
+
+        // Make the first mixer the default one:
+        if (!options.hasOwnProperty('value')) options.value = 'mixer' + m.id
     })
+    inputsHandler.items.forEach(m => {
+        options.options['input' + m.id] = 'Input ' + m.id
+    })
+    if (!options.hasOwnProperty('value')) options.value = 'none'
+    console.log('currentProps=', currentProps)
+    console.log('options=', options)
+    return formGroup(options)
 }
 
 function splitXyString(s) {
@@ -146,21 +149,6 @@ function splitDimensionsIntoWidthAndHeight(obj) {
         }
     }
     delete obj.dimensions // also deletes if empty string
-    return true
-}
-
-function handleSource(obj) {
-    if (obj.source) {
-        const matches = obj.source.match(/^mixer-(\d+)$/)
-        if (matches) {
-            obj.mixer_id = parseInt(matches[1])
-        }
-        else {
-            showMessage('Cannot understand source ' + obj.source, 'warning')
-            return false
-        }
-    }
-    delete obj.source // also deletes if empty string
     return true
 }
 

@@ -4,7 +4,7 @@
 
 preview = {
     outputId: null,
-    mixerId: null,
+    source: null,
     type: null
 }
 
@@ -28,8 +28,8 @@ preview._checkWeAreShowingTheRightOutput = () => {
 }
 
 preview._findRightOutputId = () => {
-    if (preview.type === null || preview.mixerId == null) return null
-    const details = outputsHandler.findByDetails({type: preview.type, mixer_id: preview.mixerId})
+    if (preview.type === null || preview.source == null) return null
+    const details = outputsHandler.findByDetails({type: preview.type, source: preview.source})
     return details ? details.id : null
 }
 
@@ -57,15 +57,16 @@ preview._drawPreviewMenu = () => {
     dropdownMenu.empty()
     const items = []
     const noPreviewOption = $('<a />').html('No preview')
-    if (preview.mixerId === null) {
+    if (preview.source === null) {
         noPreviewOption.addClass('active')
     }
     items.push(noPreviewOption)
 
     mixersHandler.items.forEach(mixer => {
-        const webrtcPreview = $('<a />').data('id', mixer.id).data('type', 'webrtc').html('Mixer ' + mixer.id + ' (as a WebRTC stream)')
-        const imagePreview = $('<a />').data('id', mixer.id).data('type', 'image').html('Mixer ' + mixer.id + ' (as an updating image)')
-        if (preview.mixerId === mixer.id) {
+        const source = 'mixer' + mixer.id
+        const webrtcPreview = $('<a />').data('source', source).data('type', 'webrtc').html('Mixer ' + mixer.id + ' (as a WebRTC stream)')
+        const imagePreview = $('<a />').data('source', source).data('type', 'image').html('Mixer ' + mixer.id + ' (as an updating image)')
+        if (preview.source === source) {
             if (preview.type === 'webrtc') {
                 webrtcPreview.addClass('active')
                 previewMsg = webrtcPreview.html()
@@ -105,11 +106,11 @@ preview._removeMuteButton = () => {
     if (currentButton && currentButton.length) currentButton.remove()
 }
 
-preview._handlePreviewRequest = (type, mixerId) => {
-    preview.mixerId = mixerId
+preview._handlePreviewRequest = (type, source) => {
+    preview.source = source
     preview.type = type
-    if (preview._findRightOutputId() === null && type !== null && mixerId !== null) {
-        outputsHandler._requestNewOutput(type, {mixer_id: mixerId})
+    if (preview._findRightOutputId() === null && type !== null && source !== null) {
+        outputsHandler._requestNewOutput(type, {source: source})
     }
     preview._checkWeAreShowingTheRightOutput()
 }
