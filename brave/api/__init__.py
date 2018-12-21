@@ -44,7 +44,7 @@ class RestApi(object):
 
         @app.exception(brave.exceptions.InvalidConfiguration)
         async def invalid_cf(request, exception):
-            msg = 'Invalid configuration from user: ' + str(exception)
+            msg = 'Invalid configuration: ' + str(exception)
             logger.debug(msg)
             return sanic.response.json({'error': msg}, 400)
 

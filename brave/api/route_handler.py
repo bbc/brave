@@ -95,17 +95,15 @@ async def overlay_source(request, id):
         return _user_error_response('No such mixer ID')
     if not request.json:
         return _user_error_response('Invalid JSON')
-    if 'type' not in request.json or 'id' not in request.json:
-        return _user_error_response("Requires 'type' and 'id' fields in JSON body")
-    if request.json['type'] != 'input':
-        return _user_error_response('Only inputs can be added to a mixer')
+    if 'uid' not in request.json:
+        return _user_error_response("Requires 'uid' field in JSON body")
 
-    input_id = request.json['id']
-    if input_id not in request['session'].inputs or request['session'].inputs[input_id] is None:
-        return _user_error_response('No such input ID')
+    block = request['session'].uid_to_block(request.json['uid'])
+    if block is None:
+        return _user_error_response('No such item "%s"' % request.json['uid'])
 
     mixer = request['session'].mixers[id]
-    connection = mixer.connection_for_src(request['session'].inputs[input_id], create_if_not_made=True)
+    connection = mixer.connection_for_src(block, create_if_not_made=True)
 
     run_on_master_thread_when_idle(connection.add_to_mix)
     return _status_ok_response()
@@ -116,17 +114,15 @@ async def remove_source(request, id):
         return _user_error_response('No such mixer ID')
     if not request.json:
         return _user_error_response('Invalid JSON')
-    if 'type' not in request.json or 'id' not in request.json:
-        return _user_error_response("Requires 'type' and 'id' fields in JSON body")
-    if request.json['type'] != 'input':
-        return _user_error_response('Only inputs can be added to a mixer')
+    if 'uid' not in request.json:
+        return _user_error_response("Requires 'uid' field in JSON body")
 
-    input_id = request.json['id']
-    if input_id not in request['session'].inputs or request['session'].inputs[input_id] is None:
-        return _user_error_response('No such input ID')
+    block = request['session'].uid_to_block(request.json['uid'])
+    if block is None:
+        return _user_error_response('No such item "%s"' % request.json['uid'])
 
     mixer = request['session'].mixers[id]
-    connection = mixer.connection_for_src(request['session'].inputs[input_id])
+    connection = mixer.connection_for_src(block)
     if not connection:
         return _user_error_response('Not a source of mixer')
 
@@ -185,9 +181,9 @@ async def create_input(request):
     # When an input is created, which mixers should it be added to?
     # For now, it's added to the first mixer.
     # TODO find a better way
-    mixer = request['session'].mixers[0]
-    connection = mixer.connection_for_src(input, create_if_not_made=True)
-    run_on_master_thread_when_idle(connection.add_to_mix)
+    # mixer = request['session'].mixers[0]
+    # connection = mixer.connection_for_src(input, create_if_not_made=True)
+    # run_on_master_thread_when_idle(connection.add_to_mix)
     logger.info('Created input #%d with details %s' % (input.id, request.json))
     return sanic.response.json({'id': input.id})
 
