@@ -280,6 +280,9 @@ function restartBrave() {
     $.ajax({
         type: 'POST',
         url: 'api/restart',
+        body: "{}",
+        dataType: "json",
+        contentType: "application/json",
         success: function() {
             showMessage('Restart underway', 'success')
         },
