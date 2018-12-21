@@ -55,20 +55,6 @@ class Input(InputOutputOverlay):
 
         return s
 
-    def delete(self):
-        self.logger.info('Being deleted')
-        super_delete = super().delete
-        connections = self.dest_connections()
-
-        def iterate_through_connections():
-            if len(connections) == 0:
-                super_delete()
-            else:
-                connection = connections.pop()
-                connection.delete(callback=iterate_through_connections)
-
-        iterate_through_connections()
-
     def handle_updated_props(self):
         '''
         Called after the props have been set/updated, to update the elements
@@ -84,11 +70,12 @@ class Input(InputOutputOverlay):
         '''
         width = self.props['width'] if 'width' in self.props else 0
         height = self.props['height'] if 'height' in self.props else 0
-        mixer = self.session().mixers[0]
+        # TODO can we work without this mixer:
+        # mixer = self.session().mixers[0]
 
         mix_width, mix_height = None, None
-        if mixer:
-            mix_width, mix_height = mixer.get_dimensions()
+        # if mixer:
+        #     mix_width, mix_height = mixer.get_dimensions()
 
         # An internal format of 'RGBA' ensures alpha support and no color variation.
         # It then may be set to something else on output (e.g. I420)
@@ -119,7 +106,7 @@ class Input(InputOutputOverlay):
         Called when the stream starts
         '''
         for connection in self.dest_connections():
-            connection.on_input_pipeline_start()
+            connection.unblock_intersrc_if_ready()
 
     def default_video_pipeline_string_end(self):
         # A tee is used so that we can connect this input to multiple mixers/outputs

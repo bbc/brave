@@ -120,7 +120,8 @@ class InputOutputOverlay():
         s = {
             'state': self.get_state().value_nick.upper(),
             'has_audio': self.has_audio(),
-            'has_video': self.has_video()
+            'has_video': self.has_video(),
+            'uid': self.uid()
         }
 
         attributes_to_copy = ['id', 'type', 'error_message', 'props', 'current_num_peers']
@@ -130,7 +131,33 @@ class InputOutputOverlay():
 
         return s
 
+    def uid(self):
+        return '%s%d' % (self.input_output_overlay_or_mixer(), self.id)
+
+    def src_connections(self):
+        return []
+
+    def dest_connections(self):
+        return []
+
     def delete(self):
+        '''
+        Delete this block.
+        Ensures any connections to/from this block are also deleted.
+        '''
+        self.logger.debug('Being deleted')
+        connections = self.src_connections() + self.dest_connections()
+
+        def iterate_through_connections():
+            if len(connections) == 0:
+                self._delete_with_no_connections()
+            else:
+                connection = connections.pop()
+                connection.delete(callback=iterate_through_connections)
+
+        iterate_through_connections()
+
+    def _delete_with_no_connections(self):
         if not self.pipeline.set_state(Gst.State.NULL):
             self.logger.warning('Unable to set private pipe to NULL before attempting to delete')
 
