@@ -73,6 +73,7 @@ class Mixer(InputOutputOverlay):
         s['sources'] = []
         for connection in self.src_connections():
             pretty = {
+                'uid': connection.src.uid(),
                 'id': connection.src.id,
                 'type': connection.src.input_output_overlay_or_mixer(),
                 'in_mix': connection.in_mix()
@@ -149,8 +150,8 @@ class Mixer(InputOutputOverlay):
                 unblock_pad(output, 'intervideosrc_src_pad')
                 unblock_pad(output, 'interaudiosrc_src_pad')
 
-        # Likewise, tell each input
-        for connection in self.src_connections():
+        # Likewise, tell each connection in and out of this mixer:
+        for connection in self.src_connections() + self.dest_connections():
             connection.unblock_intersrc_if_ready()
 
     def get_new_pad_for_source(self, audio_or_video):
