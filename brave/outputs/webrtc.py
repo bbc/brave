@@ -182,9 +182,12 @@ class WebRTCOutput(Output):
         for element_name in ['webrtcbin', 'video_queue', 'audio_queue']:
             if element_name in self.peers[ws]:
                 element = self.peers[ws][element_name]
-                if not element.set_state(Gst.State.NULL) or not hasattr(self, 'pipeline') \
-                   or not self.pipeline.remove(element):
-                    self.logger.warning('Cannot remove ' + element_name)
+                if not element.set_state(Gst.State.NULL):
+                    self.logger.warning('Cannot remove %s: in the %s state' % (element_name, element.get_state(0)))
+                elif not hasattr(self, 'pipeline'):
+                    self.logger.warning('Cannot remove %s: no pipeline' % element_name)
+                elif not self.pipeline.remove(element):
+                    self.logger.warning('Cannot remove %s: remove request failed' % element_name)
 
     def _remove_no_longer_needed_tee_pads(self, ws):
         '''

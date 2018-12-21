@@ -1,5 +1,5 @@
 from gi.repository import Gst
-from brave.helpers import round_down, create_intersink_channel_name, block_pad, unblock_pad
+from brave.helpers import round_down
 import brave.exceptions
 from brave.inputoutputoverlay import InputOutputOverlay
 
@@ -11,10 +11,8 @@ class Output(InputOutputOverlay):
 
     def __init__(self, **args):
         super().__init__(**args)
+        self.intersrc_src_pad_probe = {}
 
-        self._queue_into_intersink = {} # TODO remove once we have connection
-
-        self._set_src()
         self.create_elements()
 
         if self.has_video():
@@ -27,20 +25,9 @@ class Output(InputOutputOverlay):
             self.interaudiosrc = self.pipeline.get_by_name('interaudiosrc')
             self.interaudiosrc_src_pad = self.interaudiosrc.get_static_pad('src')
 
-        # This stores the pads on the source's tee which are connected to this output:
-        self.tee_src_pads = {}
-
-        if self.src():
-            if self.has_video() and self.src().has_video():
-                self.create_intervideosink_and_connections()
-
-            if self.has_audio() and self.src().has_audio():
-                self.create_interaudiosink_and_connections()
-
-            self._sync_elements_on_src_pipeline()
-
-            # Link this to the source (input or mixer), assuming there is one
-            self.link_from_source()
+        self._set_src()
+        # if self.src_connection():
+        #     self.src_connection().setup()
 
         # Set initially to READY, and when there we set to self.props['initial_state']
         self.set_state(Gst.State.READY)
@@ -51,11 +38,8 @@ class Output(InputOutputOverlay):
     def permitted_props(self):
         return {
             **super().permitted_props(),
-            'mixer_id': {
-                'type': 'int'
-            },
-            'input_id': {
-                'type': 'int'
+            'source': {
+                'type': 'str'
             }
         }
 
@@ -95,102 +79,25 @@ class Output(InputOutputOverlay):
         else:
             return self.session().connections.get_connection_between_src_and_dest(input_or_mixer, self)
 
-    def link_from_source(self):
+    def _update_props(self, new_props):
         '''
-        Link this output so that it is receiving AV from the source (mixer).
+        Validate that the source is valid before we accept it.
         '''
-        if self.has_video() and self.src().has_video():
-            self._connect_tee_to_element(self.src().final_video_tee, 'video')
-        if self.has_audio() and self.src().has_audio():
-            self._connect_tee_to_element(self.src().final_audio_tee, 'audio')
+        if 'source' in new_props and new_props['source'] != self.src():
+            if self.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]:
+                raise brave.exceptions.InvalidConfiguration('Cannot change source in PAUSED or PLAYING state')
+            if new_props['source'] != 'none' and self.session().uid_to_block(new_props['source']) is None:
+                raise brave.exceptions.InvalidConfiguration('Unknown source "%s"' % new_props['source'])
+        super()._update_props(new_props)
 
-    def unlink_from_source(self):
-        '''
-        Stop taking AV from the connected source (mixer).
-        '''
-        for video_or_audio in ['video', 'audio']:
-            if video_or_audio in self.tee_src_pads:
-                tee_src_pad = self.tee_src_pads[video_or_audio]
-                pad_tee_is_connected_to = tee_src_pad.get_peer()
-                if pad_tee_is_connected_to:
-                    if tee_src_pad.unlink(pad_tee_is_connected_to):
-                        self.logger.debug('Disconnected from tee')
-                    else:
-                        self.logger.warning('FAILED to disconnect from tee')
-
-    def _sync_elements_on_src_pipeline(self):
-        '''
-        Make sure the elements on the source (mixer) are matching what the source's state is.
-        It's important this happens _after_ after this pipeline has been initialised (i.e. left NULL state),
-        so that the caps are correctly discovered.
-        '''
-        for element_name in ['interaudiosink', 'intervideosink']:
-            if hasattr(self, element_name):
-                element = getattr(self, element_name)
-                if not element.sync_state_with_parent():
-                    self.logger.warning('Unable to set %s to state of parent source' % element.name)
-
-        for audio_or_video, element in self._queue_into_intersink.items():
-            if not element.sync_state_with_parent():
-                self.logger.warning('Unable to set %s to state of parent source' % element.name)
+    def handle_updated_props(self):
+        self._set_src()
 
     def delete(self):
         self.logger.info('Being deleted')
-        self.unlink_from_source()
-        self.__delete_from_source()
+        if self.src_connection():
+            self.src_connection().delete()
         super().delete()
-
-    def __delete_from_source(self):
-        for element_name in ['interaudiosink', 'intervideosink']:
-            if hasattr(self, element_name):
-                element = getattr(self, element_name)
-                if not self.src().pipeline.remove(element):
-                    self.logger.warning('Unable to remove %s' % element.name)
-        # TODO remove src from the source (mixer) tee
-
-    def create_intervideosink_and_connections(self):
-        '''
-        intervideosink/intervidesrc are used to connect the master pipeline
-        with the local pipeline for this output.
-        '''
-        self.intervideosink = self.src().add_element('intervideosink', self, 'video')
-
-        channel_name = create_intersink_channel_name()
-        self.intervideosrc.set_property('channel', channel_name)
-        self.intervideosink.set_property('channel', channel_name)
-
-        self._queue_into_intersink['video'] = self.src().add_element('queue', self, 'video', name='video_queue')
-        if not self._queue_into_intersink['video'].link(self.intervideosink):
-            self.logger.error('Cannot connect queue to intervideosink')
-
-        # We block the source (output) pad of this intervideosrc until we're sure video is being sent.
-        # Otherwise the output pipeline will have a 'not negotiated' error if it starts before the other one.
-        # We don't need to do this if the other one is playing.
-        # Note: without this things work *most* of the time.
-        # 'test_image_input' is an example that fails without it.
-        if self.src().get_state() not in [Gst.State.PLAYING, Gst.State.PAUSED]:
-            block_pad(self, 'intervideosrc_src_pad')
-
-    def create_interaudiosink_and_connections(self):
-        '''
-        interaudiosink/interaudiosrc are used to connect the master pipeline
-        with the local pipeline for this output.
-        '''
-        self.interaudiosink = self.src().add_element('interaudiosink', self, 'audio')
-
-        channel_name = create_intersink_channel_name()
-        self.interaudiosrc.set_property('channel', channel_name)
-        self.interaudiosink.set_property('channel', channel_name)
-
-        self._queue_into_intersink['audio'] = self.src().add_element('queue', self, 'audio', name='audio_queue')
-        if not self._queue_into_intersink['audio'].link(self.interaudiosink):
-            self.logger.error('Cannot connect queue to interaudiosink')
-
-        # We block the source (output) pad of this interaudiosrc until we're sure audio is being sent.
-        # Otherwise we can get a partial message, which causes an error.
-        # We don't need to do this if the other one is playing.
-        if self.src().get_state() not in [Gst.State.PLAYING, Gst.State.PAUSED]:
-            block_pad(self, 'interaudiosrc_src_pad')
 
     def create_caps_string(self):
         '''
@@ -228,54 +135,40 @@ class Output(InputOutputOverlay):
         '''
         Called when the stream starts
         '''
-        # We may have blocked pads. This will unblock them, assuming the  is running.
-        if self.src() and self.src().get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]:
-            unblock_pad(self, 'intervideosrc_src_pad')
-            unblock_pad(self, 'interaudiosrc_src_pad')
-
-    def _connect_tee_to_element(self, tee, video_or_audio):
-        '''
-        Called when it's time to connect an input (via a mixer/tee) to this output
-        '''
-
-        # Get the next available source (output) from a tee:
-        tee_src_pad_template = tee.get_pad_template("src_%u")
-        tee_src_pad = tee.request_pad(tee_src_pad_template, None, None)
-        self.logger.debug(f'Connecting {tee.get_name()} request pad ' +
-                          f'{tee_src_pad.get_name()} to {video_or_audio}')
-
-        # Keep the source pad so we can disconnect from it later:
-        self.tee_src_pads[video_or_audio] = tee_src_pad
-
-        sink = self._queue_into_intersink[video_or_audio].get_static_pad('sink')
-        if tee_src_pad.link(sink) != Gst.PadLinkReturn.OK:
-            self.logger.error('Failed to connect tee to queue')
+        if self.src_connection():
+            self.src_connection().unblock_intersrc_if_ready()
+        else:
+            self.logger.warning('TEMP cannot unblock if ready - no source (%s)' % (self.props['source']))
 
     def _set_src(self):
         '''
         Ensure the source of this output (either an input or mixer) is correctly set up.
         '''
+        new_src = None
+        if 'source' in self.props:
+            if self.props['source'] == 'none':
+                if self.src_connection():
+                    self.src_connection().delete()
+                return
 
-        # Default: mixer 0, if it exists:
-        if 'mixer_id' not in self.props and 'input_id' not in self.props and 0 in self.session().mixers:
-            self.props['mixer_id'] = 0
+            new_src = self.session().uid_to_block(self.props['source'])
 
-        if 'mixer_id' in self.props:
-            try:
-                src = self.session().mixers[self.props['mixer_id']]
-            except KeyError as e:
-                raise brave.exceptions.InvalidConfiguration('Invalid mixer ID %s' % self.props['mixer_id'])
-        elif 'input_id' in self.props:
-            try:
-                src = self.session().inputs[self.props['input_id']]
-            except KeyError as e:
-                self.logger.warn('Inputs: %s' % list(self.session().inputs.keys()))
-                raise brave.exceptions.InvalidConfiguration('Invalid input ID %s' % self.props['input_id'])
-        else:
-            self.logger.debug('No source, this output will not show anything')
+        # Default is to mixer0 if it exists; otherwise, do nothing
+        if not new_src:
+            if 0 in self.session().mixers:
+                new_src = self.session().mixers[0]
+            else:
+                return
+
+        if self.src() == new_src:
             return
 
-        connection = self.session().connections.get_or_add_connection_between_src_and_dest(src, self)
+        if self.src():
+            self.logger.info('Request to change source from %s to %s' % (self.src().uid, new_src.uid))
+            self.src_connection().delete()
+
+        self.session().connections.get_or_add_connection_between_src_and_dest(new_src, self)
+        self.src_connection().setup()
 
     def _video_pipeline_start(self):
         '''
