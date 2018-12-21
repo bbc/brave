@@ -1,16 +1,18 @@
 from gi.repository import Gst
-from brave.connections import Connection
+from brave.connections.connection import Connection
 
 
 class ConnectionToMixer(Connection):
     '''
-    A type of connection for going into a mixer.
-    It differs in that is can be mixed.
+    A connection from an input/mixer to a mixer.
     '''
 
     def __init__(self, **args):
         super().__init__(**args)
         self._mix_request_pad = {}
+        self._tee_pad = {}
+        self._tee = {}
+        self._intersrc_src_pad_probe_dict = {}
 
     def delete(self, callback=None):
         '''
@@ -97,17 +99,20 @@ class ConnectionToMixer(Connection):
         if 'video' not in self._mix_request_pad:
             return
 
-        self._mix_request_pad['video'].set_property('xpos', self.src.props['xpos'])
-        self._mix_request_pad['video'].set_property('ypos', self.src.props['ypos'])
+        if 'xpos' in self.src.props:
+            self._mix_request_pad['video'].set_property('xpos', self.src.props['xpos'])
+        if 'ypos' in self.src.props:
+            self._mix_request_pad['video'].set_property('ypos', self.src.props['ypos'])
         self._set_mixer_width_and_height()
 
         # Setting zorder to what's already set can cause a segfault.
-        current_zorder = self._mix_request_pad['video'].get_property('zorder')
-        if current_zorder != self.src.props['zorder']:
-            self.logger.debug('Setting zorder to %d (current state: %s)' %
-                              (self.src.props['zorder'],
-                               self.dest.mixer_element['video'].get_state(0).state.value_nick.upper()))
-            self._mix_request_pad['video'].set_property('zorder', self.src.props['zorder'])
+        if 'zorder' in self.src.props:
+            current_zorder = self._mix_request_pad['video'].get_property('zorder')
+            if current_zorder != self.src.props['zorder']:
+                self.logger.debug('Setting zorder to %d (current state: %s)' %
+                                  (self.src.props['zorder'],
+                                   self.dest.mixer_element['video'].get_state(0).state.value_nick.upper()))
+                self._mix_request_pad['video'].set_property('zorder', self.src.props['zorder'])
 
     def _handle_audio_mix_props(self):
         '''
@@ -116,12 +121,13 @@ class ConnectionToMixer(Connection):
         if 'audio' not in self._mix_request_pad:
             return
 
-        prev_volume = self._mix_request_pad['audio'].get_property('volume')
-        volume = self.src.props['volume']
+        if 'volume' in self.src.props:
+            prev_volume = self._mix_request_pad['audio'].get_property('volume')
+            volume = self.src.props['volume']
 
-        if volume != prev_volume:
-            # self.logger.debug(f'Setting volume from {str(prev_volume)} to {str(volume)}')
-            self._mix_request_pad['audio'].set_property('volume', float(volume))
+            if volume != prev_volume:
+                # self.logger.debug(f'Setting volume from {str(prev_volume)} to {str(volume)}')
+                self._mix_request_pad['audio'].set_property('volume', float(volume))
 
     def _set_mixer_width_and_height(self):
         # First stage: go with mixer's size
@@ -135,10 +141,12 @@ class ConnectionToMixer(Connection):
             height = self.src.props['height']
 
         # Third stage: if positioned to go off the side, reduce the size.
-        if width + self.src.props['xpos'] > self.dest.props['width']:
-            width = self.dest.props['width'] - self.src.props['xpos']
-        if height + self.src.props['ypos'] > self.dest.props['height']:
-            height = self.dest.props['height'] - self.src.props['ypos']
+        if 'xpos' in self.src.props:
+            if width + self.src.props['xpos'] > self.dest.props['width']:
+                width = self.dest.props['width'] - self.src.props['xpos']
+        if 'ypos' in self.src.props:
+            if height + self.src.props['ypos'] > self.dest.props['height']:
+                height = self.dest.props['height'] - self.src.props['ypos']
 
         self._mix_request_pad['video'].set_property('width', width)
         self._mix_request_pad['video'].set_property('height', height)
@@ -164,3 +172,108 @@ class ConnectionToMixer(Connection):
             tee_src_pad_template = self._tee[audio_or_video].get_pad_template("src_%u")
             self._tee_pad[audio_or_video] = self._tee[audio_or_video].request_pad(tee_src_pad_template, None, None)
             return self._tee_pad[audio_or_video]
+
+    def _ensure_elements_are_created(self):
+        # STEP 1: Connect the source to the destination, unless that's already been done
+        if self.src.has_video() and not hasattr(self, 'video_is_linked'):
+            self._create_video_elements()
+        if self.src.has_audio() and not hasattr(self, 'audio_is_linked'):
+            self._create_audio_elements()
+
+        # STEP 2: Get the new elements in the same state as their pipelines:
+        self._sync_element_states()
+
+        # STEP 3: Connect the input's tee to these new elements
+        # (It's important we don't do this earlier, as if the elements were not
+        #  ready we could disrupt the existing pipeline.)
+        if self.src.has_video() and not hasattr(self, 'video_is_linked'):
+            self._connect_tee_to_intersink('video')
+            self.video_is_linked = True
+        if self.src.has_audio() and not hasattr(self, 'audio_is_linked'):
+            self._connect_tee_to_intersink('audio')
+            self.audio_is_linked = True
+
+        # If source and destination have already started, we need to unblock straightaway:
+        self.unblock_intersrc_if_ready()
+
+    def _create_video_elements(self):
+        '''
+        Create the elements to connect the src and dest pipelines.
+        Src pipeline looks like: tee -> queue -> intervideosink
+        Dest pipeline looks like: intervideosrc -> videoscale -> videoconvert -> capsfilter -> queue -> tee
+        '''
+        intervideosrc, intervideosink = self._create_inter_elements('video')
+        self._create_dest_elements_after_intervideosrc(intervideosrc)
+
+    def _create_dest_elements_after_intervideosrc(self, intervideosrc):
+        '''
+        On the destination pipeline, after the intervideosrc, we scale/convert the video so that we can
+        set the relevant caps. This method provides theose elements.
+        '''
+        videoscale = self._add_element_to_dest_pipeline('videoscale', 'video')
+        if not intervideosrc.link(videoscale):
+            self.logger.error('Cannot link intervideosrc to videoscale')
+
+        # Decent scaling options:
+        videoscale.set_property('method', 3)
+        videoscale.set_property('dither', True)
+
+        videoconvert = self._add_element_to_dest_pipeline('videoconvert', 'video')
+        if not videoscale.link(videoconvert):
+            self.logger.error('Cannot link videoscale to videoconvert')
+
+        self.capsfilter_after_intervideosrc = self._add_element_to_dest_pipeline('capsfilter', 'video')
+        if not videoconvert.link(self.capsfilter_after_intervideosrc):
+            self.logger.error('Cannot link videoconvert to capsfilter')
+
+        queue = self._add_element_to_dest_pipeline('queue', 'video', name='video_queue')
+
+        # We use a tee even though we only have one output because then we can use
+        # allow-not-linked which means this bit of the pipeline does not fail when it's disconnected.
+        # TODO reconsider this
+        self._tee['video'] = self._add_element_to_dest_pipeline('tee', 'video', name='video_tee_after_queue')
+        self._tee['video'].set_property('allow-not-linked', True)
+
+        if not self.capsfilter_after_intervideosrc.link(queue):
+            self.logger.error('Cannot link capsfilter to queue')
+        if not queue.link(self._tee['video']):
+            self.logger.error('Cannot link queue to tee')
+
+    def _create_audio_elements(self):
+        '''
+        The audio equivalent of _create_video_elements
+        '''
+        interaudiosrc, interaudiosink = self._create_inter_elements('audio')
+
+        # A queue ensures that disconnection from the audiomixer does not result in a pipeline failure:
+        queue = self._add_element_to_dest_pipeline('queue', 'audio', name='audio_queue')
+
+        # We use a tee even though we only have one output because then we can use
+        # allow-not-linked which means this bit of the pipeline does not fail when it's disconnected.
+        self._tee['audio'] = self._add_element_to_dest_pipeline('tee', 'audio', name='audio_tee_after_queue')
+        self._tee['audio'].set_property('allow-not-linked', True)
+
+        if not interaudiosrc.link(queue):
+            self.logger.error('Cannot link interaudiosrc to queue')
+        if not queue.link(self._tee['audio']):
+            self.logger.error('Cannot link queue to tee')
+
+    def _create_intersrc(self, audio_or_video):
+        '''
+        The intervideosrc/interaudiosrc goes on the destination (mixer/output) pipeline, so that it
+        can accept content from the source pipeline.
+        '''
+        assert(audio_or_video in ['audio', 'video'])
+
+        # Create the receiving 'inter' element to accept the AV into the main pipeline
+        intersrc_element = self._add_element_to_dest_pipeline('inter%ssrc' % audio_or_video, audio_or_video)
+
+        # We ask the src to hold the frame for 24 hours (basically, a very long time)
+        # This is optional, but prevents it from going black when it's better to show the last frame.
+        if audio_or_video is 'video':
+            intersrc_element.set_property('timeout', Gst.SECOND * 60 * 60 * 24)
+
+        return intersrc_element
+
+    def _intersrc_src_pad_probe(self):
+        return self._intersrc_src_pad_probe_dict

@@ -1,6 +1,6 @@
 from brave.abstract_collection import AbstractCollection
-from brave.connections.connection import Connection
 from brave.connections.connection_to_mixer import ConnectionToMixer
+from brave.connections.connection_to_output import ConnectionToOutput
 from brave.inputs.input import Input
 from brave.outputs.output import Output
 from brave.mixers.mixer import Mixer
@@ -26,7 +26,7 @@ class ConnectionCollection(AbstractCollection):
         if isinstance(dest, Mixer):
             self._items[args['id']] = ConnectionToMixer(src=src, dest=dest, collection=self, **args)
         else:
-            self._items[args['id']] = Connection(src=src, dest=dest, collection=self, **args)
+            self._items[args['id']] = ConnectionToOutput(src=src, dest=dest, collection=self, **args)
         return self._items[args['id']]
 
     def get_first_collection_for_src(self, src):

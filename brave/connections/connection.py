@@ -19,15 +19,20 @@ class Connection():
         self._elements_on_dest_pipeline = []
         self._elements_on_src_pipeline = []
         self._intersrc_src_pad = {}
-        self._intersrc_src_pad_probe = {}
-        self._tee_pad = {}
-        self._tee = {}
         self._queue_into_intersink = {}
 
     def delete(self, callback=None):
         '''
         Deletes this connection. Don't get confused with remove_from_mix()
         '''
+        # Before removing elements, unlink from the source.
+        if self.has_video():
+            self._block_intersrc('video')
+            self._unlink_from_src_tee('video')
+        if self.has_audio():
+            self._block_intersrc('audio')
+            self._unlink_from_src_tee('audio')
+
         self._remove_all_elements()
         self.collection.pop(self.id)
         if callback:
@@ -39,12 +44,6 @@ class Connection():
         '''
         pass
         # overwritten by subclass
-
-    def on_input_pipeline_start(self):
-        '''
-        Called when the input starts
-        '''
-        self.unblock_intersrc_if_ready()
 
     def set_new_caps(self, new_caps):
         if hasattr(self, 'capsfilter_after_intervideosrc'):
@@ -62,71 +61,21 @@ class Connection():
            (self.src.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]) and \
            self._elements_are_created():
             for audio_or_video in ['audio', 'video']:
-                if audio_or_video in self._intersrc_src_pad and audio_or_video in self._intersrc_src_pad_probe:
-                    self._intersrc_src_pad[audio_or_video].remove_probe(self._intersrc_src_pad_probe[audio_or_video])
-                    del self._intersrc_src_pad_probe[audio_or_video]
+                if audio_or_video in self._intersrc_src_pad and audio_or_video in self._intersrc_src_pad_probe():
+                    self._intersrc_src_pad[audio_or_video].remove_probe(self._intersrc_src_pad_probe()[audio_or_video])
+                    del self._intersrc_src_pad_probe()[audio_or_video]
 
-    def _create_video_elements(self):
+    def has_video(self):
         '''
-        Create the elements to connect the src and dest pipelines.
-        Src pipeline looks like: tee -> queue -> intervideosink
-        Dest pipeline looks like: intervideosrc -> videoscale -> videoconvert -> capsfilter -> queue -> tee
+        True iff both the src and dest have video
         '''
-        intervideosrc, intervideosink = self._create_inter_elements('video')
-        self._create_dest_elements_after_intervideosrc(intervideosrc)
+        return self.src.has_video() and self.dest.has_video()
 
-    def _create_dest_elements_after_intervideosrc(self, intervideosrc):
+    def has_audio(self):
         '''
-        On the destination pipeline, after the intervideosrc, we scale/convert the video so that we can
-        set the relevant caps. This method provides theose elements.
+        True iff both the src and dest have audio
         '''
-        videoscale = self._add_element_to_dest_pipeline('videoscale', 'video')
-        if not intervideosrc.link(videoscale):
-            self.logger.error('Cannot link intervideosrc to videoscale')
-
-        # Decent scaling options:
-        videoscale.set_property('method', 3)
-        videoscale.set_property('dither', True)
-
-        videoconvert = self._add_element_to_dest_pipeline('videoconvert', 'video')
-        if not videoscale.link(videoconvert):
-            self.logger.error('Cannot link videoscale to videoconvert')
-
-        self.capsfilter_after_intervideosrc = self._add_element_to_dest_pipeline('capsfilter', 'video')
-        if not videoconvert.link(self.capsfilter_after_intervideosrc):
-            self.logger.error('Cannot link videoconvert to capsfilter')
-
-        queue = self._add_element_to_dest_pipeline('queue', 'video', name='video_queue')
-
-        # We use a tee even though we only have one output because then we can use
-        # allow-not-linked which means this bit of the pipeline does not fail when it's disconnected.
-        # TODO reconsider this
-        self._tee['video'] = self._add_element_to_dest_pipeline('tee', 'video', name='video_tee_after_queue')
-        self._tee['video'].set_property('allow-not-linked', True)
-
-        if not self.capsfilter_after_intervideosrc.link(queue):
-            self.logger.error('Cannot link capsfilter to queue')
-        if not queue.link(self._tee['video']):
-            self.logger.error('Cannot link queue to tee')
-
-    def _create_audio_elements(self):
-        '''
-        The audio equivalent of _create_video_elements
-        '''
-        interaudiosrc, interaudiosink = self._create_inter_elements('audio')
-
-        # A queue ensures that disconnection from the audiomixer does not result in a pipeline failure:
-        queue = self._add_element_to_dest_pipeline('queue', 'audio', name='audio_queue')
-
-        # We use a tee even though we only have one output because then we can use
-        # allow-not-linked which means this bit of the pipeline does not fail when it's disconnected.
-        self._tee['audio'] = self._add_element_to_dest_pipeline('tee', 'audio', name='audio_tee_after_queue')
-        self._tee['audio'].set_property('allow-not-linked', True)
-
-        if not interaudiosrc.link(queue):
-            self.logger.error('Cannot link interaudiosrc to queue')
-        if not queue.link(self._tee['audio']):
-            self.logger.error('Cannot link queue to tee')
+        return self.src.has_audio() and self.dest.has_audio()
 
     def _create_inter_elements(self, audio_or_video):
         '''
@@ -135,38 +84,29 @@ class Connection():
         intersrc = self._create_intersrc(audio_or_video)
         intersink = self._create_intersink(audio_or_video)
 
+        self._intersrc_src_pad[audio_or_video] = intersrc.get_static_pad('src')
+        self._block_intersrc(audio_or_video)
+
         # Give the 'inter' elements a channel name. It doesn't matter what, so long as they're unique.
         channel_name = create_intersink_channel_name()
         intersink.set_property('channel', channel_name)
         intersrc.set_property('channel', channel_name)
         return intersrc, intersink
 
-    def _create_intersrc(self, audio_or_video):
+    def _block_intersrc(self, audio_or_video):
         '''
-        The intervideosrc/interaudiosrc goes on the destination (mixer/output) pipeline, so that it
-        can accept content from the source pipeline.
+        The intersrc (into the dest pipeline) is blocked until it's definitely got a source.
         '''
-        assert(audio_or_video in ['audio', 'video'])
-
-        # Create the receiving 'inter' element to accept the AV into the main pipeline
-        intersrc_element = self._add_element_to_dest_pipeline('inter%ssrc' % audio_or_video, audio_or_video)
-        self._intersrc_src_pad[audio_or_video] = intersrc_element.get_static_pad('src')
-
-        # We ask the src to hold the frame for 24 hours (basically, a very long time)
-        # This is optional, but prevents it from going black when it's better to show the last frame.
-        if audio_or_video is 'video':
-            intersrc_element.set_property('timeout', Gst.SECOND * 60 * 60 * 24)
-
         def _blocked_probe_callback(*_):
             self.logger.debug('_blocked_probe_callback called')
             return Gst.PadProbeReturn.OK
 
         # We block the source (output) pad of this intervideosrc/interaudiosrc until we're sure video is being sent.
         # Otherwise we can get a partial message, which causes an error.
-        self._intersrc_src_pad_probe[audio_or_video] = self._intersrc_src_pad[audio_or_video].add_probe(
-            Gst.PadProbeType.BLOCK_DOWNSTREAM, _blocked_probe_callback)
-
-        return intersrc_element
+        if not audio_or_video in self._intersrc_src_pad_probe():
+            self._intersrc_src_pad_probe()[audio_or_video] = self._intersrc_src_pad[audio_or_video].add_probe(
+                Gst.PadProbeType.BLOCK_DOWNSTREAM, _blocked_probe_callback)
+            self.dest.logger.warn('TEMP add_probe (%s) id=%s' % (audio_or_video, self._intersrc_src_pad_probe()[audio_or_video]))
 
     def _create_intersink(self, audio_or_video):
         '''
@@ -174,8 +114,8 @@ class Connection():
         '''
         assert(audio_or_video in ['audio', 'video'])
         element_name = 'inter%ssink' % audio_or_video
-        element = self._add_element_to_src_pipeline(element_name, audio_or_video=audio_or_video)
-        queue = self._add_element_to_src_pipeline('queue', audio_or_video=audio_or_video, name=audio_or_video+'_queue')
+        element = self._add_element_to_src_pipeline(element_name, audio_or_video)
+        queue = self._add_element_to_src_pipeline('queue', audio_or_video, name=audio_or_video + '_queue')
         if not element or not queue:
             return
 
@@ -194,25 +134,49 @@ class Connection():
 
     def _connect_tee_to_intersink(self, audio_or_video):
         '''
-        The tee allows a source to have multiple connections.
-        This connects the tee to an intersink (via a queue) so that it can be sent to a destination.
+        The tee allows a source to have multiple connections to multiple destinations.
+        This method links tee -> queue -> intersink, so that it can be sent to a destination.
         '''
         tee = getattr(self.src, 'final_' + audio_or_video + '_tee')
         if not tee:
             self.logger.error('Failed to connect tee to queue: cannot find tee')
             return
 
+        tee_src_pad_template = tee.get_pad_template("src_%u")
+        tee_src_pad = tee.request_pad(tee_src_pad_template, None, None)
+
+        sink = self._get_pad_to_connect_tee_to(audio_or_video)
+        if not sink or tee_src_pad.link(sink) != Gst.PadLinkReturn.OK:
+            self.logger.error('Failed to connect tee to queue')
+
+    def _unlink_from_src_tee(self, audio_or_video):
+        '''
+        This connection is connected to the source via a 'tee' element.
+        This method disconnects from that tee.
+        '''
+        pad = self._get_pad_to_connect_tee_to(audio_or_video)
+        if not pad:
+            self.logger.warning('Cannot unlink from tee: cannot find connected pad')
+            return
+        tee_pad = pad.get_peer()
+        if not tee_pad:
+            self.logger.warning('Cannot unlink from tee: cannot find connected tee pad')
+            return
+        tee_pad.unlink(pad)
+
+        # Now delete the pad, we won't need it again
+        tee_pad.get_parent().release_request_pad(tee_pad)
+
+    def _get_pad_to_connect_tee_to(self, audio_or_video):
+        '''
+        Returns the pad of the queue that should be connected to from the source's 'tee' element.
+        '''
         queue = self._queue_into_intersink[audio_or_video]
         if not queue:
             self.logger.error('Failed to connect tee to queue: cannot find queue')
             return
 
-        tee_src_pad_template = tee.get_pad_template("src_%u")
-        tee_src_pad = tee.request_pad(tee_src_pad_template, None, None)
-
-        sink = queue.get_static_pad('sink')
-        if tee_src_pad.link(sink) != Gst.PadLinkReturn.OK:
-            self.logger.error('Failed to connect tee to queue')
+        return queue.get_static_pad('sink')
 
     def _remove_all_elements(self):
         '''
@@ -256,31 +220,8 @@ class Connection():
                 self.logger.warning('Unable to set %s to state of parent source' % e.name)
 
     def _elements_are_created(self):
-        return (not self.src.has_video() or hasattr(self, 'video_is_linked')) and \
-               (not self.src.has_audio() or hasattr(self, 'audio_is_linked'))
-
-    def _ensure_elements_are_created(self):
-        # STEP 1: Connect the source to the destination, unless that's already been done
-        if self.src.has_video() and not hasattr(self, 'video_is_linked'):
-            self._create_video_elements()
-        if self.src.has_audio() and not hasattr(self, 'audio_is_linked'):
-            self._create_audio_elements()
-
-        # STEP 2: Get the new elements in the same state as their pipelines:
-        self._sync_element_states()
-
-        # STEP 3: Connect the input's tee to these new elements
-        # (It's important we don't do this earlier, as if the elements were not
-        #  ready we could disrupt the existing pipeline.)
-        if self.src.has_video() and not hasattr(self, 'video_is_linked'):
-            self._connect_tee_to_intersink('video')
-            self.video_is_linked = True
-        if self.src.has_audio() and not hasattr(self, 'audio_is_linked'):
-            self._connect_tee_to_intersink('audio')
-            self.audio_is_linked = True
-
-        # If source and destination have already started, we need to unblock straightaway:
-        self.unblock_intersrc_if_ready()
+        return (not self.has_video() or hasattr(self, 'video_is_linked')) and \
+               (not self.has_audio() or hasattr(self, 'audio_is_linked'))
 
     def _set_dest_element_state(self, state):
         '''
