@@ -1,5 +1,7 @@
 import os
 import sys
+import re
+import brave.exceptions
 from brave.helpers import get_logger
 logger = get_logger('brave.session')
 from gi.repository import Gst, GObject
@@ -89,6 +91,31 @@ class Session(object):
         self.print_state_summary()
         self.logger.debug('...state will print out every %d seconds...' % PERIODIC_MESSAGE_FREQUENCY)
         GObject.timeout_add(PERIODIC_MESSAGE_FREQUENCY * 1000, self.periodic_message)
+
+    def uid_to_block(self, uid):
+        if not isinstance(uid, str):
+            raise brave.exceptions.InvalidConfiguration('Invalid uid "%s", it must be a string (input/mixer/output then a number)' % uid)
+        match = re.search(r'^(input|mixer|output)(\d+)$', uid)
+        if not match:
+            raise brave.exceptions.InvalidConfiguration('Invalid uid "%s", it must be input/mixer/output then a number' % uid)
+
+        type, id = match.group(1), int(match.group(2))
+        return self.get_block_by_type(type, id)
+
+    def get_block_by_type(self, type, id):
+        if type == 'input':
+            collection = self.inputs
+        elif type == 'mixer':
+            collection = self.mixers
+        elif type == 'output':
+            collection = self.outputs
+        else:
+            raise ValueError('Invalid block type "%s"' % type)
+
+        if id in collection:
+            return collection[id]
+        else:
+            return None
 
 
 def init():
