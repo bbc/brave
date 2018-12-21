@@ -10,7 +10,7 @@ preview = {
 
 preview.init = () => {
     $('#preview-bar-dropdown').click((change) => {
-        preview._handlePreviewRequest($(change.target).data('type'), $(change.target).data('id'))
+        preview._handlePreviewRequest($(change.target).data('type'), $(change.target).data('source'))
     })
     setInterval(preview._refreshImage, 1000)
 }
@@ -62,21 +62,24 @@ preview._drawPreviewMenu = () => {
     }
     items.push(noPreviewOption)
 
-    mixersHandler.items.forEach(mixer => {
-        const source = 'mixer' + mixer.id
-        const webrtcPreview = $('<a />').data('source', source).data('type', 'webrtc').html('Mixer ' + mixer.id + ' (as a WebRTC stream)')
-        const imagePreview = $('<a />').data('source', source).data('type', 'image').html('Mixer ' + mixer.id + ' (as an updating image)')
-        if (preview.source === source) {
-            if (preview.type === 'webrtc') {
-                webrtcPreview.addClass('active')
-                previewMsg = webrtcPreview.html()
+    const blockTypes = ['mixer', 'input']
+    blockTypes.forEach(blockType => {
+        const blockItems = blockType == 'input' ? inputsHandler.items : mixersHandler.items
+        blockItems.forEach(item => {
+            const webrtcPreview = $('<a />').data('source', item.uid).data('type', 'webrtc').html(ucFirst(blockType) + ' ' + item.id + ' (as a WebRTC stream)')
+            const imagePreview = $('<a />').data('source', item.uid).data('type', 'image').html(ucFirst(blockType) + ' ' + item.id + ' (as an updating image)')
+            if (preview.source === item.uid) {
+                if (preview.type === 'webrtc') {
+                    webrtcPreview.addClass('active')
+                    previewMsg = webrtcPreview.html()
+                }
+                else if (preview.type === 'image') {
+                    imagePreview.addClass('active')
+                    previewMsg = imagePreview.html()
+                }
             }
-            else if (preview.type === 'image') {
-                imagePreview.addClass('active')
-                previewMsg = imagePreview.html()
-            }
-        }
-        items.push(webrtcPreview, imagePreview)
+            items.push(webrtcPreview, imagePreview)
+        })
     })
 
     items.forEach(i => {

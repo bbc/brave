@@ -119,7 +119,7 @@ components.getMixOptions = (src) => {
     return mixersHandler.items.map(mixer => {
         if (!mixer.sources) return
         if (src === mixer) return
-        var foundThis = mixer.sources.find(x => x.slug === src.slug)
+        var foundThis = mixer.sources.find(x => x.uid === src.uid)
         var inMix = foundThis && foundThis.in_mix ? 'In mix' : 'Not in mix'
         var div = $('<div class="mix-option"></div>')
         if (foundThis && foundThis.in_mix) {

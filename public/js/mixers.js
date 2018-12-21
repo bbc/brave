@@ -66,9 +66,9 @@ mixersHandler._sendMixerCommand = function(mixer, source, command) {
         type: 'POST',
         url: 'api/mixers/' + mixer.id + '/' + command,
         dataType: 'json',
-        data: JSON.stringify({slug:source.slug}),
+        data: JSON.stringify({uid:source.uid}),
         success: function() {
-            showMessage('Success in ' + command + ' for ' + source.slug + ' to ' + mixer.slug)
+            showMessage('Success in ' + command + ' for ' + source.uid + ' to ' + mixer.uid)
             updatePage()
         },
         error: function() {
