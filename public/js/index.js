@@ -32,6 +32,7 @@ setInterval(updatePage, 5000)
 
 function drawAllItems() {
     $('#cards').empty()
+    if (noItems()) return showNoItemsMessage()
     inputsHandler.draw()
     overlaysHandler.draw()
     mixersHandler.draw()
@@ -98,26 +99,25 @@ function getDimensionsSelect(name, width, height) {
     })
 }
 
-function getSourceSelect(currentProps) {
+function getSourceSelect(block, isNew) {
     const options = {
         id: 'source',
         label: 'Source',
         name: 'source',
         options: {'none': 'None'},
     }
-    if (currentProps.hasOwnProperty('source')) options.value = currentProps.source
-    mixersHandler.items.forEach(m => {
-        options.options['mixer' + m.id] = 'Mixer ' + m.id
 
-        // Make the first mixer the default one:
-        if (!options.hasOwnProperty('value')) options.value = 'mixer' + m.id
+    options.value = block.source
+
+    mixersHandler.items.concat(inputsHandler.items).forEach(m => {
+        options.options[m.uid] = prettyUid(m.uid)
+
+        // If creating new, make the first mixer the default one:
+        if (isNew && !options.value) options.value = m.uid
     })
-    inputsHandler.items.forEach(m => {
-        options.options['input' + m.id] = 'Input ' + m.id
-    })
-    if (!options.hasOwnProperty('value')) options.value = 'none'
-    console.log('currentProps=', currentProps)
-    console.log('options=', options)
+
+    if (!options.value) options.value = 'none'
+    console.log(options)
     return formGroup(options)
 }
 
@@ -279,6 +279,24 @@ function restartBrave() {
 
 function ucFirst(string) {
     return string.charAt(0).toUpperCase() + string.slice(1)
+}
+
+function prettyUid(uid) {
+    const matches = uid.match(/^(input|mixer|output|overlay)(\d+)$/)
+    if (matches) {
+        return ucFirst(matches[1] + ' ' + matches[2])
+    }
+    else {
+        return uid
+    }
+}
+
+function noItems() {
+    return inputsHandler.items.length + outputsHandler.items.length + mixersHandler.items.length + overlaysHandler.items.length === 0
+}
+
+function showNoItemsMessage() {
+    $('#cards').append('Use the \'Add\' button above to create inputs, mixers, outputs and overlays.')
 }
 
 onPageLoad()

@@ -75,7 +75,7 @@ overlaysHandler._getMixOptions = (overlay) => {
         var buttons = $('<div class="option-icons"></div>').append(overlayButton)
         div.append(buttons)
     }
-    div.append('<strong>Mixer ' + overlay.props.mixer_id + ':</strong> ' + showingOrHidden)
+    div.append('<strong>' + prettyUid(overlay.source) + ':</strong> ' + showingOrHidden)
     return div
 
     return mixersHandler.items.map(mixer => {
@@ -238,7 +238,9 @@ overlaysHandler._handleFormSubmit = function() {
 
     console.log('Submitting new overlay with values', newProps)
     delete newProps.type
-    overlaysHandler._submitCreateOrEdit(id, {type: type, props: newProps})
+    const source = newProps.source
+    delete newProps.source
+    overlaysHandler._submitCreateOrEdit(id, {type, source, props: newProps})
     hideModal();
 }
 

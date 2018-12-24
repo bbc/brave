@@ -66,8 +66,8 @@ preview._drawPreviewMenu = () => {
     blockTypes.forEach(blockType => {
         const blockItems = blockType == 'input' ? inputsHandler.items : mixersHandler.items
         blockItems.forEach(item => {
-            const webrtcPreview = $('<a />').data('source', item.uid).data('type', 'webrtc').html(ucFirst(blockType) + ' ' + item.id + ' (as a WebRTC stream)')
-            const imagePreview = $('<a />').data('source', item.uid).data('type', 'image').html(ucFirst(blockType) + ' ' + item.id + ' (as an updating image)')
+            const webrtcPreview = $('<a />').data('source', item.uid).data('type', 'webrtc').html(prettyUid(item.uid) + ' (as a WebRTC stream)')
+            const imagePreview = $('<a />').data('source', item.uid).data('type', 'image').html(prettyUid(item.uid) + ' (as an updating image)')
             if (preview.source === item.uid) {
                 if (preview.type === 'webrtc') {
                     webrtcPreview.addClass('active')
@@ -113,7 +113,7 @@ preview._handlePreviewRequest = (type, source) => {
     preview.source = source
     preview.type = type
     if (preview._findRightOutputId() === null && type !== null && source !== null) {
-        outputsHandler._requestNewOutput(type, {source: source})
+        outputsHandler.requestNewOutput({type, source})
     }
     preview._checkWeAreShowingTheRightOutput()
 }

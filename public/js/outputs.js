@@ -10,8 +10,7 @@ outputsHandler.findById = (id) => {
 outputsHandler.findByDetails = (details) => {
     return outputsHandler.items.find(i => {
         if (details.type && details.type !== i.type) return false
-        if (details.hasOwnProperty('source') && i.props.hasOwnProperty('source') &&
-            details.source !== i.props.source) return false
+        if (details.hasOwnProperty('source') && details.source !== i.source) return false
         return true
     })
 }
@@ -79,8 +78,11 @@ outputsHandler._outputCardBody = (output) => {
         details.push('<strong>Stream name:</strong> ' + output.props.stream_name)
     }
 
-    if (output.props.hasOwnProperty('source')) {
-        details.push('<strong>Source:</strong> ' + output.props.source)
+    if (output.hasOwnProperty('source')) {
+        details.push('<strong>Source:</strong> ' + output.source)
+    }
+    else {
+        details.push('<strong>Source:</strong> None')
     }
 
     if (output.hasOwnProperty('error_message')) details.push('<strong>ERROR:</strong> <span style="color:red">' + output.error_message + '</span>')
@@ -88,8 +90,8 @@ outputsHandler._outputCardBody = (output) => {
     return details.map(d => $('<div></div>').append(d))
 }
 
-outputsHandler._requestNewOutput = function(type, props) {
-    outputsHandler._submitCreateOrEdit(null, {type, props}, (response) => {
+outputsHandler.requestNewOutput = function(args) {
+    outputsHandler._submitCreateOrEdit(null, args, (response) => {
         if (!response || !response.hasOwnProperty('id')) {
             showMessage('Unable to create output', 'warning')
         }
@@ -138,7 +140,7 @@ outputsHandler._populateForm = function(output) {
     else {
         form.append('<input type="hidden" name="id" value="' + output.id + '">')
     }
-    form.append(getSourceSelect(output.props))
+    form.append(getSourceSelect(output, isNew))
     if (!output.type) {
     }
     else if (output.type === 'local') {
@@ -271,7 +273,9 @@ outputsHandler._handleFormSubmit = function() {
     }
 
     delete newProps.type
-    outputsHandler._submitCreateOrEdit(output.id, {type: type, props: newProps}, outputsHandler._onNewOutputSuccess)
+    const source = newProps.source
+    delete newProps.source
+    outputsHandler._submitCreateOrEdit(output.id, {type, source, props: newProps}, outputsHandler._onNewOutputSuccess)
     hideModal();
 }
 
