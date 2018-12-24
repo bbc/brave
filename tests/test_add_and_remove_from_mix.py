@@ -5,17 +5,17 @@ from PIL import Image
 def test_adding_and_removing_sources_to_a_mix(run_brave, create_config_file):
     set_up_two_sources(run_brave, create_config_file)
     assert_api_returns_right_mixer_sources([{'id': 0, 'type': 'input', 'in_mix': True}, {'id': 1, 'type': 'input', 'in_mix': True}])
-    remove_source(1)
+    remove_source('input1')
     assert_api_returns_right_mixer_sources([{'id': 0, 'type': 'input', 'in_mix': True}, {'id': 1, 'type': 'input', 'in_mix': False}])
-    remove_source(1) # Prove it's safe to do repeatedly
+    remove_source('input1')  # Prove it's safe to do repeatedly
     assert_api_returns_right_mixer_sources([{'id': 0, 'type': 'input', 'in_mix': True}, {'id': 1, 'type': 'input', 'in_mix': False}])
-    remove_source(0)
+    remove_source('input0')
     assert_api_returns_right_mixer_sources([{'id': 0, 'type': 'input', 'in_mix': False}, {'id': 1, 'type': 'input', 'in_mix': False}])
-    overlay_source(1)
+    overlay_source('input1')
     assert_api_returns_right_mixer_sources([{'id': 0, 'type': 'input', 'in_mix': False}, {'id': 1, 'type': 'input', 'in_mix': True}])
-    overlay_source(1) # Prove it's safe to do repeatedly
+    overlay_source('input1') # Prove it's safe to do repeatedly
     assert_api_returns_right_mixer_sources([{'id': 0, 'type': 'input', 'in_mix': False}, {'id': 1, 'type': 'input', 'in_mix': True}])
-    overlay_source(0)
+    overlay_source('input0')
     assert_api_returns_right_mixer_sources([{'id': 0, 'type': 'input', 'in_mix': True}, {'id': 1, 'type': 'input', 'in_mix': True}])
 
 
@@ -31,11 +31,11 @@ def test_removing_input_whilst_in_a_mix(run_brave, create_config_file):
 def test_switching(run_brave, create_config_file):
     set_up_two_sources(run_brave, create_config_file)
     assert_api_returns_right_mixer_sources([{'id': 0, 'type': 'input', 'in_mix': True}, {'id': 1, 'type': 'input', 'in_mix': True}])
-    cut_to_source(1, 0)
+    cut_to_source('input1', 0)
     assert_api_returns_right_mixer_sources([{'id': 0, 'type': 'input', 'in_mix': False}, {'id': 1, 'type': 'input', 'in_mix': True}])
-    cut_to_source(0, 0)
+    cut_to_source('input0', 0)
     assert_api_returns_right_mixer_sources([{'id': 0, 'type': 'input', 'in_mix': True}, {'id': 1, 'type': 'input', 'in_mix': False}])
-    cut_to_source(0, 0)
+    cut_to_source('input0', 0)
     assert_api_returns_right_mixer_sources([{'id': 0, 'type': 'input', 'in_mix': True}, {'id': 1, 'type': 'input', 'in_mix': False}])
 
 def set_up_two_sources(run_brave, create_config_file):
@@ -45,6 +45,9 @@ def set_up_two_sources(run_brave, create_config_file):
     'default_inputs': [
         {'type': 'test_video', 'props': {'pattern': 4, 'zorder': 2}}, # pattern 4 is red
         {'type': 'test_video', 'props': {'pattern': 5, 'zorder': 3}}, # pattern 5 is green
+    ],
+    'default_mixers': [
+        {}  # one standard mixer
     ],
     'default_outputs': [
         # {'type': 'local'} # good for debugging
@@ -58,8 +61,8 @@ def set_up_two_sources(run_brave, create_config_file):
 def assert_api_returns_right_mixer_sources(inputs):
     response = api_get('/api/all')
     assert response.status_code == 200
-
-    (response)
+    for i in inputs:
+        i['uid'] = '%s%d' % (i['type'], i['id'])
 
     if len(inputs) == 0:
         assert 'sources' not in response.json()['mixers'][0]
@@ -67,14 +70,14 @@ def assert_api_returns_right_mixer_sources(inputs):
         assert response.json()['mixers'][0]['sources'] == inputs
 
 
-def remove_source(input_id):
-    response = api_post('/api/mixers/0/remove_source', {'id': input_id, 'type': 'input'})
+def remove_source(uid):
+    response = api_post('/api/mixers/0/remove_source', {'source': uid})
     assert response.status_code == 200
     time.sleep(0.5)
 
 
-def overlay_source(input_id):
-    response = api_post('/api/mixers/0/overlay_source', {'id': input_id, 'type': 'input'})
+def overlay_source(uid):
+    response = api_post('/api/mixers/0/overlay_source', {'source': uid})
     assert response.status_code == 200
     time.sleep(0.5)
 

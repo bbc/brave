@@ -21,8 +21,8 @@ MIXER1 = {
 # INPUT0 is RED and INPUT1 is GREEN:
 INPUT0 = {'type': 'test_video', 'props': { 'pattern': 4, 'zorder': 10 } }
 INPUT1 = {'type': 'test_video', 'props': { 'pattern': 5, 'zorder': 20 } }
-OUTPUT0 = {'type': 'image', 'props': {'mixer_id': 0}}
-OUTPUT1 = {'type': 'image', 'props': {'mixer_id': 1}}
+OUTPUT0 = {'type': 'image', 'source': 'mixer0'}
+OUTPUT1 = {'type': 'image', 'source': 'mixer1'}
 
 
 def test_mixer_from_config(run_brave, create_config_file):
@@ -43,7 +43,7 @@ def test_mixer_from_config(run_brave, create_config_file):
 
 def subtest_ensure_one_mixer_does_not_affect_another():
     # Set mixer0 to just use INPUT0. It should go RED, leaving mixer 1 on GREEN:
-    cut_to_source(0, 0)
+    cut_to_source('input0', 0)
     time.sleep(3)
     assert_image_output_color(0, [255, 0, 0])
     assert_image_output_color(1, [0, 255, 0])
@@ -51,7 +51,8 @@ def subtest_ensure_one_mixer_does_not_affect_another():
 
 def subtest_addition_of_input():
     # Create a third input. This is BLUE
-    add_input({'type': 'test_video', 'props': {'pattern': 6, 'zorder': 30}})
+    new_input = add_input({'type': 'test_video', 'props': {'pattern': 6, 'zorder': 30}})
+    cut_to_source(new_input['uid'], 0)
     time.sleep(3)
 
     # The current rule is that mixer 0 gets the input automatically. Mixer 1 does not.
@@ -61,7 +62,7 @@ def subtest_addition_of_input():
 
 
 def subtest_overlay_of_new_input():
-    cut_to_source(2, 1)
+    cut_to_source('input2', 1)
     time.sleep(3)
 
     # Both outputs should now be showing blue, as they are all showing input 2
@@ -100,7 +101,7 @@ def subtest_addition_of_mixer():
 
 
 def subtest_addition_of_destination_to_new_mixer():
-    add_output({'type': 'image', 'props': {'mixer_id': 2}})
+    add_output({'type': 'image', 'source': 'mixer2'})
     time.sleep(2)
     response = api_get('/api/all')
     assert response.status_code == 200
@@ -108,7 +109,7 @@ def subtest_addition_of_destination_to_new_mixer():
 
 
 def subtest_overlay_of_input_onto_new_mixer():
-    cut_to_source(2, 2)
+    cut_to_source('input2', 2)
     time.sleep(2)
 
     # Now all three outputs will be input 2, i.e. blue

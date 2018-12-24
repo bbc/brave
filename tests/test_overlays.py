@@ -6,13 +6,13 @@ def test_overlay_at_start(run_brave, create_config_file):
     set_up_overlay_at_start(run_brave, create_config_file)
     assert_overlays([{'id': 0, 'state': 'PLAYING'}])
 
-    add_overlay({'type': 'text', 'props': {'text': 'Overlay #1', 'visible': True}})
+    add_overlay({'type': 'text', 'source': 'mixer0', 'props': {'text': 'Overlay #1', 'visible': True}})
     time.sleep(1)
-    assert_overlays([{'id': 0, 'state': 'PLAYING', 'props': {'visible': True, 'mixer_id': 0}},
-                     {'id': 1, 'state': 'PLAYING', 'props': {'visible': True, 'mixer_id': 0}}])
+    assert_overlays([{'id': 0, 'state': 'PLAYING', 'source': 'mixer0', 'props': {'visible': True}},
+                     {'id': 1, 'state': 'PLAYING', 'source': 'mixer0', 'props': {'visible': True}}])
 
     # Try adding one that's not visible:
-    add_overlay({'type': 'text', 'props': {'text': 'Overlay #2', 'visible': False}})
+    add_overlay({'type': 'text', 'source': 'mixer0', 'props': {'text': 'Overlay #2', 'visible': False}})
     time.sleep(1)
     assert_overlays([{'id': 0, 'state': 'PLAYING', 'props': {'visible': True}},
                      {'id': 1, 'state': 'PLAYING', 'props': {'visible': True}},
@@ -36,8 +36,11 @@ def set_up_overlay_at_start(run_brave, create_config_file):
     output_video_location = create_output_video_location()
 
     config = {
+    'default_mixers': [
+        {}
+    ],
     'default_overlays': [
-        {'type': 'text', 'props': {'text': 'Overlay #0', 'visible': True}}
+        {'type': 'text', 'source': 'mixer0', 'props': {'text': 'Overlay #0', 'visible': True}}
     ],
     'default_outputs': [
         # {'type': 'local'} # good for debugging

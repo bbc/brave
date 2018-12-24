@@ -97,7 +97,9 @@ def assert_overlays_in_playing_state(json_response):
             assert overlay['state'] == 'PLAYING', 'Overlay in %s state, not PLAYING: %s' % (overlay['state'], str(overlay))
 
 
-def assert_everything_in_playing_state(json_response):
+def assert_everything_in_playing_state(json_response=None):
+    if json_response is None:
+        json_response = api_get('/api/all')
     assert_inputs_in_playing_state(json_response)
     assert_outputs_in_playing_state(json_response)
     assert_mixers_in_playing_state(json_response)
@@ -141,7 +143,7 @@ def create_output_video_location():
 
 def add_output(details, status_code=200):
     response = api_put('/api/outputs', details)
-    assert response.status_code == status_code
+    assert response.status_code == status_code, 'Expected status code %s but got %s, body was:%s' % (status_code, response.status_code, response.json())
     time.sleep(0.5)
     return response.json()
 
@@ -154,7 +156,7 @@ def delete_output(id, expected_status_code=200):
 
 def update_output(id, updates, expected_status_code=200):
     response = api_post('/api/outputs/' + str(id), updates)
-    assert response.status_code == expected_status_code
+    assert response.status_code == expected_status_code, 'Expected status code %s but got %s, body was:%s' % (expected_status_code, response.status_code, response.json())
     time.sleep(0.2)
 
 
@@ -197,6 +199,12 @@ def assert_outputs(outputs, check_playing_state=True):
                 for (props_key, props_value) in expected_output['props'].items():
                     assert props_key in actual_output['props']
                     assert props_value == actual_output['props'][props_key], 'For output %s, for key %s, expected %s but got %s' % (expected_output['id'], props_key, props_value, actual_output['props'][props_key])
+            elif key == 'source':
+                if value is None:
+                    assert 'source' not in actual_output
+                else:
+                    assert 'source' in actual_output, 'Expected source in %s' % actual_output
+                    assert actual_output['source'] == value
             else:
                 assert value == actual_output[key], 'Key "%s" expected to be "%s", but was "%s"' % (key, value, actual_output[key])
 
@@ -254,6 +262,7 @@ def add_input(details):
     response = api_put('/api/inputs', details)
     assert response.status_code == 200
     time.sleep(0.2)
+    return response.json()
 
 
 def delete_input(id, expected_status_code=200):
@@ -310,9 +319,9 @@ def delete_mixer(id, expected_status_code=200):
     time.sleep(0.2)
 
 
-def cut_to_source(input_id, mixer_id):
-    response = api_post('/api/mixers/%d/cut_to_source' % mixer_id, {'id': input_id, 'type': 'input'})
-    assert response.status_code == 200
+def cut_to_source(source, mixer_id, status_code=200):
+    response = api_post('/api/mixers/%d/cut_to_source' % mixer_id, {'source': source})
+    assert response.status_code == status_code, 'Expected status code %s but got %s, body was:%s' % (status_code, response.status_code, response.json())
     time.sleep(0.5)
 
 

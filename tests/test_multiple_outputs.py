@@ -9,7 +9,7 @@ def start_with_multiple_outputs(run_brave, create_config_file, output_image_loca
         {'props': {'pattern': 5}} # 5 is green
     ],
     'default_outputs': [
-        {'type': 'image', 'props': { 'location': output_image_location0, 'mixer_id': 1 }},
+        {'type': 'image', 'source': 'mixer1', 'props': { 'location': output_image_location0 }},
         {'type': 'image', 'props': { 'location': output_image_location1 } }
         # ,{'type': 'local'}
     ]
@@ -25,8 +25,8 @@ def test_multiple_outputs_at_startup(run_brave, create_config_file):
     output_image_location1 = create_output_image_location()
     start_with_multiple_outputs(run_brave, create_config_file, output_image_location0, output_image_location1)
     assert_outputs([
-        {'type': 'image', 'props': { 'location': output_image_location0, 'mixer_id': 1 }},
-        {'type': 'image', 'props': { 'location': output_image_location1, 'mixer_id': 0 }}
+        {'type': 'image', 'source': 'mixer1', 'props': { 'location': output_image_location0 }},
+        {'type': 'image', 'source': 'mixer0', 'props': { 'location': output_image_location1 }}
     ])
     assert_mixers([
         {'id': 0, 'props': {'pattern': 4}},
@@ -41,7 +41,7 @@ def test_multiple_outputs_at_startup(run_brave, create_config_file):
 def test_output_at_startup_to_missing_mixer(run_brave, create_config_file):
     config = {
     'default_outputs': [
-        {'type': 'image', 'props': { 'mixer_id': 1 }},
+        {'type': 'image', 'source': 'mixer1'},
     ]
     }
     config_file = create_config_file(config)
@@ -54,23 +54,23 @@ def test_multiple_outputs_at_runtime(run_brave):
     time.sleep(1)
 
     # Mixer ID 0 exists:
-    add_output({'type': 'image', 'props': {'mixer_id': 0}})
+    add_output({'type': 'image', 'source': 'mixer0'})
 
     # Mixer ID 1 does not exist:
-    response = add_output({'type': 'image', 'props': {'mixer_id': 1}}, 400)
-    assert 'Invalid mixer ID' in response['error']
+    response = add_output({'type': 'image', 'source': 'mixer1'}, 400)
+    assert 'Unknown source' in response['error']
     time.sleep(1)
 
-    assert_outputs([{'type': 'image', 'id': 0, 'props': {'mixer_id': 0}}])
+    assert_outputs([{'type': 'image', 'id': 0, 'source': 'mixer0'}])
 
     add_mixer({})
 
     # Now we have a mixer, this will work:
-    add_output({'type': 'image', 'props': {'mixer_id': 1}})
+    add_output({'type': 'image', 'source': 'mixer1'})
     # Do it again to prove we can  have multiple outputs on the same mixer
-    add_output({'type': 'image', 'props': {'mixer_id': 1}})
+    add_output({'type': 'image', 'source': 'mixer1'})
     time.sleep(1)
 
-    assert_outputs([{'type': 'image', 'props': {'mixer_id': 0}},
-                    {'type': 'image', 'props': {'mixer_id': 1}},
-                    {'type': 'image', 'props': {'mixer_id': 1}}])
+    assert_outputs([{'type': 'image', 'source': 'mixer0'},
+                    {'type': 'image', 'source': 'mixer1'},
+                    {'type': 'image', 'source': 'mixer1'}])

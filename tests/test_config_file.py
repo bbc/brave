@@ -34,8 +34,8 @@ def test_brave_with_full_config_file(run_brave, create_config_file):
     'default_outputs': [
         {'type': 'local'},
         {'type': 'tcp'},
-        {'type': 'file', 'props': { 'location': output_video_location, 'input_id': 0 } },
-        {'type': 'image', 'props': { 'location': output_image_location, 'input_id': 1 } }
+        {'type': 'file', 'source': 'input0', 'props': { 'location': output_video_location}},
+        {'type': 'image', 'source': 'input1', 'props': { 'location': output_image_location}}
     ]
     }
     config_file = create_config_file(config)
@@ -55,5 +55,5 @@ def test_brave_with_full_config_file(run_brave, create_config_file):
     assert response.json()['outputs'][2]['type'] == 'file'
     assert response.json()['outputs'][3]['type'] == 'image'
     assert response.json()['outputs'][2]['props']['location'] == output_video_location
-    assert response.json()['outputs'][2]['props']['input_id'] == 0
-    assert response.json()['outputs'][3]['props']['input_id'] == 1
+    assert response.json()['outputs'][2]['source'] == 'input0'
+    assert response.json()['outputs'][3]['source'] == 'input1'
