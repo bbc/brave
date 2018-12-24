@@ -70,12 +70,6 @@ class Input(InputOutputOverlay):
         '''
         width = self.props['width'] if 'width' in self.props else 0
         height = self.props['height'] if 'height' in self.props else 0
-        # TODO can we work without this mixer:
-        # mixer = self.session().mixers[0]
-
-        mix_width, mix_height = None, None
-        # if mixer:
-        #     mix_width, mix_height = mixer.get_dimensions()
 
         # An internal format of 'RGBA' ensures alpha support and no color variation.
         # It then may be set to something else on output (e.g. I420)

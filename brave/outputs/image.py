@@ -46,7 +46,6 @@ class ImageOutput(Output):
         sink = self.pipeline.get_by_name('sink')
         sink.set_property('location', self.props['location'])
 
-
     def __delete_file_if_exists(self):
         try:
             os.remove(self.props['location'])

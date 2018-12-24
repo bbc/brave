@@ -21,9 +21,7 @@ class ConnectionToOutput(Connection):
             self.audio_is_linked = True
 
         # If source and destination have already started, we need to unblock straightaway:
-        self.logger.warning('TEMP connection calling unblock_intersrc_if_ready')
         self.unblock_intersrc_if_ready()
-        self.logger.warning('TEMP connection calling unblock_intersrc_if_ready= FINISHED')
 
     def _create_intersrc(self, audio_or_video):
         '''

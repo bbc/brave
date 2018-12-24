@@ -1,8 +1,6 @@
 from gi.repository import Gst
 from brave.inputoutputoverlay import InputOutputOverlay
-# from brave.mixers.source_collection import SourceCollection
 import brave.config as config
-from brave.helpers import unblock_pad
 
 
 class Mixer(InputOutputOverlay):
@@ -144,12 +142,6 @@ class Mixer(InputOutputOverlay):
         '''
         Called when the stream starts
         '''
-        # Tell each output to unblock its intervideosrc as content is now coming through
-        for name, output in self.session().outputs.items():
-            if output.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]:
-                unblock_pad(output, 'intervideosrc_src_pad')
-                unblock_pad(output, 'interaudiosrc_src_pad')
-
         # Likewise, tell each connection in and out of this mixer:
         for connection in self.src_connections() + self.dest_connections():
             connection.unblock_intersrc_if_ready()

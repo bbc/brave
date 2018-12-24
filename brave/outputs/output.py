@@ -10,6 +10,11 @@ class Output(InputOutputOverlay):
     '''
 
     def __init__(self, **args):
+        source_uid = None
+        if 'source' in args:
+            source_uid = args['source']
+            del args['source']
+
         super().__init__(**args)
         self.intersrc_src_pad_probe = {}
 
@@ -25,9 +30,7 @@ class Output(InputOutputOverlay):
             self.interaudiosrc = self.pipeline.get_by_name('interaudiosrc')
             self.interaudiosrc_src_pad = self.interaudiosrc.get_static_pad('src')
 
-        self._set_src()
-        # if self.src_connection():
-        #     self.src_connection().setup()
+        self._set_source(source_uid)
 
         # Set initially to READY, and when there we set to self.props['initial_state']
         self.set_state(Gst.State.READY)
@@ -35,13 +38,11 @@ class Output(InputOutputOverlay):
     def input_output_overlay_or_mixer(self):
         return 'output'
 
-    def permitted_props(self):
-        return {
-            **super().permitted_props(),
-            'source': {
-                'type': 'str'
-            }
-        }
+    def summarise(self):
+        s = super().summarise()
+        if self.src():
+            s['source'] = self.src().uid()
+        return s
 
     def src(self):
         '''
@@ -49,10 +50,7 @@ class Output(InputOutputOverlay):
         Can be None if this outpu thas no source.
         '''
         connection = self.src_connection()
-        if connection:
-            return connection.src
-        else:
-            return None
+        return connection.src if connection else None
 
     def src_connection(self):
         '''
@@ -79,19 +77,16 @@ class Output(InputOutputOverlay):
         else:
             return self.session().connections.get_connection_between_src_and_dest(input_or_mixer, self)
 
-    def _update_props(self, new_props):
+    def update(self, updates):
         '''
-        Validate that the source is valid before we accept it.
+        Overridden update() method to handle an update the source of this output.
         '''
-        if 'source' in new_props and new_props['source'] != self.src():
+        if 'source' in updates and (not self.src() or updates['source'] != self.src().uid):
             if self.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]:
-                raise brave.exceptions.InvalidConfiguration('Cannot change source in PAUSED or PLAYING state')
-            if new_props['source'] != 'none' and self.session().uid_to_block(new_props['source']) is None:
-                raise brave.exceptions.InvalidConfiguration('Unknown source "%s"' % new_props['source'])
-        super()._update_props(new_props)
-
-    def handle_updated_props(self):
-        self._set_src()
+                raise brave.exceptions.InvalidConfiguration(
+                    'Cannot change an output\'s source whilst it is in PAUSED or PLAYING state')
+            self._set_source(updates['source'])
+        super().update(updates)
 
     def delete(self):
         self.logger.info('Being deleted')
@@ -137,24 +132,24 @@ class Output(InputOutputOverlay):
         '''
         if self.src_connection():
             self.src_connection().unblock_intersrc_if_ready()
-        else:
-            self.logger.warning('TEMP cannot unblock if ready - no source (%s)' % (self.props['source']))
 
-    def _set_src(self):
+    def _set_source(self, new_src_uid):
         '''
         Ensure the source of this output (either an input or mixer) is correctly set up.
         '''
         new_src = None
-        if 'source' in self.props:
-            if self.props['source'] == 'none':
+        if new_src_uid:
+            if new_src_uid == 'none':
                 if self.src_connection():
                     self.src_connection().delete()
                 return
+            else:
+                new_src = self.session().uid_to_block(new_src_uid)
+                if new_src is None:
+                    raise brave.exceptions.InvalidConfiguration('Unknown source "%s"' % new_src_uid)
 
-            new_src = self.session().uid_to_block(self.props['source'])
-
-        # Default is to mixer0 if it exists; otherwise, do nothing
-        if not new_src:
+        else:
+            # Default is to mixer0 if it exists; otherwise, do nothing
             if 0 in self.session().mixers:
                 new_src = self.session().mixers[0]
             else:
@@ -164,7 +159,7 @@ class Output(InputOutputOverlay):
             return
 
         if self.src():
-            self.logger.info('Request to change source from %s to %s' % (self.src().uid, new_src.uid))
+            self.logger.info('Request to change source from %s to %s' % (self.src().uid(), new_src.uid()))
             self.src_connection().delete()
 
         self.session().connections.get_or_add_connection_between_src_and_dest(new_src, self)

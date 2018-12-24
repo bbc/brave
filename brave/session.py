@@ -93,29 +93,33 @@ class Session(object):
         GObject.timeout_add(PERIODIC_MESSAGE_FREQUENCY * 1000, self.periodic_message)
 
     def uid_to_block(self, uid):
-        if not isinstance(uid, str):
-            raise brave.exceptions.InvalidConfiguration('Invalid uid "%s", it must be a string (input/mixer/output then a number)' % uid)
-        match = re.search(r'^(input|mixer|output)(\d+)$', uid)
+        '''
+        Given a UID (e.g. 'input2') returns the instance of the relevant block.
+        '''
+        match = re.search(r'^(input|mixer|output)(\d+)$', uid) if isinstance(uid, str) else None
         if not match:
-            raise brave.exceptions.InvalidConfiguration('Invalid uid "%s", it must be input/mixer/output then a number' % uid)
+            raise brave.exceptions.InvalidConfiguration(
+                'Invalid uid "%s", it must be input/mixer/output then a number' % uid)
 
         type, id = match.group(1), int(match.group(2))
         return self.get_block_by_type(type, id)
 
     def get_block_by_type(self, type, id):
+        '''
+        Given the block type as a string (input/mixer/output/overlay) and an ID (integer) returns the block instance.
+        '''
         if type == 'input':
             collection = self.inputs
         elif type == 'mixer':
             collection = self.mixers
         elif type == 'output':
             collection = self.outputs
+        elif type == 'overlay':
+            collection = self.overlays
         else:
             raise ValueError('Invalid block type "%s"' % type)
 
-        if id in collection:
-            return collection[id]
-        else:
-            return None
+        return collection[id] if id in collection else None
 
 
 def init():

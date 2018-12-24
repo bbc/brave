@@ -131,29 +131,3 @@ def run_on_master_thread_when_idle(func, **func_args):
     if func is None:
         raise RuntimeError('Missing function to run on master thread!')
     GLib.idle_add(function_runner, {'func': func, 'func_args': func_args})
-
-
-def unblock_pad(block, name):
-    if hasattr(block, name):
-        if name in block.probes:
-            getattr(block, name).remove_probe(block.probes[name])
-            block.probes.pop(name)
-            block.logger.debug('Removed block from %s' % name)
-        # else it wasn't blocked, no need to worry
-    # else it does not exist, e.g. audio in a video-only situation, so ignore
-
-
-def block_pad(block, name):
-    if hasattr(block, name):
-        if name in block.probes:
-            block.logger.warning('Attempting to block %s but already blocked' % name)
-        else:
-            block.probes[name] = getattr(block, name).add_probe(
-                Gst.PadProbeType.BLOCK_DOWNSTREAM, _blocked_probe_callback, block)
-    else:
-        block.logger.error('Attempting to block pad %s that does not exist' % name)
-
-
-def _blocked_probe_callback(self, _, block):
-    block.logger.debug('_blocked_probe_callback called (default version)')
-    return Gst.PadProbeReturn.OK

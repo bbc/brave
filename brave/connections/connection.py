@@ -103,10 +103,9 @@ class Connection():
 
         # We block the source (output) pad of this intervideosrc/interaudiosrc until we're sure video is being sent.
         # Otherwise we can get a partial message, which causes an error.
-        if not audio_or_video in self._intersrc_src_pad_probe():
+        if audio_or_video not in self._intersrc_src_pad_probe():
             self._intersrc_src_pad_probe()[audio_or_video] = self._intersrc_src_pad[audio_or_video].add_probe(
                 Gst.PadProbeType.BLOCK_DOWNSTREAM, _blocked_probe_callback)
-            self.dest.logger.warn('TEMP add_probe (%s) id=%s' % (audio_or_video, self._intersrc_src_pad_probe()[audio_or_video]))
 
     def _create_intersink(self, audio_or_video):
         '''

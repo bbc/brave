@@ -10,6 +10,11 @@ class Overlay(InputOutputOverlay):
 
     def __init__(self, **args):
         super().__init__(**args)
+        if not hasattr(self, 'source'):
+            raise brave.exceptions.InvalidConfiguration('No "source" property provided to the overlay')
+        if not self.mixer():
+            raise brave.exceptions.InvalidConfiguration('Unknown source "%s"' % self.source)
+
         self.visible = self.props['visible']
         self.create_elements()
         if self.visible:
@@ -18,17 +23,13 @@ class Overlay(InputOutputOverlay):
     def input_output_overlay_or_mixer(self):
         return 'overlay'
 
-    def permitted_props(self):
-        return {
-            **super().permitted_props(),
-            'mixer_id': {
-                'type': 'int',
-                'default': 0
-            }
-        }
-
     def has_audio(self):
         return False   # no such thing as audio on overlays
+
+    def summarise(self):
+        s = super().summarise()
+        s['source'] = self.source
+        return s
 
     def get_state(self):
         if not hasattr(self, 'element'):
@@ -52,7 +53,7 @@ class Overlay(InputOutputOverlay):
         '''
         Returns the mixer that this overlay is for
         '''
-        return self.session().mixers[self.props['mixer_id']]
+        return self.session().uid_to_block(self.source) if hasattr(self, 'source') else None
 
     def delete(self):
         '''

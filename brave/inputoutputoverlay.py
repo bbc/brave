@@ -83,6 +83,12 @@ class InputOutputOverlay():
 
         return True
 
+    def handle_updated_props(self):
+        '''
+        Called when the user has updated certain properties of this block.
+        '''
+        pass  # overwritten by some subclasses
+
     def get_state(self):
         if hasattr(self, 'pipeline'):
             return self.pipeline.get_state(0).state
