@@ -69,13 +69,9 @@ default_overlays:
 
 ##
 ## DEFAULT MIXERS
-## If omitted, one mixer is always created.
-## At present only the first mixer is able to connect to inputs and outputs.
 ## No 'type' field requided for mixers.
 ## 'props' can have 'width' and 'height' and 'pattern' (all integers)
 ##
 default_mixers:
-    # - props:
-    #     width: 160
-    #     height: 90
-    #     pattern: 6
+    # Default to one mixer, with no specific props:
+    - props:
