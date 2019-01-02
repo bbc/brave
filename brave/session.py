@@ -63,17 +63,12 @@ class Session(object):
         for input_config in config.default_inputs():
             input = self.inputs.add(**input_config)
             input.setup()
-            # for id, mixer in self.mixers.items():
-            #     connection = mixer.connection_for_source(input, create_if_not_made=True)
-            #     connection.add_to_mix()
 
         for output_config in config.default_outputs():
             self.outputs.add(**output_config)
 
         for id, mixer in self.mixers.items():
             mixer.setup_initial_sources()
-        #     connection = mixer.connection_for_source(input, create_if_not_made=True)
-        #     connection.add_to_mix()
 
         if config.enable_video():
             for overlay_config in config.default_overlays():

@@ -16,8 +16,6 @@ class Overlay(InputOutputOverlay):
         super().__init__(**args)
         self._set_source(source_uid)
         self.visible = self.props['visible']
-        # if self.source is not None:
-        #     self.create_elements()
 
     def input_output_overlay_or_mixer(self):
         return 'overlay'
