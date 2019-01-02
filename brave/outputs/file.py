@@ -77,4 +77,4 @@ class FileOutput(Output):
 
     def create_caps_string(self):
         # format=I420 ensures the mp4 is playable with QuickTime.
-        return super().create_caps_string() + ',format=I420'
+        return super().create_caps_string(format='I420')

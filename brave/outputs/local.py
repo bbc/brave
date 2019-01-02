@@ -40,4 +40,4 @@ class LocalOutput(Output):
 
     def create_caps_string(self):
         # format=RGB removes the alpha channel which can crash glimagesink
-        return super().create_caps_string() + ',pixel-aspect-ratio=1/1,format=RGB'
+        return super().create_caps_string(format='RGB') + ',pixel-aspect-ratio=1/1'

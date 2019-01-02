@@ -30,7 +30,7 @@ class TextOverlay(Overlay):
         }
 
     def create_elements(self):
-        self.element = self.mixer().add_element('textoverlay', self, audio_or_video='video')
+        self.element = self.source.add_element('textoverlay', self, audio_or_video='video')
         self.set_element_values_from_props()
 
     def set_element_values_from_props(self):

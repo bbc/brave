@@ -11,8 +11,8 @@ def test_elements_api_endpoint(run_brave):
     time.sleep(0.5)
     check_brave_is_running()
     add_input({'type': 'image', 'props': {'uri': 'file://' + test_directory() + '/assets/image_640_360.png'}})
-    cut_to_source('input0', 0)
-    time.sleep(1)
+    cut_to_source('input1', 1)
+    time.sleep(0.5)
 
     subtest_elements_endpoint()
     subtest_elements_endpoint_with_bin_elements()
@@ -24,7 +24,7 @@ def subtest_elements_endpoint():
     assert len(elements_object['inputs'].items()) == 1
     assert len(elements_object['mixers'].items()) == 1
     assert len(elements_object['outputs'].items()) == 0
-    assert len(elements_object['inputs']['0']['elements']) == 7
+    assert len(elements_object['inputs']['1']['elements']) == 10
 
 def subtest_elements_endpoint_with_bin_elements():
     elements_response = api_get('/api/elements?show_inside_bin_elements=yes')
@@ -33,4 +33,4 @@ def subtest_elements_endpoint_with_bin_elements():
     assert len(elements_object['inputs'].items()) == 1
     assert len(elements_object['mixers'].items()) == 1
     assert len(elements_object['outputs'].items()) == 0
-    assert len(elements_object['inputs']['0']['elements']) == 12
+    assert len(elements_object['inputs']['1']['elements']) == 15

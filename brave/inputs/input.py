@@ -1,5 +1,6 @@
 from gi.repository import Gst
 from brave.inputoutputoverlay import InputOutputOverlay
+import random
 
 
 class Input(InputOutputOverlay):
@@ -25,7 +26,7 @@ class Input(InputOutputOverlay):
         Returns an array of Connections, describing what this input is connected to.
         (An input can have any number of connections, each going to a Mixer or Output.)
         '''
-        return self.session().connections.get_all_collections_for_src(self)
+        return self.session().connections.get_all_for_source(self)
 
     def summarise(self):
         s = super().summarise()
@@ -104,11 +105,13 @@ class Input(InputOutputOverlay):
 
     def default_video_pipeline_string_end(self):
         # A tee is used so that we can connect this input to multiple mixers/outputs
-        return ' ! tee name=final_video_tee allow-not-linked=true'
+        # The fakesink with sync=true ensures the stream acts as a live stream even with no connections.
+        return (' ! queue name=video_output_queue ! tee name=final_video_tee allow-not-linked=true '
+                'final_video_tee. ! queue ! fakesink sync=true')
 
     def default_audio_pipeline_string_end(self):
-        # A tee is used so that we can connect this input to multiple mixers/outputs
-        return ' ! tee name=final_audio_tee allow-not-linked=true'
+        return (' ! queue name=audio_output_queue ! tee name=final_audio_tee allow-not-linked=true '
+                'final_audio_tee. ! queue ! fakesink sync=true')
 
     def add_element(self, factory_name, who_its_for, audio_or_video, name=None):
         '''
@@ -117,7 +120,7 @@ class Input(InputOutputOverlay):
         '''
         if name is None:
             name = factory_name
-        name = who_its_for.input_output_overlay_or_mixer() + '_' + str(who_its_for.id) + '_' + name
+        name = who_its_for.uid() + '_' + name + '_' + str(random.randint(1, 1000000))
         input_bin = getattr(self, 'final_' + audio_or_video + '_tee').parent
         e = Gst.ElementFactory.make(factory_name, name)
         if not input_bin.add(e):

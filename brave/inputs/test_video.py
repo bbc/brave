@@ -42,6 +42,7 @@ class TestVideoInput(Input):
         self.create_pipeline_from_string(pipeline_string)
 
         self.final_video_tee = self.pipeline.get_by_name('final_video_tee')
+        self.video_output_queue = self.pipeline.get_by_name('video_output_queue')
         self.videotestsrc = self.pipeline.get_by_name('videotestsrc')
         self.capsfilter = self.pipeline.get_by_name('capsfilter')
 

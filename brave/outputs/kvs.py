@@ -47,4 +47,4 @@ class KvsOutput(Output):
         kvssink.set_property('stream-name', self.props['stream_name'])
 
     def create_caps_string(self):
-        return super().create_caps_string() + ',format=I420,pixel-aspect-ratio=1/1,framerate=30/1'
+        return super().create_caps_string(format='I420') + ',pixel-aspect-ratio=1/1,framerate=30/1'

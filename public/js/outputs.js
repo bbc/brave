@@ -273,7 +273,7 @@ outputsHandler._handleFormSubmit = function() {
     }
 
     delete newProps.type
-    const source = newProps.source
+    const source = newProps.source === 'none' ? null : newProps.source
     delete newProps.source
     outputsHandler._submitCreateOrEdit(output.id, {type, source, props: newProps}, outputsHandler._onNewOutputSuccess)
     hideModal();
@@ -287,7 +287,6 @@ outputsHandler._onNewOutputSuccess = function() {
 outputsHandler._submitCreateOrEdit = function(id, values, onSuccess) {
     var type = (id != null) ? 'POST' : 'PUT'
     var url = (id != null) ? 'api/outputs/' + id : 'api/outputs'
-    if (Object.keys(values).length === 0) console.trace('_submitCreateOrEdit with no updates! TEMP')
     $.ajax({
         contentType: 'application/json',
         type, url,

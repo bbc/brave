@@ -10,14 +10,13 @@ class Output(InputOutputOverlay):
     '''
 
     def __init__(self, **args):
-        source_uid = None
         if 'source' in args:
             source_uid = args['source']
             del args['source']
+        else:
+            source_uid = 'default'
 
         super().__init__(**args)
-        self.intersrc_src_pad_probe = {}
-
         self.create_elements()
 
         if self.has_video():
@@ -40,48 +39,47 @@ class Output(InputOutputOverlay):
 
     def summarise(self):
         s = super().summarise()
-        if self.src():
-            s['source'] = self.src().uid()
+        s['source'] = self.source().uid() if self.source() else None
         return s
 
-    def src(self):
+    def source(self):
         '''
-        Returns the Input or Mixer that is the source for this output.
-        Can be None if this outpu thas no source.
+        Returns the Input or Mixer object that is the source for this output.
+        Can be None if this output thas no source.
         '''
-        connection = self.src_connection()
-        return connection.src if connection else None
+        connection = self.source_connection()
+        return connection.source if connection else None
 
-    def src_connection(self):
+    def source_connection(self):
         '''
         Returns an the Connection object which describes what this output is connected to.
         If this output is not connected to anything, returns None.
         An output can be the destination to exactly one connection.
         The source of a connection will be either an Input or a Mixer.
         '''
-        return self.session().connections.get_first_collection_for_dest(self)
+        return self.session().connections.get_first_for_dest(self)
 
-    def src_connections(self):
+    def source_connections(self):
         '''
-        As src_connection() but returns an array of the 1 connected source, or an empty array if no attached source.
+        As source_connection() but returns an array of the 1 connected source, or an empty array if no attached source.
         '''
-        return self.session().connections.get_all_collections_for_src(self)
+        return self.session().connections.get_all_for_source(self)
 
-    def connection_for_src(self, input_or_mixer, create_if_not_made=False):
+    def connection_for_source(self, input_or_mixer, create_if_not_made=False):
         '''
         Given an input or mixer, gets the Connection from it to this.
         If such a Connection has not been made before, makes it.
         '''
         if create_if_not_made:
-            return self.session().connections.get_or_add_connection_between_src_and_dest(input_or_mixer, self)
+            return self.session().connections.get_or_add_connection_between_source_and_dest(input_or_mixer, self)
         else:
-            return self.session().connections.get_connection_between_src_and_dest(input_or_mixer, self)
+            return self.session().connections.get_connection_between_source_and_dest(input_or_mixer, self)
 
     def update(self, updates):
         '''
         Overridden update() method to handle an update the source of this output.
         '''
-        if 'source' in updates and (not self.src() or updates['source'] != self.src().uid):
+        if 'source' in updates and (not self.source() or updates['source'] != self.source().uid):
             if self.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]:
                 raise brave.exceptions.InvalidConfiguration(
                     'Cannot change an output\'s source whilst it is in PAUSED or PLAYING state')
@@ -90,24 +88,23 @@ class Output(InputOutputOverlay):
 
     def delete(self):
         self.logger.info('Being deleted')
-        if self.src_connection():
-            self.src_connection().delete()
+        if self.source_connection():
+            self.source_connection().delete()
         super().delete()
 
-    def create_caps_string(self):
+    def create_caps_string(self, format='RGBx'):
         '''
         Returns the preferred caps (a string defining things such as width, height and framerate)
         '''
 
-        # Don't set 'format' here... output types set their own.
-        caps = 'video/x-raw'
+        caps = 'video/x-raw,format=%s' % format
 
         # If only one dimension is provided, we calculate the other.
         # Some encoders (jpegenc, possibly others) don't like it if only one metric is present.
         width = self.props['width'] if 'width' in self.props else None
         height = self.props['height'] if 'height' in self.props else None
-        if self.src():
-            src_width, src_height = self.src().get_dimensions()
+        if self.source():
+            src_width, src_height = self.source().get_dimensions()
             if src_width and src_height:
                 if width and not height:
                     height = round_down(width * src_height / src_width)
@@ -130,40 +127,33 @@ class Output(InputOutputOverlay):
         '''
         Called when the stream starts
         '''
-        if self.src_connection():
-            self.src_connection().unblock_intersrc_if_ready()
+        if self.source_connection():
+            self.source_connection().unblock_intersrc_if_ready()
 
     def _set_source(self, new_src_uid):
         '''
         Ensure the source of this output (either an input or mixer) is correctly set up.
         '''
-        new_src = None
-        if new_src_uid:
-            if new_src_uid == 'none':
-                if self.src_connection():
-                    self.src_connection().delete()
+        if new_src_uid is None:
+            if self.source_connection():
+                self.source_connection().delete()
+            return
+        elif new_src_uid == 'default':
+            new_src = self.session().mixers.get_entry_with_lowest_id()
+            if not new_src:
                 return
-            else:
-                new_src = self.session().uid_to_block(new_src_uid)
-                if new_src is None:
-                    raise brave.exceptions.InvalidConfiguration('Unknown source "%s"' % new_src_uid)
-
         else:
-            # Default is to mixer0 if it exists; otherwise, do nothing
-            if 0 in self.session().mixers:
-                new_src = self.session().mixers[0]
-            else:
-                return
+            new_src = self.session().uid_to_block(new_src_uid, error_if_not_exists=True)
 
-        if self.src() == new_src:
+        if self.source() == new_src:
             return
 
-        if self.src():
-            self.logger.info('Request to change source from %s to %s' % (self.src().uid(), new_src.uid()))
-            self.src_connection().delete()
+        if self.source():
+            self.logger.info('Request to change source from %s to %s' % (self.source().uid(), new_src.uid()))
+            self.source_connection().delete()
 
-        self.session().connections.get_or_add_connection_between_src_and_dest(new_src, self)
-        self.src_connection().setup()
+        self.session().connections.get_or_add_connection_between_source_and_dest(new_src, self)
+        self.source_connection().setup()
 
     def _video_pipeline_start(self):
         '''

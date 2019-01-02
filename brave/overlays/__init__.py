@@ -2,10 +2,9 @@ from brave.overlays.text import TextOverlay
 from brave.overlays.effect import EffectOverlay
 from brave.overlays.clock import ClockOverlay
 from brave.abstract_collection import AbstractCollection
-from gi.repository import Gst
 import brave.exceptions
 import brave.helpers
-logger = brave.helpers.get_logger('brave.overlays')
+logger = brave.helpers.get_logger('overlays')
 
 
 class OverlayCollection(AbstractCollection):
@@ -29,60 +28,55 @@ class OverlayCollection(AbstractCollection):
             raise brave.exceptions.InvalidConfiguration("Invalid overlay type '%s'" % args['type'])
 
         self._items[args['id']] = overlay
+
+        # Visibility check happens here, not in the Overlay constructor, so that it is in self._items:
+        if overlay.visible:
+            overlay._make_visible()
+
         return overlay
 
-    def ensure_overlays_are_correctly_connected(self, mixer):
+    def remove_source(self, source):
         '''
-        Ensure the provided mixer's pipeline contains the correct overlay elements.
+        Removes the provided source from any overlays that have it
         '''
-        def _connect_overlays_once_blocked(*_):
-            '''
-            Called once the video is blocked, this arranges all the overlays in the pipeline.
-            '''
+        for overlay in self.get_all_with_source(source):
+            overlay.update({'source': None})
 
-            def getSortValue(overlay):
-                return overlay.getSortValue()
+    def get_all_with_source(self, source):
+        return list(filter(lambda x: x.source == source, self._items.values()))
 
-            overlays = sorted(list(filter(lambda o: o.visible and o.mixer() == mixer, self._items.values())),
-                              key=getSortValue)
+    def ensure_overlays_are_correctly_connected(self, source):
+        '''
+        Ensure the provided source's pipeline contains the correct overlay elements.
+        '''
+        def get_sort_value(overlay):
+            return overlay.get_sort_value()
+        overlays = sorted(list(filter(lambda o: o.visible and o.source == source, self._items.values())),
+                          key=get_sort_value)
 
-            if len(overlays) == 0:
-                if not _link_if_not_already_linked(mixer.video_mixer_output_queue,
-                                                   mixer.end_capsfilter):
-                    mixer.logger.warning('Unable to connect from video mixer output queue to me')
-            else:
-                # The first should be linked to from the video mixer
-                if not _link_if_not_already_linked(mixer.video_mixer_output_queue,
-                                                   overlays[0].element):
-                    overlays[0].logger.warning('Unable to connect from video mixer to me')
-
-                # Connect the middle ones together:
-                for n in range(len(overlays) - 1):
-                    if not _link_if_not_already_linked(overlays[n].element, overlays[n + 1].element):
-                        overlays[n].logger.warning('Unable to connect to the next overlay ' + str(overlays[n + 1]))
-
-                # The last should be linked to the video mixer tee
-                logger.debug('Now linking overlay %s to the video mixer tee' % overlays[-1].id)
-                if not _link_if_not_already_linked(overlays[-1].element, mixer.end_capsfilter):
-                    overlays[-1].logger.warning('Unable to connect to the video mixer tee')
-
-            #  Unblock everything
-            for overlay in overlays:
-                overlay.ensure_src_pad_not_blocked()
-
-            logger.debug('Completed update of overlays, now unblocking')
-            return Gst.PadProbeReturn.REMOVE
-
-        # We block the video so that we can make changes to a live pipeline
-        # As described at https://gstreamer.freedesktop.org/documentation/design/ ...
-        # ... probes.html#dynamically-switching-an-element-in-a-playing-pipeline
-        if mixer.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]:
-            logger.debug('Overlays need updating, blocking pipeline temporarily')
-            self.video_mixer_queue_src_pad = mixer.video_mixer_output_queue.get_static_pad('src')
-            self.video_mixer_queue_src_pad_block_probe = self.video_mixer_queue_src_pad.add_probe(
-                Gst.PadProbeType.BLOCK_DOWNSTREAM, _connect_overlays_once_blocked)
+        if len(overlays) == 0:
+            if not _link_if_not_already_linked(source.video_output_queue,
+                                               source.final_video_tee):
+                source.logger.warning('Unable to connect from video source output queue to me')
         else:
-            _connect_overlays_once_blocked()
+            # The first should be linked to from the video source
+            if not _link_if_not_already_linked(source.video_output_queue,
+                                               overlays[0].element):
+                overlays[0].logger.warning('Unable to connect from video source to me')
+
+            # Connect the middle ones together:
+            for n in range(len(overlays) - 1):
+                if not _link_if_not_already_linked(overlays[n].element, overlays[n + 1].element):
+                    overlays[n].logger.warning('Unable to connect to the next overlay ' + str(overlays[n + 1]))
+
+            # The last should be linked to the video source tee
+            logger.debug('Now linking overlay %s to the video source tee' % overlays[-1].id)
+            if not _link_if_not_already_linked(overlays[-1].element, source.final_video_tee):
+                overlays[-1].logger.warning('Unable to connect to the video source tee')
+
+        #  Unblock everything
+        for overlay in overlays:
+            overlay.ensure_src_pad_not_blocked()
 
 
 def _link_if_not_already_linked(element1, element2):

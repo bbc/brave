@@ -3,7 +3,6 @@ import sys
 import re
 import brave.exceptions
 from brave.helpers import get_logger
-logger = get_logger('brave.session')
 from gi.repository import Gst, GObject
 from brave.inputs import InputCollection
 from brave.outputs import OutputCollection
@@ -22,7 +21,7 @@ class Session(object):
     '''
 
     def __init__(self):
-        self.logger = get_logger('brave.session', '%(levelname)s:\033[32m[session]\033[0m %(message)s')
+        self.logger = get_logger('session')
         self.items_recently_updated = []
         self.items_recently_deleted = []
 
@@ -64,12 +63,17 @@ class Session(object):
         for input_config in config.default_inputs():
             input = self.inputs.add(**input_config)
             input.setup()
-            for id, mixer in self.mixers.items():
-                connection = mixer.connection_for_src(input, create_if_not_made=True)
-                connection.add_to_mix()
+            # for id, mixer in self.mixers.items():
+            #     connection = mixer.connection_for_source(input, create_if_not_made=True)
+            #     connection.add_to_mix()
 
         for output_config in config.default_outputs():
             self.outputs.add(**output_config)
+
+        for id, mixer in self.mixers.items():
+            mixer.setup_initial_sources()
+        #     connection = mixer.connection_for_source(input, create_if_not_made=True)
+        #     connection.add_to_mix()
 
         if config.enable_video():
             for overlay_config in config.default_overlays():
@@ -92,7 +96,7 @@ class Session(object):
         self.logger.debug('...state will print out every %d seconds...' % PERIODIC_MESSAGE_FREQUENCY)
         GObject.timeout_add(PERIODIC_MESSAGE_FREQUENCY * 1000, self.periodic_message)
 
-    def uid_to_block(self, uid):
+    def uid_to_block(self, uid, error_if_not_exists=False):
         '''
         Given a UID (e.g. 'input2') returns the instance of the relevant block.
         '''
@@ -102,7 +106,10 @@ class Session(object):
                 'Invalid uid "%s", it must be input/mixer/output then a number' % uid)
 
         type, id = match.group(1), int(match.group(2))
-        return self.get_block_by_type(type, id)
+        block = self.get_block_by_type(type, id)
+        if error_if_not_exists and not block:
+            raise brave.exceptions.InvalidConfiguration('"%s" does not exist' % uid)
+        return block
 
     def get_block_by_type(self, type, id):
         '''
@@ -120,6 +127,9 @@ class Session(object):
             raise ValueError('Invalid block type "%s"' % type)
 
         return collection[id] if id in collection else None
+
+    def report_deleted_item(self, item):
+        self.items_recently_deleted.append({'id': item.id, 'block_type': item.input_output_overlay_or_mixer()})
 
 
 def init():

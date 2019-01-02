@@ -1,10 +1,10 @@
 from gi.repository import Gst
-from brave.helpers import create_intersink_channel_name
+from brave.helpers import create_intersink_channel_name, block_pad, unblock_pad
 
 
 class Connection():
     '''
-    A connection connects a 'src' to a 'dest'. Valid connections are:
+    A connection connects a 'source' to a 'dest'. Valid connections are:
      - input to mixer
      - mixer to mixer
      - input to output
@@ -14,11 +14,11 @@ class Connection():
     def __init__(self, **args):
         for a in args:
             setattr(self, a, args[a])
-        self.logger = self.src.logger
+        self.logger = self.source.logger
 
         self._elements_on_dest_pipeline = []
         self._elements_on_src_pipeline = []
-        self._intersrc_src_pad = {}
+        # self._intersrc_src_pad = {}
         self._queue_into_intersink = {}
 
     def delete(self, callback=None):
@@ -58,24 +58,28 @@ class Connection():
         This method unblocks them.
         '''
         if (self.dest.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]) and \
-           (self.src.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]) and \
+           (self.source.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]) and \
            self._elements_are_created():
             for audio_or_video in ['audio', 'video']:
-                if audio_or_video in self._intersrc_src_pad and audio_or_video in self._intersrc_src_pad_probe():
-                    self._intersrc_src_pad[audio_or_video].remove_probe(self._intersrc_src_pad_probe()[audio_or_video])
-                    del self._intersrc_src_pad_probe()[audio_or_video]
+                pad = self._get_intersrc_src_pad(audio_or_video)
+                if pad:
+                    unblock_pad(pad)
 
     def has_video(self):
         '''
         True iff both the src and dest have video
         '''
-        return self.src.has_video() and self.dest.has_video()
+        return self.source.has_video() and self.dest.has_video()
 
     def has_audio(self):
         '''
         True iff both the src and dest have audio
         '''
-        return self.src.has_audio() and self.dest.has_audio()
+        return self.source.has_audio() and self.dest.has_audio()
+
+    def _get_intersrc_src_pad(self, audio_or_video):
+        element = self._get_intersrc(audio_or_video)
+        return element.get_static_pad('src') if element else None
 
     def _create_inter_elements(self, audio_or_video):
         '''
@@ -83,8 +87,6 @@ class Connection():
         '''
         intersrc = self._create_intersrc(audio_or_video)
         intersink = self._create_intersink(audio_or_video)
-
-        self._intersrc_src_pad[audio_or_video] = intersrc.get_static_pad('src')
         self._block_intersrc(audio_or_video)
 
         # Give the 'inter' elements a channel name. It doesn't matter what, so long as they're unique.
@@ -101,11 +103,9 @@ class Connection():
             self.logger.debug('_blocked_probe_callback called')
             return Gst.PadProbeReturn.OK
 
-        # We block the source (output) pad of this intervideosrc/interaudiosrc until we're sure video is being sent.
-        # Otherwise we can get a partial message, which causes an error.
-        if audio_or_video not in self._intersrc_src_pad_probe():
-            self._intersrc_src_pad_probe()[audio_or_video] = self._intersrc_src_pad[audio_or_video].add_probe(
-                Gst.PadProbeType.BLOCK_DOWNSTREAM, _blocked_probe_callback)
+        # We block the source (output) pad of this intervideosrc/interaudiosrc until we're sure video
+        # is being sent. Otherwise we can get a partial message, which causes an error.
+        block_pad(self._get_intersrc_src_pad(audio_or_video))
 
     def _create_intersink(self, audio_or_video):
         '''
@@ -120,12 +120,6 @@ class Connection():
 
         self._queue_into_intersink[audio_or_video] = queue
 
-        # Increasing to 3 seconds allows different encoders to share a pipeline.
-        # This can be reconsidered if/when outputs are put on different pipelines.
-        MAX_SIZE_IN_SECONDS = 3
-        queue.set_property('max-size-time', MAX_SIZE_IN_SECONDS * 1000000000)
-        queue.set_property('max-size-bytes', MAX_SIZE_IN_SECONDS * 10485760)
-
         if not queue.link(element):
             self.logger.error('Failed to connect queue to %s' % element_name)
 
@@ -136,7 +130,7 @@ class Connection():
         The tee allows a source to have multiple connections to multiple destinations.
         This method links tee -> queue -> intersink, so that it can be sent to a destination.
         '''
-        tee = getattr(self.src, 'final_' + audio_or_video + '_tee')
+        tee = getattr(self.source, 'final_' + audio_or_video + '_tee')
         if not tee:
             self.logger.error('Failed to connect tee to queue: cannot find tee')
             return
@@ -186,7 +180,7 @@ class Connection():
             if not e.get_parent().remove(e):
                 self.dest.logger.warning('Unable to remove %s' % e.name)
 
-        self._set_src_element_state(Gst.State.NULL)
+        self._set_source_element_state(Gst.State.NULL)
         for e in self._elements_on_src_pipeline:
             if not e.get_parent().remove(e):
                 self.logger.warning('Unable to remove %s' % e.name)
@@ -195,7 +189,7 @@ class Connection():
         '''
         Add an element on the destination pipeline
         '''
-        e = self.dest.add_element(factory_name, self.src, audio_or_video=audio_or_video, name=name)
+        e = self.dest.add_element(factory_name, self.source, audio_or_video=audio_or_video, name=name)
         self._elements_on_dest_pipeline.append(e)
         return e
 
@@ -203,7 +197,7 @@ class Connection():
         '''
         Add an element on the source pipeline
         '''
-        e = self.src.add_element(factory_name, self.dest, audio_or_video=audio_or_video, name=name)
+        e = self.source.add_element(factory_name, self.dest, audio_or_video=audio_or_video, name=name)
         self._elements_on_src_pipeline.append(e)
         return e
 
@@ -230,7 +224,7 @@ class Connection():
             if e.set_state(state) != Gst.StateChangeReturn.SUCCESS:
                 self.dest.logger.warning('Unable to set element %s to %s state' % (e.name, state.value_nick.upper()))
 
-    def _set_src_element_state(self, state):
+    def _set_source_element_state(self, state):
         '''
         Set the state of all elements on the src pipeline
         '''

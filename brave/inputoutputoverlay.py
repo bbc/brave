@@ -11,10 +11,7 @@ class InputOutputOverlay():
     An abstract superclass representing an input, output, overlay, and mixer.
     '''
     def __init__(self, **args):
-        logger_name = 'brave.%s.%s.%d' % (self.input_output_overlay_or_mixer(), args['type'], args['id'])
-        logger_format = '%%(levelname)s:\033[32m[%s %d]\033[0m %%(message)s' % \
-            (self.input_output_overlay_or_mixer(), args['id'])
-        self.logger = brave.helpers.get_logger(logger_name, logger_format)
+        self.logger = brave.helpers.get_logger(self.input_output_overlay_or_mixer() + str(args['id']))
         self.elements = {}
         self.probes = {}
 
@@ -69,7 +66,7 @@ class InputOutputOverlay():
 
     def update(self, updates):
         '''
-        Accepts updates to this elements.
+        Accepts updates to this block.
         Note: may be overridden.
         '''
         if 'state' in updates:
@@ -124,11 +121,13 @@ class InputOutputOverlay():
 
     def summarise(self):
         s = {
-            'state': self.get_state().value_nick.upper(),
             'has_audio': self.has_audio(),
             'has_video': self.has_video(),
             'uid': self.uid()
         }
+
+        if hasattr(self, 'pipeline'):
+            s['state'] = self.get_state().value_nick.upper()
 
         attributes_to_copy = ['id', 'type', 'error_message', 'props', 'current_num_peers']
         for a in attributes_to_copy:
@@ -140,7 +139,7 @@ class InputOutputOverlay():
     def uid(self):
         return '%s%d' % (self.input_output_overlay_or_mixer(), self.id)
 
-    def src_connections(self):
+    def source_connections(self):
         return []
 
     def dest_connections(self):
@@ -150,9 +149,11 @@ class InputOutputOverlay():
         '''
         Delete this block.
         Ensures any connections to/from this block are also deleted.
+        Also ensures any overlays attached to this block are unattached
         '''
         self.logger.debug('Being deleted')
-        connections = self.src_connections() + self.dest_connections()
+        self.session().overlays.remove_source(self)
+        connections = self.source_connections() + self.dest_connections()
 
         def iterate_through_connections():
             if len(connections) == 0:
@@ -174,7 +175,7 @@ class InputOutputOverlay():
         iterator.foreach(remove_element)
         del self.pipeline
         self.collection.pop(self.id)
-        self.session().items_recently_deleted.append({'id': self.id, 'type': self.input_output_overlay_or_mixer()})
+        self.session().report_deleted_item(self)
 
     def set_state(self, state):
         '''

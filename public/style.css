@@ -172,6 +172,10 @@ body {
     background: linear-gradient(#2596b8, #28a1c5 40%, #29a8cd);
 }
 
+.mix-option-not-connected {
+    background: grey;
+}
+
 .slider {
     margin-left: 16px;
     margin-right: 16px;

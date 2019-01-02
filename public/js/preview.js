@@ -35,7 +35,6 @@ preview._findRightOutputId = () => {
 
 preview._previewOutputId = (type, outputId) => {
     preview.outputId = outputId
-    // preview._drawPreviewMenu()
     preview._delete()
     if (type === null || outputId === null) {
         // Do nothing

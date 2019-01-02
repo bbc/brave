@@ -12,7 +12,7 @@ class ConnectionToMixer(Connection):
         self._mix_request_pad = {}
         self._tee_pad = {}
         self._tee = {}
-        self._intersrc_src_pad_probe_dict = {}
+        self._intersrc_element = {}
 
     def delete(self, callback=None):
         '''
@@ -24,9 +24,9 @@ class ConnectionToMixer(Connection):
     def cut(self):
         if not self.in_mix():
             self.add_to_mix()
-        for src in self.dest.src_connections():
-            if src != self:
-                src.remove_from_mix()
+        for source in self.dest.source_connections():
+            if source != self:
+                source.remove_from_mix()
 
     def in_mix(self):
         '''
@@ -45,9 +45,9 @@ class ConnectionToMixer(Connection):
         If you want to replace what's on the mix. use source.cut()
         '''
         self._ensure_elements_are_created()
-        if self.src.has_video():
+        if self.has_video():
             self._add_to_mix('video')
-        if self.src.has_audio():
+        if self.has_audio():
             self._add_to_mix('audio')
         self.unblock_intersrc_if_ready()
         self.dest.report_update_to_user()
@@ -57,9 +57,9 @@ class ConnectionToMixer(Connection):
         Removes this source from showing on this mixer
         '''
         if self.in_mix():
-            if self.src.has_video():
+            if self.has_video():
                 self._remove_from_mix('video')
-            if self.src.has_audio():
+            if self.has_audio():
                 self._remove_from_mix('audio')
             self.logger.debug('Completed removal of from mix.')
             self.dest.report_update_to_user()
@@ -69,9 +69,9 @@ class ConnectionToMixer(Connection):
         Called after the props have been set/updated, to update the elements
         '''
         # Note: overwrites parent method
-        if self.src.has_audio():
+        if self.has_audio():
             self._handle_audio_mix_props()
-        if self.src.has_video():
+        if self.has_video():
             self._handle_video_mix_props()
 
     def _add_to_mix(self, audio_or_video):
@@ -99,20 +99,20 @@ class ConnectionToMixer(Connection):
         if 'video' not in self._mix_request_pad:
             return
 
-        if 'xpos' in self.src.props:
-            self._mix_request_pad['video'].set_property('xpos', self.src.props['xpos'])
-        if 'ypos' in self.src.props:
-            self._mix_request_pad['video'].set_property('ypos', self.src.props['ypos'])
+        if 'xpos' in self.source.props:
+            self._mix_request_pad['video'].set_property('xpos', self.source.props['xpos'])
+        if 'ypos' in self.source.props:
+            self._mix_request_pad['video'].set_property('ypos', self.source.props['ypos'])
         self._set_mixer_width_and_height()
 
         # Setting zorder to what's already set can cause a segfault.
-        if 'zorder' in self.src.props:
+        if 'zorder' in self.source.props:
             current_zorder = self._mix_request_pad['video'].get_property('zorder')
-            if current_zorder != self.src.props['zorder']:
+            if current_zorder != self.source.props['zorder']:
                 self.logger.debug('Setting zorder to %d (current state: %s)' %
-                                  (self.src.props['zorder'],
+                                  (self.source.props['zorder'],
                                    self.dest.mixer_element['video'].get_state(0).state.value_nick.upper()))
-                self._mix_request_pad['video'].set_property('zorder', self.src.props['zorder'])
+                self._mix_request_pad['video'].set_property('zorder', self.source.props['zorder'])
 
     def _handle_audio_mix_props(self):
         '''
@@ -121,9 +121,9 @@ class ConnectionToMixer(Connection):
         if 'audio' not in self._mix_request_pad:
             return
 
-        if 'volume' in self.src.props:
+        if 'volume' in self.source.props:
             prev_volume = self._mix_request_pad['audio'].get_property('volume')
-            volume = self.src.props['volume']
+            volume = self.source.props['volume']
 
             if volume != prev_volume:
                 # self.logger.debug(f'Setting volume from {str(prev_volume)} to {str(volume)}')
@@ -135,22 +135,22 @@ class ConnectionToMixer(Connection):
         height = self.dest.props['height']
 
         # Second stage: if input is smaller, go with that
-        if 'width' in self.src.props and self.src.props['width'] < width:
-            width = self.src.props['width']
-        if 'height' in self.src.props and self.src.props['height'] < height:
-            height = self.src.props['height']
+        if 'width' in self.source.props and self.source.props['width'] < width:
+            width = self.source.props['width']
+        if 'height' in self.source.props and self.source.props['height'] < height:
+            height = self.source.props['height']
 
         # Third stage: if positioned to go off the side, reduce the size.
-        if 'xpos' in self.src.props:
-            if width + self.src.props['xpos'] > self.dest.props['width']:
-                width = self.dest.props['width'] - self.src.props['xpos']
-        if 'ypos' in self.src.props:
-            if height + self.src.props['ypos'] > self.dest.props['height']:
-                height = self.dest.props['height'] - self.src.props['ypos']
+        if 'xpos' in self.source.props:
+            if width + self.source.props['xpos'] > self.dest.props['width']:
+                width = self.dest.props['width'] - self.source.props['xpos']
+        if 'ypos' in self.source.props:
+            if height + self.source.props['ypos'] > self.dest.props['height']:
+                height = self.dest.props['height'] - self.source.props['ypos']
 
         self._mix_request_pad['video'].set_property('width', width)
         self._mix_request_pad['video'].set_property('height', height)
-        self.logger.debug('Setting width and height in mixer to be %s and %s' %
+        self.logger.debug('Setting mixer width=%d and mixer height=%d' %
                           (self._mix_request_pad['video'].get_property('width'),
                            self._mix_request_pad['video'].get_property('height')))
 
@@ -175,9 +175,9 @@ class ConnectionToMixer(Connection):
 
     def _ensure_elements_are_created(self):
         # STEP 1: Connect the source to the destination, unless that's already been done
-        if self.src.has_video() and not hasattr(self, 'video_is_linked'):
+        if self.has_video() and not hasattr(self, 'video_is_linked'):
             self._create_video_elements()
-        if self.src.has_audio() and not hasattr(self, 'audio_is_linked'):
+        if self.has_audio() and not hasattr(self, 'audio_is_linked'):
             self._create_audio_elements()
 
         # STEP 2: Get the new elements in the same state as their pipelines:
@@ -186,10 +186,10 @@ class ConnectionToMixer(Connection):
         # STEP 3: Connect the input's tee to these new elements
         # (It's important we don't do this earlier, as if the elements were not
         #  ready we could disrupt the existing pipeline.)
-        if self.src.has_video() and not hasattr(self, 'video_is_linked'):
+        if self.has_video() and not hasattr(self, 'video_is_linked'):
             self._connect_tee_to_intersink('video')
             self.video_is_linked = True
-        if self.src.has_audio() and not hasattr(self, 'audio_is_linked'):
+        if self.has_audio() and not hasattr(self, 'audio_is_linked'):
             self._connect_tee_to_intersink('audio')
             self.audio_is_linked = True
 
@@ -258,22 +258,26 @@ class ConnectionToMixer(Connection):
         if not queue.link(self._tee['audio']):
             self.logger.error('Cannot link queue to tee')
 
-    def _create_intersrc(self, audio_or_video):
+    def _get_intersrc(self, audio_or_video):
         '''
         The intervideosrc/interaudiosrc goes on the destination (mixer/output) pipeline, so that it
         can accept content from the source pipeline.
         '''
+        return self._intersrc_element[audio_or_video] if audio_or_video in self._intersrc_element else None
+
+    def _create_intersrc(self, audio_or_video):
+        '''
+        Create the intervideosrc / interaudiosrc
+        '''
         assert(audio_or_video in ['audio', 'video'])
 
         # Create the receiving 'inter' element to accept the AV into the main pipeline
-        intersrc_element = self._add_element_to_dest_pipeline('inter%ssrc' % audio_or_video, audio_or_video)
+        self._intersrc_element[audio_or_video] =\
+            self._add_element_to_dest_pipeline('inter%ssrc' % audio_or_video, audio_or_video)
 
         # We ask the src to hold the frame for 24 hours (basically, a very long time)
         # This is optional, but prevents it from going black when it's better to show the last frame.
         if audio_or_video is 'video':
-            intersrc_element.set_property('timeout', Gst.SECOND * 60 * 60 * 24)
+            self._intersrc_element[audio_or_video].set_property('timeout', Gst.SECOND * 60 * 60 * 24)
 
-        return intersrc_element
-
-    def _intersrc_src_pad_probe(self):
-        return self._intersrc_src_pad_probe_dict
+        return self._intersrc_element[audio_or_video]

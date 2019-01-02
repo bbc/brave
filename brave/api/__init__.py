@@ -1,7 +1,7 @@
 import brave.helpers
 import asyncio
 import uvloop
-logger = brave.helpers.get_logger('brave.rest_api')
+logger = brave.helpers.get_logger('api')
 from sanic import Sanic
 import sanic.response
 from sanic.exceptions import NotFound, InvalidUsage

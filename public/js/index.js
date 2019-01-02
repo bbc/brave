@@ -117,7 +117,6 @@ function getSourceSelect(block, isNew) {
     })
 
     if (!options.value) options.value = 'none'
-    console.log(options)
     return formGroup(options)
 }
 
@@ -282,6 +281,7 @@ function ucFirst(string) {
 }
 
 function prettyUid(uid) {
+    if (!uid) return uid
     const matches = uid.match(/^(input|mixer|output|overlay)(\d+)$/)
     if (matches) {
         return ucFirst(matches[1] + ' ' + matches[2])

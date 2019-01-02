@@ -5,14 +5,14 @@ gi.require_version('Gst', '1.0')
 from gi.repository import Gst, GLib
 
 
-def get_logger(name, format=None):
-    logger = logging.getLogger(name)
-    logger.propagate = False
+def get_logger(name):
+    logger = logging.getLogger('brave.' + name)
     logger.setLevel(os.environ.get('LOG_LEVEL', 'INFO').upper())
-    if format:
-        handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter(format))
-        logger.addHandler(handler)
+    format = '%%(levelname)8s: \033[32m[%10s]\033[0m %%(message)s' % name
+    logger.propagate = False
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter(format))
+    logger.addHandler(handler)
     return logger
 
 
@@ -131,3 +131,28 @@ def run_on_master_thread_when_idle(func, **func_args):
     if func is None:
         raise RuntimeError('Missing function to run on master thread!')
     GLib.idle_add(function_runner, {'func': func, 'func_args': func_args})
+
+
+block_probes = {}
+
+
+def block_pad(pad):
+    '''
+    Block an element's pad. (If already blocked, do nothing.)
+    '''
+    def _callback(*_):
+        return Gst.PadProbeReturn.OK
+
+    global block_probes
+    if pad not in block_probes:
+        block_probes[pad] = pad.add_probe(Gst.PadProbeType.BLOCK_DOWNSTREAM, _callback)
+
+
+def unblock_pad(pad):
+    '''
+    Unblock an element's pad. (If not blocked, do nothing.)
+    '''
+    global block_probes
+    if pad in block_probes:
+        pad.remove_probe(block_probes[pad])
+        del block_probes[pad]

@@ -91,19 +91,12 @@ def assert_mixers_in_playing_state(json_response):
             assert mixer['state'] == 'PLAYING', 'Mixer in %s state, not PLAYING: %s' % (mixer['state'], str(mixer))
 
 
-def assert_overlays_in_playing_state(json_response):
-    if 'overlays' in json_response:
-        for overlay in json_response['overlays']:
-            assert overlay['state'] == 'PLAYING', 'Overlay in %s state, not PLAYING: %s' % (overlay['state'], str(overlay))
-
-
 def assert_everything_in_playing_state(json_response=None):
     if json_response is None:
         json_response = api_get('/api/all')
     assert_inputs_in_playing_state(json_response)
     assert_outputs_in_playing_state(json_response)
     assert_mixers_in_playing_state(json_response)
-    assert_overlays_in_playing_state(json_response)
 
 
 def delete_if_exists(name):
@@ -172,12 +165,12 @@ def delete_overlay(overlay_id):
 
 def update_overlay(overlay_id, details, status_code=200):
     response = api_post('/api/overlays/' + str(overlay_id), details)
-    assert response.status_code == status_code, 'Status code to update overlay was %d' % response.status_code
+    assert response.status_code == status_code, 'Expected status code %s but got %s, body was:%s' % (status_code, response.status_code, response.json())
 
 
 def set_mixer_state(mixer_id, state, status_code=200):
     response = api_post('/api/mixers/' + str(mixer_id), {'state': state})
-    assert response.status_code == status_code, 'Status code to update mixer was %d' % response.status_code
+    assert response.status_code == status_code, 'Expected status code %s but got %s, body was:%s' % (status_code, response.status_code, response.json())
 
 
 def assert_outputs(outputs, check_playing_state=True):
@@ -199,12 +192,6 @@ def assert_outputs(outputs, check_playing_state=True):
                 for (props_key, props_value) in expected_output['props'].items():
                     assert props_key in actual_output['props']
                     assert props_value == actual_output['props'][props_key], 'For output %s, for key %s, expected %s but got %s' % (expected_output['id'], props_key, props_value, actual_output['props'][props_key])
-            elif key == 'source':
-                if value is None:
-                    assert 'source' not in actual_output
-                else:
-                    assert 'source' in actual_output, 'Expected source in %s' % actual_output
-                    assert actual_output['source'] == value
             else:
                 assert value == actual_output[key], 'Key "%s" expected to be "%s", but was "%s"' % (key, value, actual_output[key])
 
@@ -258,9 +245,9 @@ def assert_overlays(overlays):
                 assert value == actual_overlay[key], 'Key "%s" expected to be "%s", but was "%s"' % (key, value, actual_overlay[key])
 
 
-def add_input(details):
+def add_input(details, status_code=200):
     response = api_put('/api/inputs', details)
-    assert response.status_code == 200
+    assert response.status_code == status_code, 'Expected status code %s but got %s, body was:%s' % (status_code, response.status_code, response.json())
     time.sleep(0.2)
     return response.json()
 
@@ -281,6 +268,7 @@ def add_mixer(details):
     response = api_put('/api/mixers', details)
     assert response.status_code == 200
     time.sleep(0.2)
+    return response.json()
 
 
 def update_mixer(id, updates, expected_status_code=200):
@@ -321,6 +309,18 @@ def delete_mixer(id, expected_status_code=200):
 
 def cut_to_source(source, mixer_id, status_code=200):
     response = api_post('/api/mixers/%d/cut_to_source' % mixer_id, {'source': source})
+    assert response.status_code == status_code, 'Expected status code %s but got %s, body was:%s' % (status_code, response.status_code, response.json())
+    time.sleep(0.5)
+
+
+def overlay_source(source, mixer_id, status_code=200):
+    response = api_post('/api/mixers/%d/overlay_source' % mixer_id, {'source': source})
+    assert response.status_code == status_code, 'Expected status code %s but got %s, body was:%s' % (status_code, response.status_code, response.json())
+    time.sleep(0.5)
+
+
+def remove_source(uid, mixer_id, status_code=200):
+    response = api_post('/api/mixers/1/remove_source', {'source': uid})
     assert response.status_code == status_code, 'Expected status code %s but got %s, body was:%s' % (status_code, response.status_code, response.json())
     time.sleep(0.5)
 

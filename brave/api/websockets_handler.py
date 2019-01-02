@@ -4,7 +4,7 @@ import json
 import brave.helpers
 import psutil
 from brave.outputs.webrtc import WebRTCOutput
-logger = brave.helpers.get_logger('brave.websockets')
+logger = brave.helpers.get_logger('websockets')
 
 
 class WebsocketsHandler():
@@ -98,7 +98,7 @@ class WebsocketsHandler():
         for o in items_recently_updated:
             messages_to_send.append({
                 'msg_type': 'update',
-                'type': o.input_output_overlay_or_mixer(),
+                'block_type': o.input_output_overlay_or_mixer(),
                 'data': o.summarise()
             })
         return messages_to_send
@@ -108,7 +108,7 @@ class WebsocketsHandler():
         for item in self.session.items_recently_deleted:
             messages_to_send.append({
                 'msg_type': 'delete',
-                'type': item['type'],
+                'block_type': item['block_type'],
                 'id': item['id']
             })
         self.session.items_recently_deleted = []

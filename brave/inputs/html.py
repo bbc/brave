@@ -50,6 +50,7 @@ class HTMLInput(Input):
 
         self.intervideosink = self.pipeline.get_by_name('intervideosink')
         self.final_video_tee = self.pipeline.get_by_name('final_video_tee')
+        self.video_output_queue = self.pipeline.get_by_name('video_output_queue')
 
     def get_input_cap_props(self):
         '''

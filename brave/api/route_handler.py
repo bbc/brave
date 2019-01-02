@@ -1,5 +1,5 @@
 import brave.helpers
-logger = brave.helpers.get_logger('brave.rest_api')
+logger = brave.helpers.get_logger('api_routes')
 import sanic
 import sanic.response
 from brave.helpers import state_string_to_constant, run_on_master_thread_when_idle
@@ -187,7 +187,7 @@ def _get_connection(request, id, create_if_not_made):
     if source is None:
         raise InvalidUsage('No such item "%s"' % request.json['source'])
 
-    connection = _get_mixer(request, id).connection_for_src(source, create_if_not_made=create_if_not_made)
+    connection = _get_mixer(request, id).connection_for_source(source, create_if_not_made=create_if_not_made)
     if not connection and create_if_not_made is True:
         raise InvalidUsage('Unable to connect "%s" to mixer %d' % (request.json['source'], id))
     return connection

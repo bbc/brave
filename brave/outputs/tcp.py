@@ -105,3 +105,7 @@ class TCPOutput(Output):
             if 'port' in output.props:
                 ports_in_use.append(int(output.props['port']))
         return ports_in_use
+
+    def create_caps_string(self):
+        # x264enc cannot accept RGB format, so we move to one that it does (I420)
+        return super().create_caps_string(format='I420')

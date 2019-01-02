@@ -58,6 +58,10 @@ overlaysHandler.remove = (overlay) => {
 
 overlaysHandler._getMixOptions = (overlay) => {
     var div = $('<div class="mix-option"></div>')
+    if (!overlay.source) {
+        div.addClass('mix-option-not-connected')
+        return div.append('Not connected')
+    }
     var showingOrHidden
     if (overlay.props.visible) {
         showingOrHidden = 'In mix'
@@ -77,33 +81,6 @@ overlaysHandler._getMixOptions = (overlay) => {
     }
     div.append('<strong>' + prettyUid(overlay.source) + ':</strong> ' + showingOrHidden)
     return div
-
-    return mixersHandler.items.map(mixer => {
-        if (!mixer.sources) return
-        var foundThisInput = mixer.sources.find(i => i.id === input.id && i.type === 'input')
-        var inMix = foundThisInput.in_mix ? 'In mix' : 'Not in mix'
-        var div = $('<div class="mix-option"></div>')
-        if (foundThisInput.in_mix) {
-            div.addClass('mix-option-showing')
-            var removeButton = components.removeButton()
-            removeButton.click(() => { mixersHandler.remove(mixer, foundThisInput); return false })
-            var buttons = $('<div class="option-icons"></div>')
-            buttons.append([removeButton])
-            div.append(buttons)
-        }
-        else {
-            div.addClass('mix-option-hidden')
-            var cutButton = components.cutButton()
-            cutButton.click(() => { mixersHandler.cut(mixer, foundThisInput); return false })
-            var overlayButton = components.overlayButton()
-            overlayButton.click(() => { mixersHandler.overlay(mixer, foundThisInput); return false })
-            var buttons = $('<div class="option-icons"></div>')
-            buttons.append([cutButton, overlayButton])
-            div.append(buttons)
-        }
-        div.append('<strong>Mixer ' + mixer.id + ':</strong> ' + inMix)
-        return div
-    }).filter(x => !!x)
 }
 
 overlaysHandler.delete = function(overlay) {
@@ -160,10 +137,10 @@ overlaysHandler._populateForm = function(overlay) {
         form.append('<input type="hidden" name="id" value="' + overlay.id + '">')
     }
 
+    form.append(getSourceSelect(overlay, isNew))
     if (!overlay.type) {
     }
     else if (overlay.type === 'text' || overlay.type === 'clock') {
-        form.append(getSourceSelect(overlay.props))
         form.append(formGroup({
             id: 'overlay-text',
             label: 'Text',
@@ -181,7 +158,6 @@ overlaysHandler._populateForm = function(overlay) {
         }))
     }
     else if (overlay.type === 'effect') {
-        form.append(getSourceSelect(overlay.props))
         form.append(formGroup({
             id: 'overlay-effect',
             label: 'Effect',
@@ -238,7 +214,7 @@ overlaysHandler._handleFormSubmit = function() {
 
     console.log('Submitting new overlay with values', newProps)
     delete newProps.type
-    const source = newProps.source
+    const source = newProps.source === 'none' ? null : newProps.source
     delete newProps.source
     overlaysHandler._submitCreateOrEdit(id, {type, source, props: newProps})
     hideModal();
@@ -282,11 +258,9 @@ overlaysHandler.effectNames = {
     'edgetv': 'EdgeTV effect',
     'exclusion': 'Exclusion',
     'optv': 'OpTV effect',
-    'quarktv': 'QuarkTV effect',
     'radioactv': 'RadioacTV effect',
     'revtv': 'RevTV effect',
     'rippletv': 'RippleTV effect',
-    'shagadelictv': 'ShagadelicTV',
     'solarize': 'Solarize',
     'streaktv': 'StreakTV effect',
     'vertigotv': 'VertigoTV effect',

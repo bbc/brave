@@ -71,6 +71,7 @@ class UriInput(Input):
 
         self.capsfilter = bin.get_by_name('capsfilter')
         self.final_video_tee = bin.get_by_name('final_video_tee')
+        self.video_output_queue = bin.get_by_name('video_output_queue')
         self._update_video_filter_caps()
         self.playsink.set_property('video-sink', bin)
 
