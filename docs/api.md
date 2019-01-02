@@ -23,7 +23,7 @@ Retrieves information on all created items (blocks). The response is a map (dict
 - Method: `GET`
 - Local URL example: [http://localhost:5000/api/all](http://localhost:5000/api/all)
 
-#### Comand-line curl example
+#### Command-line curl example
 ```
 curl http://localhost:5000/api/all
 ```
