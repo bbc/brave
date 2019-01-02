@@ -18,7 +18,6 @@ class Connection():
 
         self._elements_on_dest_pipeline = []
         self._elements_on_src_pipeline = []
-        # self._intersrc_src_pad = {}
         self._queue_into_intersink = {}
 
     def delete(self, callback=None):

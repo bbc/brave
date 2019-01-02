@@ -126,7 +126,6 @@ class ConnectionToMixer(Connection):
             volume = self.source.props['volume']
 
             if volume != prev_volume:
-                # self.logger.debug(f'Setting volume from {str(prev_volume)} to {str(volume)}')
                 self._mix_request_pad['audio'].set_property('volume', float(volume))
 
     def _set_mixer_width_and_height(self):
