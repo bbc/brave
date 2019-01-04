@@ -1,14 +1,17 @@
 # Brave config file
 [Brave](../README.md) can be configured by config file.
-This includes being able to set inputs, mixers, outputs and overlays that are created when Brave starts. It is an alternative to configuring Brave via the API.
+This includes being able to set inputs, mixers, outputs and overlays that are created when Brave starts. It is an alternative to configuring Brave via the [API](api.md).
 
 Brave does not reconsider the config file after it has started. To configure Brave after it has started (e.g. to add another input), use the API.
+
+## Contents
+
 
 ## Selecting a config file
 Provide Brave with the config file at startup with the `-c` parameter, e.g.
 
 ```
-./brave.py -c config/example_empty.yaml
+./brave.py -c config/empty.yaml
 ```
 
 ## Default config file
@@ -16,7 +19,7 @@ The default config file can be found at `config/default.yaml`.
 
 It creates one mixer, and no inputs or outputs.
 
-## Custom config files
+## Creating a config file
 Config files are written in [YAML](http://yaml.org/), and are simple to create by hand.
 
 The following options can be included in the config file.
@@ -28,6 +31,7 @@ Example:
 
 ```
 default_inputs:
+     - type: test_video
      - type: uri
        props:
            initial_state: PAUSED
@@ -38,13 +42,9 @@ default_inputs:
            uri: file:///home/user/images/image.jpg
 ```
 
-Each input must have a type (either `uri`, `image`, `html`, `test_video`, or `test_audio`)
-
-Each input can then, optionally, have `props` containing key-values pairs of the properties of that input. Available properties vary per input. Common ones include:
-
-* `uri` - of the content to display. (Does not exist for `test_video` or `test_audio`)
-* `zorder` - the ordering that that input should appear when mixed
-* `intial_state` - the state that the input should enter. Permitted values: 'PLAYING', 'PAUSED', 'READY', 'NULL. Defaults to PLAYING.
+* Each input must have a type.
+* Each input can then, optionally, have `props` containing key-values pairs of the properties of that input.
+* See [inputs](inputs.md) for the list of types and props.
 
 
 ### `default_mixers`
