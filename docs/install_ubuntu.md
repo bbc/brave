@@ -1,7 +1,7 @@
 # Installing on Ubuntu
 This is instructions on how to install [Brave](../README.md), and its dependencies, on Ubuntu.
 
-## Ubuntu version
+## Ubuntu version
 You must use at least version 18.10, to access a recent version of GStreamer (1.14.3 or later) via Apt.
 
 ## STEP 1: Dependencies

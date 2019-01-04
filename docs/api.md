@@ -103,22 +103,22 @@ curl http://localhost:5000/api/all
 }
 ```
 
-### Restart Brave
+### Restart Brave
 Restarts Brave. Resets all settings and connections.
 
 - Path: `/api/restart`
 - Method: `POST`
 
-#### Comand-line curl example
+#### Command-line curl example
 ```
 curl -X POST -d {}  http://localhost:5000/api/restart
 ```
 
-## Inputs
+## Inputs
 Inputs allow you to source content (e.g. from an RTMP stream or a file.) There can be any number of inputs, and they can be created, updated, and deleted. [Read more about input types.](./inputs.md)
 
 
-### Get all inputs
+### Get all inputs
 Get an array of all inputs.
 
 - Path: `/api/inputs`
@@ -135,7 +135,7 @@ Create a new input. There are different types of inputs. You must specify a `typ
 - Path: `/api/inputs`
 - Method: `PUT`
 
-#### Comand-line curl example
+#### Command-line curl example
 ```
 curl -X PUT -d '{"type": "test_video"}' http://localhost:5000/api/inputs
 ```
@@ -155,7 +155,7 @@ Update an existing input. The `id` (integer) of the input is required in the pat
 - Method: `POST`
 - Request body: JSON containing the changes
 
-#### Comand-line curl example
+#### Command-line curl example
 ```
 # Change the state of input 1 to PAUSED
 curl -X POST -d '{"state": "PAUSED"}' http://localhost:5000/api/inputs/1
@@ -167,20 +167,20 @@ Delete an input. The `id` (integer) of the input is required in the path.
 - Path: `/api/inputs/<id>`
 - Method: `DELETE`
 
-#### Comand-line curl example
+#### Command-line curl example
 ```
 # Delete input 1
 curl -X DELETE http://localhost:5000/api/inputs/1
 ```
 
-#### Response (if successful)
+#### Response (if successful)
 
 ```
 {"status": "OK"}
 ```
 
 
-## Mixers
+## Mixers
 
 ### Get all mixers
 Get an array of all mixers.
@@ -199,7 +199,7 @@ Create a new mixer. Optionally, provide, width, height and pattern. See [Mixers]
 - Path: `/api/mixers`
 - Method: `PUT`
 
-#### Comand-line curl example
+#### Command-line curl example
 ```
 # Create a mixer with default values:
 curl -X PUT -d '{}' http://localhost:5000/api/mixers
@@ -221,7 +221,7 @@ Update an existing mixer. The `id` (integer) of the mixer is required in the pat
 - Path: `/api/mixers/<id>`
 - Method: `POST`
 
-#### Comand-line curl example
+#### Command-line curl example
 ```
 # Change mixer 1 to have a snow background
 curl -X POST -d '{"props":{"pattern": 1}}' http://localhost:5000/api/mixers/1
@@ -238,20 +238,20 @@ To switch (cut) a mixer to a different source. A source can be an input or anoth
 {"source": "input1"}
 ```
 
-#### Comand-line curl example
+#### Command-line curl example
 ```
 # Change mixer 1 to that it's showing input 1
 curl -X POST -d '{"source": "input1"}' http://localhost:5000/api/mixers/1/cut_to_source
 ```
 
-### Overlay source
+### Overlay source
 Like `cut_to_source` above, but overlays a source into a mix without removing any other sources.
 
 - Path: `/api/mixers/<id>/overlay_source`
 - Method: `POST`
 - Request body: JSON containing a `source` value with the `uid` of the input/mixer to overlay.
 
-#### Comand-line curl example
+#### Command-line curl example
 ```
 # Change mixer 2 to that it's showing input 3
 curl -X POST -d '{"source": "input3"}' http://localhost:5000/api/mixers/2/overlay_source
@@ -264,7 +264,7 @@ Removes a source from a mix.
 - Method: `POST`
 - Request body: JSON containing a `source` value with the `uid` of the input/mixer to overlay.
 
-#### Comand-line curl example
+#### Command-line curl example
 ```
 # Remove mixer2 from being a source of mixer 1
 curl -X POST -d '{"source": "mixer2"}' http://localhost:5000/api/mixers/1/remove_source
@@ -276,13 +276,13 @@ Delete a mixer. The `id` (integer) of the mixer is required in the path.
 - Path: `/api/mixers/<id>`
 - Method: `DELETE`
 
-#### Comand-line curl example
+#### Command-line curl example
 ```
 # Delete mixer 1
 curl -X DELETE http://localhost:5000/api/mixers/1
 ```
 
-#### Response (if successful)
+#### Response (if successful)
 
 ```
 {"status": "OK"}
@@ -292,7 +292,7 @@ curl -X DELETE http://localhost:5000/api/mixers/1
 ## Outputs
 There are different types of output, which can be created, updated and deleted. [Read about output types.](outputs.md)
 
-### Get all outputs
+### Get all outputs
 Get an array of all outputs.
 
 - Path: `/api/outputs`
@@ -309,7 +309,7 @@ Create a new output. There are different types of outputs. You must specify a `t
 - Path: `/api/outputs`
 - Method: `PUT`
 
-#### Comand-line curl example
+#### Command-line curl example
 ```
 # Create a file output, that takes the output of mixer1, and writes it to an MP4 file:
 curl -X PUT -d '{"type": "file", "source": "mixer1", "props": {"location": "/tmp/file.mp4"}}' http://localhost:5000/api/outputs
@@ -330,7 +330,7 @@ Update an existing output. The `id` (integer) of the output is required in the p
 - Method: `POST`
 - Request body: JSON containing the changes
 
-#### Comand-line curl example
+#### Command-line curl example
 ```
 # Change the state of output 1 to READY
 curl -X POST -d '{"state": "READY"}' http://localhost:5000/api/outputs/1
@@ -345,20 +345,20 @@ Delete an output. The `id` (integer) of the output is required in the path.
 - Path: `/api/outputs/<id>`
 - Method: `DELETE`
 
-#### Comand-line curl example
+#### Command-line curl example
 ```
 # Delete output 1
 curl -X DELETE http://localhost:5000/api/outputs/1
 ```
 
-#### Response (if successful)
+#### Response (if successful)
 
 ```
 {"status": "OK"}
 ```
 
 
-## Overlays
+## Overlays
 Overlays can be applied to inputs and mixers. [Read about overlay types.](overlays.md)
 
 ### Get all overlays
@@ -378,7 +378,7 @@ Create a new overlay. There are different types of overlays. You must specify a 
 - Path: `/api/overlays`
 - Method: `PUT`
 
-#### Comand-line curl example
+#### Command-line curl example
 ```
 # Create a text overlay, and overlay it on mixer1
 curl -X PUT -d '{"type": "text", "source": "mixer1", "props": {"text": "What a nice overlay"}}' http://localhost:5000/api/overlays
@@ -399,7 +399,7 @@ Update an existing overlay. The `id` (integer) of the overlay is required in the
 - Method: `POST`
 - Request body: JSON containing the changes
 
-#### Comand-line curl example
+#### Command-line curl example
 ```
 # Make an overlay visible
 curl -X POST -d '{"visible": true}' http://localhost:5000/api/overlays/1
@@ -411,13 +411,13 @@ Delete an overlay. The `id` (integer) of the overlay is required in the path.
 - Path: `/api/overlays/<id>`
 - Method: `DELETE`
 
-#### Comand-line curl example
+#### Command-line curl example
 ```
 # Delete overlay 1
 curl -X DELETE http://localhost:5000/api/overlays/1
 ```
 
-#### Response (if successful)
+#### Response (if successful)
 
 ```
 {"status": "OK"}

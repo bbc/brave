@@ -8,7 +8,7 @@ Inputs can also have [overlays](overlays.md) applied to them.
 ## State
 An input will be in one of four states - NULL, READY, PAUSED, and PLAYING. (For more, see the FAQ question [_What are the four states?_](faq.md#what-are-the-four-states)).
 
-## Types of inputs
+## Types of inputs
 Brave currently supports these input types:
 
 - [uri](#uri)
@@ -40,7 +40,6 @@ Note that this type does not as a server. Content must be 'pulled' from another 
 | `width` and `height` | No | Override of the width and height | None (will appear full-screen on mixer/output) |
 
 #### Other properties
-
 * The `position` property returns the current position (time) of the media. It's in nanoseconds (so divide the number by 1000000000 to turn into seconds.) It can updated (using an API POST) to 'seek' to a certain position.
 
 * The `duration` property returns the duration of the media, if known. It is not updatable.

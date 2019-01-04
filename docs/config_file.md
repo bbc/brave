@@ -4,7 +4,7 @@ This includes being able to set inputs, mixers, outputs and overlays that are cr
 
 Brave does not reconsider the config file after it has started. To configure Brave after it has started (e.g. to add another input), use the API.
 
-## Contents
+## Contents
 
 
 ## Selecting a config file
@@ -14,7 +14,7 @@ Provide Brave with the config file at startup with the `-c` parameter, e.g.
 ./brave.py -c config/empty.yaml
 ```
 
-## Default config file
+## Default config file
 The default config file can be found at `config/default.yaml`.
 
 It creates one mixer, and no inputs or outputs.
@@ -24,7 +24,7 @@ Config files are written in [YAML](http://yaml.org/), and are simple to create b
 
 The following options can be included in the config file.
 
-### `default_inputs`
+### `default_inputs`
 Use the `default_inputs` entry to provide an array of inputs that should be created when Brave starts.
 
 Example:
@@ -47,7 +47,7 @@ default_inputs:
 * See [inputs](inputs.md) for the list of types and props.
 
 
-### `default_mixers`
+### `default_mixers`
 Use the `default_mixers` entry to provide an array of inputs that should be created when Brave starts. If omitted, one mixer will automatically be created.
 
 
@@ -70,7 +70,7 @@ Properties, all optional, are:
 * `pattern` - bettween 0 and 24, matching the pattern list [here](https://gstreamer.freedesktop.org/data/doc/gstreamer/head/gst-plugins-base-plugins/html/gst-plugins-base-plugins-videotestsrc.html#GstVideoTestSrcPattern.members). If not set, defaults to 0 (SMPTE test pattern)
 * `intial_state` - the state that the mixer should enter. Permitted values: 'PLAYING', 'PAUSED', 'READY', 'NULL. Defaults to PLAYING.
 
-### `default_outputs`
+### `default_outputs`
 `default_outputs` is an array array of inputs that should be created when Brave starts.
 
 Example (creating four outputs of different types):
@@ -96,9 +96,8 @@ Each output can then, optionally, have `props` containing key-values pairs of th
 * `intial_state` - the state that the output should enter. Permitted values: 'PLAYING', 'PAUSED', 'READY', 'NULL. Defaults to PLAYING.
 * `mixer_id` - the ID of the mixer that the output should treat as a source. If not set, defaults to mixer 0.
 
-### `default_overlays`
-`default_overlays` is an array of overlays that should be created when
-Brave starts.
+### `default_overlays`
+`default_overlays` is an array of overlays that should be created when Brave starts.
 
 Example:
 
@@ -135,7 +134,7 @@ enable_video: false
 
 Note that audio and video cannot be enabled/disabled via the API.
 
-### `default_mixer_height` and `default_mixer_width`
+### `default_mixer_height` and `default_mixer_width`
 These allow you to set the default width and height for a mixer.
 The default is a width of 640 and a height of 360.
 

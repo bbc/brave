@@ -58,7 +58,7 @@ An output is how the constructed audio/video is then sent, served or saved. Ther
 * WebRTC - for near-realtime previewing of the video (and audio)
 * [AWS Kinesis Video Stream](https://aws.amazon.com/kinesis/video-streams/)
 * Local - for playback on a local machine
- 
+
 [Read more about output types.](docs/outputs.md)
 
 ### Overlays
@@ -155,7 +155,7 @@ A few useful `pytest` options:
 
 All tests should pass.
 
-### Code quality (linting)
+### Code quality (linting)
 To check code quality, [Flake8](http://flake8.pycqa.org/en/latest/index.html) is used. To run:
 
 ```

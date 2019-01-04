@@ -4,10 +4,10 @@ Outputs allow you to send an audio or video stream elsewhere, such as to YouTube
 ## State
 An output will be in one of four states - NULL, READY, PAUSED, and PLAYING. (For more, see the FAQ question [_What are the four states?_](faq.md#what-are-the-four-states)).
 
-## Source
+## Source
 Each output has one source; either an [input](inputs.md), or a [mixer](mixers.md). The source can be declared at creation time. It can be changed later, but only when the output is in a NULL or READY state (i.e. it will interrupt the output).
 
-## Types of outputs
+## Types of outputs
 Brave currently support these output types:
 
 - [rtmp](#rtmp)
@@ -28,7 +28,7 @@ The `rtmp` output forwards the audio/video to an RTMP server. This can include Y
 | `uri` | Yes | The URI of the content | n/a (required) |
 | `width` and `height` | No | Width and height of video | Whatever the source is |
 
-  
+
 ### tcp
 The `tcp` output acts as  TCP server, allowing a client to connect and retrieve the content over the TCP protocol. VLC is able to connect in this way.
 

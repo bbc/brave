@@ -14,14 +14,14 @@ Inputs, mixers and outputs are always in one of four states. These states are th
 | `PLAYING` | Block is successfully playing content. |
 
 
-## Can support be added for another input or output type/protocol?
+## Can support be added for another input or output type/protocol?
 Because Brave is based on GStreamer, it can only support what GStreamer supports. It cannot act as an RTMP server, for example, because there is no GStreamer element that can do that.
 
 Where GStreamer plugins do exist, adding them as a new form of input or output should be relatively easy. Start with an existing one (in the `brave/inputs` and `brave/outputs` directories) and clone it. Then please raise as a pull request. Or you could [request it by raising an issue](https://github.com/bbc/brave/issues).
 
-## I've found a bug
+## I've found a bug
 Please [raise an issue in GitHub](https://github.com/bbc/brave/issues).
 
-## Can I contribute?
+## Can I contribute?
 Yes, pull requests are welcome.
 Please ensure the tests are passing and the flake8 linting is returning success first. (Information on these can be found in the [README](../readme.md)).
