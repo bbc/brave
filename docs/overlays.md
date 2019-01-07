@@ -11,7 +11,7 @@ All types of overlays have the following properties:
 
 | Name | Can be set initially? | Can be updated?? | Description | Default value (if not set) |
 | ---- | --------------------- | ---------------- | ----------- | -------------------------- |
-| `id` | No | No | ID of the overlay. Positive integer. Starts at 1 and increases by 1 for each new mixer. | n/a  |
+| `id` | No | No | ID of the overlay. Positive integer. Starts at 1 and increases by 1 for each new overlay. | n/a  |
 | `uid` | No | No | Unqiue ID - a string in the format 'overlayX' where X is the ID | n/a  |
 | `type` | Yes | No | The name of the overlay type, e.g. `text`. | N/A - **REQUIRED** |
 | `visible` | Yes | Yes | Boolean. Whether the effect is visible on the video. | False |
@@ -27,7 +27,7 @@ Brave currently supports these overlay types:
 ### text
 Shows text on the screen.
 
-### Additional properties
+### Additional properties
 In addition to the common properties defined above, this overlay also has:
 
 | Name | Can be set initially? | Can be updated?? | Description | Default value (if not set) |
@@ -36,13 +36,13 @@ In addition to the common properties defined above, this overlay also has:
 | `valignment` | Yes | Yes | The vertical alignment of the text. Can be `top`, `center` or `bottom`. | Empty string |
 
 
-### clock
+### clock
 The `clock` overlay shows the current time, and also any other text provided in the `text` property. It is a useful overlay to determine if there is any delay in the video.
 
 This overlay shares the same properties as the `text` overlay.
 
 
-### effect
+### effect
 The `effect` overlay allows a range of video transformation effects to be applied.
 
 This overlay has one additional property - `effect_name` - which can be set to one of the following values:
