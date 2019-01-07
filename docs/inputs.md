@@ -5,10 +5,17 @@ Each input can be connected to any number of [mixers](mixers.md) or [outputs](ou
 
 Inputs can also have [overlays](overlays.md) applied to them.
 
-## State
-An input will be in one of four states - NULL, READY, PAUSED, and PLAYING. (For more, see the FAQ question [_What are the four states?_](faq.md#what-are-the-four-states)).
+## Common properties
 
-## Types of inputs
+All inputs have the following properties:
+
+| Name | Can be set initially? | Can be updated?? | Description | Default value (if not set) |
+| ---- | --------------------- | ---------------- | ----------- | -------------------------- |
+| `type` | Yes | No | The input type, e.g. `uri`. | N/A - **REQUIRED** |
+| `state` | Yes (but use the key `initial_state`) | Yes | Either `NULL`, `READY`, `PAUSED` or `PLAYING`. [_What are the four states?_](faq.md#what-are-the-four-states) | `PLAYING` |
+
+
+## Input types
 Brave currently supports these input types:
 
 - [uri](#uri)
@@ -30,19 +37,18 @@ The types of content accepted will depend, in part, on which decoders and GStrea
 
 Note that this type does not as a server. Content must be 'pulled' from another place. For example, if you had a video source that wanted to send RTMP, you'd require an RTMP server to accept this so that Brave could then read it.
 
+### Properties
+In addition to the common properties above, this input type also has the following:
 
-#### Properties when creating
-| Name | Required? | Description | Default value (if not set) |
-| ---- | --------- | ----------- | -------------------------- |
-| `uri` | Yes | The URI of the content | n/a |
-| `initial_state` | No | The state that the input should enter. Can be 'PLAYING', 'PAUSED', 'READY', 'NULL'. | PLAYING |
-| `volume` | No | The volume. Floating point value, between 0 (silent) and 1 (full volume). | 0.8 |
-| `width` and `height` | No | Override of the width and height | None (will appear full-screen on mixer/output) |
-
-#### Other properties
-* The `position` property returns the current position (time) of the media. It's in nanoseconds (so divide the number by 1000000000 to turn into seconds.) It can updated (using an API POST) to 'seek' to a certain position.
-
-* The `duration` property returns the duration of the media, if known. It is not updatable.
+| Name | Can be set initially? | Can be updated?? | Description | Default value (if not set) |
+| ---- | --------------------- | ---------------- | ----------- | -------------------------- |
+| `id` | No | No | ID of the input. Positive integer. Starts at 1 and increases by 1 for each new input. | n/a  |
+| `uid` | No | No | Unqiue ID - a string in the format 'inputX' where X is the ID | n/a  |
+| `uri` | Yes | No | The URI of the image | n/a - REQUIRED PROPERTY |
+| `width` and `height` | Yes | Yes | Override of the width and height (both non-negative integers) | None (will appear full-screen on mixer/output) |
+| `volume` | Yes | Yes | The volume. Floating point value, between 0 (silent) and 1 (full volume). | 0.8 |
+| `position` | No (should be possible in a future release) | Yes | The current position (time) of the media. It's in nanoseconds (so divide the number by 1000000000 to turn into seconds.) | 0 |
+| `duration` | No (should be possible in a future release) | Yes | The duration of the content, or `-1` if there is no duration (e.g. for a live stream). | The asset duration, or `-1` |
 
 
 ### image
@@ -51,11 +57,12 @@ The `image` input type is for when an image (JPEG, PNG, etc.) should be displaye
 The image should be available as a file, and described as a URI. This means it can be local (e.g. `file:///home/user/pic.jpg`) or remote (e.g. `https://myserver.com/pic.jpg`).
 
 #### Properties
-| Name | Required? | Description | Default value (if not set) |
-| ---- | --------- | ----------- | -------------------------- |
-| `uri` | Yes | The URI of the image | n/a |
-| `initial_state` | No | The state that the input should enter. Can be 'PLAYING', 'PAUSED', 'READY', 'NULL'. | PLAYING |
-| `width` and `height` | No | Override of the width and height | None (will appear full-screen on mixer/output) |
+In addition to the common properties above, this input type also has the following:
+
+| Name | Can be set initially? | Can be updated?? | Description | Default value (if not set) |
+| ---- | --------------------- | ---------------- | ----------- | -------------------------- |
+| `uri` | Yes | No | The URI of the image | n/a - REQUIRED PROPERTY |
+| `width` and `height` | Yes | Yes | Override of the width and height | None (will appear full-screen on mixer/output) |
 
 ### test_video
 A video test source, which is useful for checking connections, or to provide a background. There is no audio.
@@ -91,10 +98,12 @@ Supply a `pattern` property to choose from 25 patterns:
 - (24): colors           - Colors
 
 #### Properties
-| Name | Required? | Description | Default value (if not set) |
-| ---- | --------- | ----------- | -------------------------- |
-| `pattern` | No | The number of the pattern (between 0 and 24, as listed above) | 0 (SMPTE 100% color bars) |
-| `width` and `height` | No | Override of the width and height | None (will appear full-screen on mixer/output) |
+In addition to the common properties above, this input type also has the following:
+
+| Name | Can be set initially? | Can be updated?? | Description | Default value (if not set) |
+| ---- | --------------------- | ---------------- | ----------- | -------------------------- |
+| `pattern` | Yes | Yes | The number of the pattern (between 0 and 24, as listed above) | 0 (SMPTE 100% color bars) |
+| `width` and `height` | Yes | Yes | Override of the width and height | None (will appear full-screen on mixer/output) |
 
 ### test_audio
 An audio test input. This is useful for testing/checking your setup. There is no video.
@@ -117,8 +126,10 @@ Supply a `wave` property to choose from 13 wave options:
 - (12): violet-noise     - Violet noise
 
 #### Properties
-| Name | Required? | Description | Default value (if not set) |
-| ---- | --------- | ----------- | -------------------------- |
-| `freq` | No | Frequency of the test sound, in Hz. Provide as an integer. | 440 (Hz) |
-| `wave` | No | The number of the wave (between 0 and 13, as listed above) | 0 (sine) |
-| `volume` | No | The volume. Floating point value, between 0 (silent) and 1 (full volume). | 0.8 |
+In addition to the common properties above, this input type also has the following:
+
+| Name | Can be set initially? | Can be updated?? | Description | Default value (if not set) |
+| ---- | --------------------- | ---------------- | ----------- | -------------------------- |
+| `freq` | Yes | Yes | Frequency of the test sound, in Hz. Provide as an integer. | 440 (Hz) |
+| `wave` | Yes | Yes | The number of the wave (between 0 and 13, as listed above) | 0 (sine) |
+| `volume` | Yes | Yes | The volume. Floating point value, between 0 (silent) and 1 (full volume). | 0.8 |

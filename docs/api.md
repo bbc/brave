@@ -34,72 +34,64 @@ curl http://localhost:5000/api/all
 
 #### Example response
 ```
-{  
-   "inputs":[  
-      {  
-         "has_audio":false,
-         "has_video":true,
-         "uid":"input2",
-         "state":"PLAYING",
-         "id":2,
-         "type":"test_video",
-         "props":{  
-            "initial_state":"PLAYING",
-            "pattern":0,
-            "width":640,
-            "height":360,
-            "xpos":0,
-            "ypos":0,
-            "zorder":5
-         },
-         "position":5744090119
-      }
-   ],
-   "overlays":[  
-
-   ],
-   "outputs":[  
-      {  
-         "has_audio":true,
-         "has_video":true,
-         "uid":"output1",
-         "state":"PLAYING",
-         "id":1,
-         "type":"tcp",
-         "props":{  
-            "initial_state":"PLAYING",
-            "audio_bitrate":128000,
-            "container":"mpeg",
-            "host":"127.0.0.1",
-            "port":7000
-         },
-         "source":"mixer1"
-      }
-   ],
-   "mixers":[  
-      {  
-         "has_audio":true,
-         "has_video":true,
-         "uid":"mixer1",
-         "state":"PLAYING",
-         "id":1,
-         "type":"mixer",
-         "props":{  
-            "initial_state":"PLAYING",
-            "width":640,
-            "height":360,
-            "pattern":0
-         },
-         "sources":[  
-            {  
-               "uid":"input2",
-               "id":2,
-               "block_type":"input",
-               "in_mix":false
-            }
-         ]
-      }
-   ]
+{
+  "inputs": [
+    {
+      "has_audio": true,
+      "has_video": true,
+      "uid": "input1",
+      "initial_state": "PAUSED",
+      "volume": 0.8,
+      "xpos": 0,
+      "ypos": 0,
+      "zorder": 44,
+      "uri": "rtmp://ec2-34-249-249-218.eu-west-1.compute.amazonaws.com:8001/live/go1",
+      "state": "READY",
+      "id": 1,
+      "type": "uri",
+      "position": -1,
+      "connection_speed": 0,
+      "buffer_size": -1,
+      "buffer_duration": 3000000000
+    }
+  ],
+  "overlays": [],
+  "outputs": [
+    {
+      "has_audio": true,
+      "has_video": true,
+      "uid": "output1",
+      "initial_state": "PLAYING",
+      "width": 640,
+      "height": 360,
+      "state": "PLAYING",
+      "id": 1,
+      "type": "local",
+      "source": "mixer1"
+    }
+  ],
+  "mixers": [
+    {
+      "has_audio": true,
+      "has_video": true,
+      "uid": "mixer1",
+      "initial_state": "PLAYING",
+      "width": 640,
+      "height": 360,
+      "pattern": 0,
+      "state": "PLAYING",
+      "id": 1,
+      "type": "mixer",
+      "sources": [
+        {
+          "uid": "input1",
+          "id": 1,
+          "block_type": "input",
+          "in_mix": true
+        }
+      ]
+    }
+  ]
 }
 ```
 
@@ -205,13 +197,14 @@ Create a new mixer. Optionally, provide, width, height and pattern. See [Mixers]
 curl -X PUT -d '{}' http://localhost:5000/api/mixers
 
 # Create a mixer, of size 1280x720, with a black background
-curl -X PUT -d '{"props":{"pattern": 2, "width": 1280, "height": 720}}' http://localhost:5000/api/mixers
+curl -X PUT -d '{"pattern": 2, "width": 1280, "height": 720}' http://localhost:5000/api/mixers
 ```
 
 #### Example response
 ```
 {
   "id": 3,
+  "uid": "mixer3"
 }
 ```
 
@@ -224,7 +217,7 @@ Update an existing mixer. The `id` (integer) of the mixer is required in the pat
 #### Command-line curl example
 ```
 # Change mixer 1 to have a snow background
-curl -X POST -d '{"props":{"pattern": 1}}' http://localhost:5000/api/mixers/1
+curl -X POST -d '{"pattern": 1}' http://localhost:5000/api/mixers/1
 ```
 
 ### Cut to a different source
@@ -312,7 +305,7 @@ Create a new output. There are different types of outputs. You must specify a `t
 #### Command-line curl example
 ```
 # Create a file output, that takes the output of mixer1, and writes it to an MP4 file:
-curl -X PUT -d '{"type": "file", "source": "mixer1", "props": {"location": "/tmp/file.mp4"}}' http://localhost:5000/api/outputs
+curl -X PUT -d '{"type": "file", "source": "mixer1", "location": "/tmp/file.mp4"}' http://localhost:5000/api/outputs
 ```
 
 #### Example response
@@ -381,7 +374,7 @@ Create a new overlay. There are different types of overlays. You must specify a 
 #### Command-line curl example
 ```
 # Create a text overlay, and overlay it on mixer1
-curl -X PUT -d '{"type": "text", "source": "mixer1", "props": {"text": "What a nice overlay"}}' http://localhost:5000/api/overlays
+curl -X PUT -d '{"type": "text", "source": "mixer1", "text": "What a nice overlay"}' http://localhost:5000/api/overlays
 ```
 
 #### Example response

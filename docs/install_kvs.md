@@ -58,11 +58,10 @@ Here is an example config file to set up one stream:
 ```
 default_outputs:
     - type: kvs
-      props:
-          stream_name: 'name-of-your-stream'
+      stream_name: 'name-of-your-stream'
 ```
 
-Ensure the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables are set. This is the same as [used by the AWS comand-line tool](https://docs.aws.amazon.com/cli/latest/userguide/cli-environment.html).
+Ensure the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables are set. This is the same as [used by the AWS command-line tool](https://docs.aws.amazon.com/cli/latest/userguide/cli-environment.html).
 
 For example, if the above config file was written to `kvs.yaml`, then it could be invocated with:
 

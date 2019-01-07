@@ -6,6 +6,18 @@ Brave does not reconsider the config file after it has started. To configure Bra
 
 ## Contents
 
+- [Selecting a config file](#selecting-a-config-file)
+- [Default config file](#default-config-file)
+- [Creating a config file](#creating-a-config-file)
+    + [Inputs](#inputs)
+    + [Mixers](#mixers)
+    + [Outputs](#outputs)
+    + [Overlays](#overlays)
+    + [Disabling audio or video](#disabling-audio-or-video)
+    + [Video width and height](#video-width-and-height)
+    + [STUN and TURN servers](#stun-and-turn-servers)
+
+
 
 ## Selecting a config file
 Provide Brave with the config file at startup with the `-c` parameter, e.g.
@@ -24,7 +36,7 @@ Config files are written in [YAML](http://yaml.org/), and are simple to create b
 
 The following options can be included in the config file.
 
-### `default_inputs`
+### Inputs
 Use the `default_inputs` entry to provide an array of inputs that should be created when Brave starts.
 
 Example:
@@ -33,21 +45,17 @@ Example:
 default_inputs:
      - type: test_video
      - type: uri
-       props:
-           initial_state: PAUSED
-           uri: rtmp://184.72.239.149/vod/BigBuckBunny_115k.mov
+       initial_state: PAUSED
+       uri: rtmp://184.72.239.149/vod/BigBuckBunny_115k.mov
      - type: image
-       props:
-           zorder: 2
-           uri: file:///home/user/images/image.jpg
+       zorder: 2
+       uri: file:///home/user/images/image.jpg
 ```
 
-* Each input must have a type.
-* Each input can then, optionally, have `props` containing key-values pairs of the properties of that input.
-* See [inputs](inputs.md) for the list of types and props.
+Each input must have a type (e.g. `uri`). Inputs also have a range of other properties. For the full list, see the [inputs](inputs.md) page.
 
 
-### `default_mixers`
+### Mixers
 Use the `default_mixers` entry to provide an array of inputs that should be created when Brave starts. If omitted, one mixer will automatically be created.
 
 
@@ -55,48 +63,38 @@ Example:
 
 ```
 default_mixers:
-    - props:
-        width: 640
-        height: 360
-        pattern: 6
+    - width: 640
+      height: 360
+      pattern: 6
+      source:
+          input1: {}
 ```
 
-Unlike inputs and outputs, mixers do not have a type.
+Unlike inputs, outputs and overlays, mixers do not have a type. The [mixers](mixers.md) page shows the properties that a mixer can have.
 
-Properties, all optional, are:
-
-* `width` - if not set, defaults to `default_mixer_height` (see below)
-* `height` - if not set, defaults to `default_mixer_width` (see below)
-* `pattern` - bettween 0 and 24, matching the pattern list [here](https://gstreamer.freedesktop.org/data/doc/gstreamer/head/gst-plugins-base-plugins/html/gst-plugins-base-plugins-videotestsrc.html#GstVideoTestSrcPattern.members). If not set, defaults to 0 (SMPTE test pattern)
-* `intial_state` - the state that the mixer should enter. Permitted values: 'PLAYING', 'PAUSED', 'READY', 'NULL. Defaults to PLAYING.
-
-### `default_outputs`
-`default_outputs` is an array array of inputs that should be created when Brave starts.
+### Outputs
+Use `default_outputs` to define an array of outputs that should be created when Brave starts.
 
 Example (creating four outputs of different types):
 
 ```
 default_outputs:
     - type: local
-      props:
-          initial_state: READY
+      initial_state: READY
+      input_id: 0
+      source: mixer1
     - type: image
+      source: input1
     - type: tcp
+      initial_state: READY
+      source: mixer1
     - type: rtmp
-      props:
-          uri: rtmp://domain/path/name
+      uri: rtmp://domain/path/name
 ```
 
-Each output must have a type (either 'rtmp', 'tcp', 'image', 'file', 'local', or 'webrtc').
+Each output must have a type (either 'rtmp', 'tcp', 'image', 'file', 'local', or 'webrtc'). Outputs also have a range of other properties. For the full list, see the [outputs](outputs.md) page.
 
-Each output can then, optionally, have `props` containing key-values pairs of the properties of that input. Available properties vary per output. All outputs have the following properties:
-
-* `width` - the width of the output.
-* `height` - the height of the output.
-* `intial_state` - the state that the output should enter. Permitted values: 'PLAYING', 'PAUSED', 'READY', 'NULL. Defaults to PLAYING.
-* `mixer_id` - the ID of the mixer that the output should treat as a source. If not set, defaults to mixer 0.
-
-### `default_overlays`
+### Overlays
 `default_overlays` is an array of overlays that should be created when Brave starts.
 
 Example:
@@ -104,22 +102,17 @@ Example:
 ```
 default_overlays:
     - type: text
-      props:
-          text: 'I am some text'
-          visible: true
+      text: 'I am some text'
+      visible: true
+      source: mixer1
     - type: effect
-      props:
-	I      effect_name: warptv
+      effect_name: warptv
 ```
 
 Each overlay must have a type (either 'text', 'clock', or 'effect').
+Overlays also have a range of other properties. For the full list, see the [overlays](overlays) page.
 
-Each overlay can then, optionally, have `props` containing key-values pairs of the properties of that input. Available properties vary per overlay type, and include:
-
-* `visible` - whether the overlay is currently visible. Can be either `true` or `false`.
-* `effect_name` - only for the `effect` type. Valid values include `agingtv`, `warptv`, and `rippletv`. See the full list in the code [here](../brave/overlays/effect.py).
-
-### `enable_video` and `enable_audio`
+### Disabling audio or video
 By default Brave handles video and audio. To disable audio, add the line:
 
 ```
@@ -134,12 +127,14 @@ enable_video: false
 
 Note that audio and video cannot be enabled/disabled via the API.
 
-### `default_mixer_height` and `default_mixer_width`
-These allow you to set the default width and height for a mixer.
+### Video width and height
+The `default_mixer_height` and `default_mixer_width` values allow you to set the default width and height for a mixer.
 The default is a width of 640 and a height of 360.
 
-### `stun_server` and `turn_server`
-Up to one STUN server and/or one TURN server can be provided. Example:
+### STUN and TURN servers
+Up to one STUN server and/or one TURN server can be provided. Use the `stun_server` and `turn_server` fields.
+
+Example:
 
 ```
 stun_server: stun.l.google.com:19302
