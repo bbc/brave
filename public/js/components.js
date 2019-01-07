@@ -53,26 +53,26 @@ components.stateIcon = (state, currentState, linkClassName) => {
 }
 
 components.openCards = {}
-components.card = (props) => {
+components.card = (block) => {
     var card = $('<div class="block-card"></div>')
     var header = $('<div class="block-card-head"></div>')
-    if (props.title) header.append(props.title)
-    if (props.options) {
+    if (block.title) header.append(block.title)
+    if (block.options) {
         var options = $('<div class="option-icons"></div>')
-        options.append(props.options)
+        options.append(block.options)
         header.append(options)
     }
     card.append(header)
-    if (props.state) card.append(props.state)
-    if (props.mixOptions) card.append(props.mixOptions)
+    if (block.state) card.append(block.state)
+    if (block.mixOptions) card.append(block.mixOptions)
 
     const cardBody = $('<div class="block-card-body"></div>')
-    cardBody.append(props.body)
-    if (!components.openCards[props.title]) cardBody.css('display', 'none')
+    cardBody.append(block.body)
+    if (!components.openCards[block.title]) cardBody.css('display', 'none')
 
-    const setToggleMsg = (target) => { target.html(components.openCards[props.title] ? components.hideDetails() : components.showDetails()) }
+    const setToggleMsg = (target) => { target.html(components.openCards[block.title] ? components.hideDetails() : components.showDetails()) }
     const toggleSwitch = $('<a href="#">Toggle</a>').click((change) => {
-        cardBody.toggle(components.openCards[props.title] = !components.openCards[props.title])
+        cardBody.toggle(components.openCards[block.title] = !components.openCards[block.title])
         setToggleMsg($(change.target))
         return false
     })

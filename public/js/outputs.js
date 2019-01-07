@@ -53,29 +53,29 @@ outputsHandler._outputCardBody = (output) => {
     if (output.current_num_peers) {
         details.push('<strong>Number of connections:</strong> ' + output.current_num_peers)
     }
-    if (output.props.location) {
-        details.push('<strong>Location:</strong> ' + output.props.location)
+    if (output.location) {
+        details.push('<strong>Location:</strong> ' + output.location)
     }
-    else if (output.props.uri) {
-        details.push('<strong>URI:</strong> <code>' + output.props.uri + '</code></div>')
+    else if (output.uri) {
+        details.push('<strong>URI:</strong> <code>' + output.uri + '</code></div>')
     }
-    else if (output.props.host && output.props.port && output.type === 'tcp') {
+    else if (output.host && output.port && output.type === 'tcp') {
         current_domain = $('<a>').attr('href', document.location.href).prop('hostname');
-        host = current_domain === '127.0.0.1' ? output.props.host : current_domain
-        // Instead of domain we can use output.props.host but it may be an internal (private) IP
-        details.push('<strong>URI:</strong> <code>tcp://' + host + ':' + output.props.port + '</code> (Use VLC to watch this)')
-        details.push('<strong>Container:</strong> <code>' + output.props.container + '</code>')
+        host = current_domain === '127.0.0.1' ? output.host : current_domain
+        // Instead of domain we can use output.host but it may be an internal (private) IP
+        details.push('<strong>URI:</strong> <code>tcp://' + host + ':' + output.port + '</code> (Use VLC to watch this)')
+        details.push('<strong>Container:</strong> <code>' + output.container + '</code>')
     }
 
-    if (output.props.hasOwnProperty('width') &&
-        output.props.hasOwnProperty('height')) details.push('<strong>Output size:</strong> ' + prettyDimensions(output.props))
+    if (output.hasOwnProperty('width') &&
+        output.hasOwnProperty('height')) details.push('<strong>Output size:</strong> ' + prettyDimensions(output))
 
-    if (output.props.audio_bitrate) {
-        details.push('<strong>Audio bitrate:</strong> ' + output.props.audio_bitrate)
+    if (output.audio_bitrate) {
+        details.push('<strong>Audio bitrate:</strong> ' + output.audio_bitrate)
     }
 
-    if (output.props.hasOwnProperty('stream_name')) {
-        details.push('<strong>Stream name:</strong> ' + output.props.stream_name)
+    if (output.hasOwnProperty('stream_name')) {
+        details.push('<strong>Stream name:</strong> ' + output.stream_name)
     }
 
     if (output.hasOwnProperty('source')) {
@@ -132,7 +132,6 @@ outputsHandler._showForm = function(output) {
 outputsHandler._populateForm = function(output) {
     var form = outputsHandler.currentForm
     form.empty()
-    if (!output.props) output.props = {}
     var isNew = !output.hasOwnProperty('id')
     if (isNew) {
         form.append(outputsHandler._getOutputsSelect(output))
@@ -160,14 +159,14 @@ outputsHandler._populateForm = function(output) {
             label: 'Audio bitrate',
             name: 'audio_bitrate',
             type: 'number',
-            value: output.props.audio_bitrate || '',
+            value: output.audio_bitrate || '',
             help: 'Leave blank for default (128000)',
             min: 1000,
             step: 1000,
             max: 128000*16
         }))
 
-        form.append(getDimensionsSelect('dimensions', output.props.width, output.props.height))
+        form.append(getDimensionsSelect('dimensions', output.width, output.height))
     }
     else if (output.type === 'rtmp') {
         form.append(formGroup({
@@ -259,7 +258,7 @@ outputsHandler._handleFormSubmit = function() {
     }
 
     if (type === 'rtmp') {
-        var uri = newProps.uri || output.uri
+        const uri = newuri || output.uri
         good_uri_regexp = '^rtmp(s?)://'
         if (!uri || !uri.match(good_uri_regexp)) {
             showMessage('uri must start with ' + good_uri_regexp)
@@ -272,10 +271,8 @@ outputsHandler._handleFormSubmit = function() {
         return
     }
 
-    delete newProps.type
-    const source = newProps.source === 'none' ? null : newProps.source
-    delete newProps.source
-    outputsHandler._submitCreateOrEdit(output.id, {type, source, props: newProps}, outputsHandler._onNewOutputSuccess)
+    if (newProps.source === 'none') newProps.source = null
+    outputsHandler._submitCreateOrEdit(output.id, newProps, outputsHandler._onNewOutputSuccess)
     hideModal();
 }
 
