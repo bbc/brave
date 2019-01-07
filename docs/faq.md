@@ -24,4 +24,4 @@ Please [raise an issue in GitHub](https://github.com/bbc/brave/issues).
 
 ## Can I contribute?
 Yes, pull requests are welcome.
-Please ensure the tests are passing and the flake8 linting is returning success first. (Information on these can be found in the [README](../readme.md)).
+Please ensure the tests are passing and the flake8 linting is returning success first. (Information on these can be found in the [README](../README.md)).
