@@ -49,21 +49,21 @@ inputsHandler._optionButtonsForInput = (input) => {
 
 inputsHandler._inputCardBody = (input) => {
     var details = []
-    if (input.props.uri) details.push('<div><code>' + input.props.uri + '</code></div>')
+    if (input.uri) details.push('<div><code>' + input.uri + '</code></div>')
     if (input.hasOwnProperty('width') &&
         input.hasOwnProperty('height')) details.push('<strong>Input size:</strong> ' + prettyDimensions(input))
-    if (input.props.hasOwnProperty('width') &&
-        input.props.hasOwnProperty('height')) details.push('<div><strong>Resized to:</strong> ' + prettyDimensions(input.props) + '</div>')
+    if (input.hasOwnProperty('width') &&
+        input.hasOwnProperty('height')) details.push('<div><strong>Resized to:</strong> ' + prettyDimensions(input) + '</div>')
     if (input.hasOwnProperty('framerate')) details.push('<div><strong>Framerate:</strong> ' + Math.round(input.framerate) + '</div>')
-    if (input.props.hasOwnProperty('xpos') && input.props.hasOwnProperty('ypos')) details.push('<div><strong>Position on screen:</strong> ' + input.props.xpos + 'x' + input.props.ypos + '</div>')
-    if (input.props.hasOwnProperty('zorder')) details.push('<strong>Z-order:</strong> ' + input.props.zorder)
+    if (input.hasOwnProperty('xpos') && input.hasOwnProperty('ypos')) details.push('<div><strong>Position on screen:</strong> ' + input.xpos + 'x' + input.ypos + '</div>')
+    if (input.hasOwnProperty('zorder')) details.push('<strong>Z-order:</strong> ' + input.zorder)
     if (input.hasOwnProperty('audio_channels')) details.push('<div><strong>Audio channels:</strong> ' + input.audio_channels + '</div>')
     if (input.hasOwnProperty('audio_rate')) details.push('<div><strong>Audio rate:</strong> ' + input.audio_rate + '</div>')
-    if (input.props.hasOwnProperty('volume')) details.push('<div><strong>Volume:</strong> ' + (100 * input.props.volume) + '&#37;</div>')
-    if (input.props.hasOwnProperty('input_volume')) details.push('<div><strong>Input volume:</strong> ' + input.props.input_volume + '</div>')
-    if (input.props.hasOwnProperty('freq')) details.push('<div><strong>Frequency:</strong> ' + input.props.freq + 'Hz</div>')
-    if (input.props.hasOwnProperty('pattern')) details.push('<div><strong>Pattern:</strong> ' + inputsHandler.patternTypes[input.props.pattern] + '</div>')
-    if (input.props.hasOwnProperty('wave')) details.push('<div><strong>Wave:</strong> ' + inputsHandler.waveTypes[input.props.wave] + '</div>')
+    if (input.hasOwnProperty('volume')) details.push('<div><strong>Volume:</strong> ' + (100 * input.volume) + '&#37;</div>')
+    if (input.hasOwnProperty('input_volume')) details.push('<div><strong>Input volume:</strong> ' + input.input_volume + '</div>')
+    if (input.hasOwnProperty('freq')) details.push('<div><strong>Frequency:</strong> ' + input.freq + 'Hz</div>')
+    if (input.hasOwnProperty('pattern')) details.push('<div><strong>Pattern:</strong> ' + inputsHandler.patternTypes[input.pattern] + '</div>')
+    if (input.hasOwnProperty('wave')) details.push('<div><strong>Wave:</strong> ' + inputsHandler.waveTypes[input.wave] + '</div>')
 
     if (input.hasOwnProperty('duration')) {
         var duration = prettyDuration(input.duration)
@@ -88,7 +88,6 @@ inputsHandler._showForm = function(input) {
 inputsHandler._populateForm = function(input) {
     var form = inputsHandler.currentForm
     form.empty()
-    if (!input.props) input.props = {}
 
     var uriExamples = ''
     if (input.type && input.type === 'uri') {
@@ -105,7 +104,7 @@ inputsHandler._populateForm = function(input) {
         label: 'Position (&lt;width&gt;x&lt;height&gt;)',
         name: 'position',
         type: 'text',
-        value: (input.props.xpos || 0) + 'x' + (input.props.ypos || 0),
+        value: (input.xpos || 0) + 'x' + (input.ypos || 0),
         help: 'In the format <samp>&lt;width&gt;x&lt;height&gt;</samp>. The default, <samp>0x0</samp>, puts it in the top-left corner.'
     })
 
@@ -114,7 +113,7 @@ inputsHandler._populateForm = function(input) {
         label: 'Z-order',
         name: 'zorder',
         type: 'number',
-        value: input.props.zorder || inputsHandler.getNextZorder()
+        value: input.zorder || inputsHandler.getNextZorder()
     })
 
     var uriRow = formGroup({
@@ -122,11 +121,11 @@ inputsHandler._populateForm = function(input) {
         label: 'Location (URI)',
         name: 'uri',
         type: 'text',
-        value: input.props.uri || '',
+        value: input.uri || '',
         help: uriExamples,
     })
 
-    var sizeBox = getDimensionsSelect('dimensions', input.props.width, input.props.height)
+    const sizeBox = getDimensionsSelect('dimensions', input.width, input.height)
 
     var patternBox = formGroup({
         id: 'input-pattern',
@@ -134,7 +133,7 @@ inputsHandler._populateForm = function(input) {
         name: 'pattern',
         options: inputsHandler.patternTypes,
         initialOption: 'Select a pattern...',
-        value: input.props.pattern || inputsHandler.patternTypes[0]
+        value: input.pattern || inputsHandler.patternTypes[0]
     })
 
     var waveBox = formGroup({
@@ -143,7 +142,7 @@ inputsHandler._populateForm = function(input) {
         name: 'wave',
         options: inputsHandler.waveTypes,
         initialOption: 'Select a wave...',
-        value: input.props.wave || inputsHandler.waveTypes[0]
+        value: input.wave || inputsHandler.waveTypes[0]
     })
 
     var freqBox = formGroup({
@@ -151,7 +150,7 @@ inputsHandler._populateForm = function(input) {
         label: 'Frequency (Hz)',
         name: 'freq',
         type: 'number',
-        value: input.props.freq || 440,
+        value: input.freq || 440,
         min: 20,
         step: 100,
         max: 20000
@@ -183,7 +182,7 @@ inputsHandler._populateForm = function(input) {
     }
     else if (input.type === 'test_audio') {
         form.append();
-        form.append(components.volumeInput(input.props.volume));
+        form.append(components.volumeInput(input.volume));
         form.append(waveBox);
         form.append(freqBox);
     }
@@ -204,7 +203,7 @@ inputsHandler._populateForm = function(input) {
         form.append(positionBox);
         form.append(sizeBox);
         form.append(zOrderBox);
-        form.append(components.volumeInput(input.props.volume));
+        form.append(components.volumeInput(input.volume));
     }
     else if (input.type === 'html') {
         if (isNew) form.append(uriRow);
@@ -220,8 +219,9 @@ inputsHandler._handleFormSubmit = function() {
     var form = inputsHandler.currentForm
     var idField = form.find('input[name="id"]')
     var id = idField.length ? idField.val() : null
-    var input = (id != null) ? inputsHandler.findById(id) : {}
-    var newProps = {}
+    const isNew = id == null
+    const input = isNew ? {} : inputsHandler.findById(id)
+    const newProps = {}
 
     fields = ['type', 'uri', 'position', 'zorder', 'dimensions', 'freq', 'volume', 'input_volume', 'pattern', 'wave']
     fields.forEach(function(f) {
@@ -231,7 +231,7 @@ inputsHandler._handleFormSubmit = function() {
         }
     })
 
-    if (newProps['volume']) newProps['volume'] /= 100 // convert percentage
+    if (newProps.volume) newProps.volume /= 100 // convert percentage
 
     splitDimensionsIntoWidthAndHeight(newProps)
     splitPositionIntoXposAndYpos(newProps)
@@ -248,30 +248,20 @@ inputsHandler._handleFormSubmit = function() {
         return
     }
 
-    if (type === 'uri') {
-        var uri = newProps.uri || (input.props && input.props.uri)
-        good_uri_regexp = '^(file|rtp|rtsp|rtmp|http|https)://'
-        if (!uri || !uri.match(good_uri_regexp)) {
-            showMessage('uri must start with ' + good_uri_regexp, 'info')
-            return
-        }
+    const GOOD_URI_REGEXP = {
+        'uri': '^(file|rtp|rtsp|rtmp|http|https)://',
+        'image': '^(file||http|https)://',
+        'html': '^(file||http|https)://'
     }
 
-    if (type === 'image') {
-        var uri = newProps.uri || (input.props && input.props.uri)
-        good_uri_regexp = '^(file||http|https)://'
-        if (!uri || !uri.match(good_uri_regexp)) {
-            showMessage('Image uri must start with ' + good_uri_regexp, 'info')
-            return
+    if (GOOD_URI_REGEXP[type]) {
+        if (newProps.uri) {
+            if (!newProps.uri.match(GOOD_URI_REGEXP[type])) {
+                showMessage('uri must start with ' + good_uri_regexp, 'info')
+            }
         }
-    }
-
-    if (type === 'html') {
-        var uri = newProps.uri || (input.props && input.props.uri)
-        good_uri_regexp = '^(file||http|https)://'
-        if (!uri || !uri.match(good_uri_regexp)) {
-            showMessage('HTML layer must start with ' + good_uri_regexp, 'info')
-            return
+        else if (isNew) {
+            showMessage('URI field is required', 'info')
         }
     }
 
@@ -280,8 +270,7 @@ inputsHandler._handleFormSubmit = function() {
         return
     }
 
-    delete newProps.type
-    inputsHandler._submitCreateOrEdit(input.id, {type: type, props: newProps})
+    inputsHandler._submitCreateOrEdit(id, newProps)
     hideModal();
 }
 
@@ -379,7 +368,7 @@ function prettyDuration(d) {
 inputsHandler.getNextZorder = function() {
     maxZorder = 1
     inputsHandler.items.forEach(i =>{
-        if (i.props && i.props.zorder && i.props.zorder >= maxZorder) maxZorder = i.props.zorder + 1
+        if (i.zorder && i.zorder >= maxZorder) maxZorder = i.zorder + 1
     })
     return maxZorder
 }

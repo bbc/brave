@@ -42,18 +42,19 @@ overlaysHandler._optionButtonsForOverlay  = (overlay) => {
 }
 
 overlaysHandler._overlayCardBody = (overlay) => {
-    return Object.keys(overlay.props).map(propName =>
-        $('<div></div>')
-        .append('<strong>' + propName + ':</strong> ' + overlay.props[propName])
-    )
+    const details = []
+    if (overlay.effect_name) details.push('<strong>Effect:</strong> ' + overlay.effect_name)
+    if (overlay.text) details.push('<strong>Text:</strong> ' + overlay.text)
+    if (overlay.valignment) details.push('<strong>Vertical alignment:</strong> ' + overlay.valignment)
+    return details.map(d => $('<div></div>').append(d))
 }
 
 overlaysHandler.overlay = (overlay) => {
-    overlaysHandler._submitCreateOrEdit(overlay.id, { props: { visible: true }})
+    overlaysHandler._submitCreateOrEdit(overlay.id, {visible: true})
 }
 
 overlaysHandler.remove = (overlay) => {
-    overlaysHandler._submitCreateOrEdit(overlay.id, { props: { visible: false }})
+    overlaysHandler._submitCreateOrEdit(overlay.id, {visible: false})
 }
 
 overlaysHandler._getMixOptions = (overlay) => {
@@ -63,7 +64,7 @@ overlaysHandler._getMixOptions = (overlay) => {
         return div.append('Not connected')
     }
     var showingOrHidden
-    if (overlay.props.visible) {
+    if (overlay.visible) {
         showingOrHidden = 'In mix'
         div.addClass('mix-option-showing')
         var removeButton = components.removeButton()
@@ -115,8 +116,6 @@ overlaysHandler._populateForm = function(overlay) {
     var form = overlaysHandler.currentForm
     form.empty()
 
-    if (!overlay.props) overlay.props = {}
-
     var isNew = !overlay.hasOwnProperty('id')
     if (isNew) {
         options = {
@@ -145,7 +144,7 @@ overlaysHandler._populateForm = function(overlay) {
             id: 'overlay-text',
             label: 'Text',
             name: 'text',
-            value: overlay.props.text || '',
+            value: overlay.text || '',
             help: 'The text to be shown by this overlay'
         }))
         form.append(formGroup({
@@ -154,7 +153,7 @@ overlaysHandler._populateForm = function(overlay) {
             name: 'valignment',
             initialOption: 'Select an alignment...',
             options: overlaysHandler.valignmentTypes,
-            value: overlay.props && overlay.props.valignment ? overlay.props.valignment : 'bottom'
+            value: overlay && overlay.valignment ? overlay.valignment : 'bottom'
         }))
     }
     else if (overlay.type === 'effect') {
@@ -164,7 +163,7 @@ overlaysHandler._populateForm = function(overlay) {
             name: 'effect_name',
             initialOption: 'Select an effect...',
             options: overlaysHandler.effectNames,
-            value: overlay.props ? overlay.props.effect_name : undefined
+            value: overlay ? overlay.effect_name : undefined
         }))
     }
 
@@ -212,11 +211,9 @@ overlaysHandler._handleFormSubmit = function() {
         return
     }
 
+    if (newProps.source === 'none') newProps.source = null
     console.log('Submitting new overlay with values', newProps)
-    delete newProps.type
-    const source = newProps.source === 'none' ? null : newProps.source
-    delete newProps.source
-    overlaysHandler._submitCreateOrEdit(id, {type, source, props: newProps})
+    overlaysHandler._submitCreateOrEdit(id, newProps)
     hideModal();
 }
 
