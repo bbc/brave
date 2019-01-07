@@ -189,9 +189,9 @@ def assert_outputs(outputs, check_playing_state=True):
         actual_output = response.json()[count]
         for (key, value) in expected_output.items():
             if key == 'props':
-                for (props_key, props_value) in expected_output['props'].items():
-                    assert props_key in actual_output['props']
-                    assert props_value == actual_output['props'][props_key], 'For output %s, for key %s, expected %s but got %s' % (expected_output['id'], props_key, props_value, actual_output['props'][props_key])
+                for (props_key, props_value) in expected_output.items():
+                    assert props_key in actual_output
+                    assert props_value == actual_output[props_key], 'For output %s, for key %s, expected %s but got %s' % (expected_output['id'], props_key, props_value, actual_output[props_key])
             else:
                 assert value == actual_output[key], 'Key "%s" expected to be "%s", but was "%s"' % (key, value, actual_output[key])
 
@@ -212,9 +212,9 @@ def assert_mixers(mixers):
         actual_mixer = response.json()[count]
         for (key, value) in expected_mixer.items():
             if key == 'props':
-                for (props_key, props_value) in expected_mixer['props'].items():
-                    assert props_key in actual_mixer['props']
-                    assert props_value == actual_mixer['props'][props_key], 'For mixer %s, for key %s, expected %s but got %s' % (expected_mixer['id'], props_key, props_value, actual_mixer['props'][props_key])
+                for (props_key, props_value) in expected_mixer.items():
+                    assert props_key in actual_mixer
+                    assert props_value == actual_mixer[props_key], 'For mixer %s, for key %s, expected %s but got %s' % (expected_mixer['id'], props_key, props_value, actual_mixer[props_key])
             else:
                 assert value == actual_mixer[key], 'Key "%s" expected to be "%s", but was "%s"' % (key, value, actual_mixer[key])
 
@@ -237,12 +237,7 @@ def assert_overlays(overlays):
         actual_overlay = response.json()[count]
         for (key, value) in expected_overlay.items():
             assert key in actual_overlay
-            if key == 'props':
-                for (props_key, props_value) in expected_overlay['props'].items():
-                    assert props_key in actual_overlay['props']
-                    assert props_value == actual_overlay['props'][props_key], 'For overlay %s, for key %s, expected %s but got %s' % (expected_overlay['id'], props_key, props_value, actual_overlay['props'][props_key])
-            else:
-                assert value == actual_overlay[key], 'Key "%s" expected to be "%s", but was "%s"' % (key, value, actual_overlay[key])
+            assert value == actual_overlay[key], 'Key "%s" expected to be "%s", but was "%s"' % (key, value, actual_overlay[key])
 
 
 def add_input(details, status_code=200):
@@ -294,9 +289,9 @@ def assert_inputs(inputs, check_playing_state=True):
         for (key, value) in expected_input.items():
             assert key in actual_input
             if key == 'props':
-                for (key, value) in expected_input['props'].items():
-                    assert key in actual_input['props']
-                    assert value == actual_input['props'][key]
+                for (key, value) in expected_input.items():
+                    assert key in actual_input
+                    assert value == actual_input[key]
             else:
                 assert value == actual_input[key], 'For key "%s", expected "%s" but got "%s"' % (key, value, actual_input[key])
 

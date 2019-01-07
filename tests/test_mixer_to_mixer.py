@@ -28,7 +28,7 @@ def subtest_ensure_mixer2_is_red():
 
 def subtest_start_brave_with_two_mixers(run_brave, create_config_file):
     # Pattern 4 is red and pattern 5 is green
-    config = {'default_mixers': [{'props': {'pattern': 4}}, {'props': {'pattern': 5}}]}
+    config = {'default_mixers': [{'pattern': 4}, {'pattern': 5}]}
     config_file = create_config_file(config)
     run_brave(config_file.name)
     time.sleep(0.5)

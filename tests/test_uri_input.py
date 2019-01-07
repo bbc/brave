@@ -7,7 +7,7 @@ def test_uri_input_from_command_line(run_brave, create_config_file):
     config = {
         # 'enable_audio': False, # useful for debugging TODO remove
         'default_inputs': [
-            {'type': 'uri', 'props': {'uri': uri}},
+            {'type': 'uri', 'uri': uri},
         ],
         'default_outputs': [
             {'type': 'local'} # good for debugging
@@ -25,7 +25,7 @@ def test_missing_file_input_from_command_line(run_brave, create_config_file):
     config = {
         # 'enable_audio': False, # useful for debugging TODO remove
         'default_inputs': [
-            {'type': 'uri', 'props': {'uri': uri}},
+            {'type': 'uri', 'uri': uri},
         ],
         'default_outputs': [
             {'type': 'local'} # good for debugging

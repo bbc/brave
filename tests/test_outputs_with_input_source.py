@@ -11,7 +11,7 @@ def test_outputs_with_input_source(run_brave):
     subtest_deleting_mixer_removes_it_as_source()
 
 def subtest_can_connect_input_to_output():
-    add_input({'type': 'test_video', 'props': {'pattern': 4}}) # pattern 4 is green
+    add_input({'type': 'test_video', 'pattern': 4}) # pattern 4 is green
     add_output({'type': 'image', 'source': 'input1'})
     time.sleep(1)
     assert_outputs([{'type': 'image', 'id': 1, 'source': 'input1'}])
@@ -20,7 +20,7 @@ def subtest_can_connect_input_to_output():
     assert_image_output_color(1, [255, 0, 0])
 
 def subtest_can_connect_change_output_to_another_input():
-    add_input({'type': 'test_video', 'props': {'pattern': 5}}) # pattern 5 is green
+    add_input({'type': 'test_video', 'pattern': 5}) # pattern 5 is green
 
     # Will fail whilst in PLAYING state:
     update_output(1, {'source': 'input2'}, 400)
@@ -37,7 +37,7 @@ def subtest_can_connect_change_output_to_another_input():
     assert_image_output_color(1, [0, 255, 0])
 
 def subtest_can_connect_change_output_from_input_to_mixer():
-    add_mixer({'props': {'pattern': 6}}) # pattern 5 is blue
+    add_mixer({'pattern': 6}) # pattern 5 is blue
     # Will fail whilst in PLAYING state:
     update_output(1, {'source': 'mixer1'}, 400)
     assert_outputs([{'type': 'image', 'id': 1, 'source': 'input2'}])
