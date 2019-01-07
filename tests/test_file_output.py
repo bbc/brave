@@ -7,10 +7,10 @@ def test_can_create_video_file_output(run_brave, create_config_file):
 
     config = {
     'default_inputs': [
-        {'type': 'test_video', 'props': {'pattern': 4, 'zorder': 2}}, # pattern 4 is red
+        {'type': 'test_video', 'pattern': 4, 'zorder': 2}, # pattern 4 is red
     ],
     'default_outputs': [
-        {'type': 'file', 'props': { 'location': output_video_location } }
+        {'type': 'file',  'location': output_video_location } 
         # ,{'type': 'local'} # good for debugging
     ]
     }

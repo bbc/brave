@@ -10,7 +10,7 @@ def test_elements_api_endpoint(run_brave):
     run_brave()
     time.sleep(0.5)
     check_brave_is_running()
-    add_input({'type': 'image', 'props': {'uri': 'file://' + test_directory() + '/assets/image_640_360.png'}})
+    add_input({'type': 'image', 'uri': 'file://' + test_directory() + '/assets/image_640_360.png'})
     cut_to_source('input1', 1)
     time.sleep(0.5)
 

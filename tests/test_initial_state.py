@@ -12,22 +12,22 @@ def test_initial_state_option_on_startup(run_brave, create_config_file):
 
     config = {
     'default_inputs': [
-        {'type': 'test_video', 'props': {'pattern': 4, 'initial_state': 'PLAYING'}},
-        {'type': 'test_video', 'props': {'pattern': 5, 'initial_state': 'PAUSED'}},
-        {'type': 'test_video', 'props': {'pattern': 6, 'initial_state': 'READY'}},
-        {'type': 'test_video', 'props': {'pattern': 7, 'initial_state': 'NULL'}},
+        {'type': 'test_video', 'pattern': 4, 'initial_state': 'PLAYING'},
+        {'type': 'test_video', 'pattern': 5, 'initial_state': 'PAUSED'},
+        {'type': 'test_video', 'pattern': 6, 'initial_state': 'READY'},
+        {'type': 'test_video', 'pattern': 7, 'initial_state': 'NULL'},
     ],
     'default_mixers': [
-        {'props': {'initial_state': 'PLAYING'}},
-        {'props': {'initial_state': 'PAUSED'}},
-        {'props': {'initial_state': 'READY'}},
-        {'props': {'initial_state': 'NULL'}},
+        {'initial_state': 'PLAYING'},
+        {'initial_state': 'PAUSED'},
+        {'initial_state': 'READY'},
+        {'initial_state': 'NULL'},
     ],
     'default_outputs': [
-        {'type': 'image', 'props': {'location': output_image_location0, 'initial_state': 'PLAYING'}},
-        {'type': 'image', 'props': {'location': output_image_location0, 'initial_state': 'PAUSED'}},
-        {'type': 'image', 'props': {'location': output_image_location0, 'initial_state': 'READY'}},
-        {'type': 'image', 'props': {'location': output_image_location0, 'initial_state': 'NULL'}},
+        {'type': 'image', 'location': output_image_location0, 'initial_state': 'PLAYING'},
+        {'type': 'image', 'location': output_image_location0, 'initial_state': 'PAUSED'},
+        {'type': 'image', 'location': output_image_location0, 'initial_state': 'READY'},
+        {'type': 'image', 'location': output_image_location0, 'initial_state': 'NULL'},
     ]
     }
     config_file = create_config_file(config)
@@ -63,20 +63,20 @@ def test_initial_state_option_via_api(run_brave):
     assert_everything_in_playing_state(response.json())
     output_image_location0 = create_output_image_location()
 
-    add_input({'type': 'test_audio', 'props': {'initial_state': 'NULL'}})
-    add_input({'type': 'test_audio', 'props': {'initial_state': 'READY'}})
-    add_input({'type': 'test_audio', 'props': {'initial_state': 'PAUSED'}})
-    add_input({'type': 'test_audio', 'props': {'initial_state': 'PLAYING'}})
+    add_input({'type': 'test_audio', 'initial_state': 'NULL'})
+    add_input({'type': 'test_audio', 'initial_state': 'READY'})
+    add_input({'type': 'test_audio', 'initial_state': 'PAUSED'})
+    add_input({'type': 'test_audio', 'initial_state': 'PLAYING'})
 
-    add_mixer({'props': {'initial_state': 'NULL'}})
-    add_mixer({'props': {'initial_state': 'READY'}})
-    add_mixer({'props': {'initial_state': 'PAUSED'}})
-    add_mixer({'props': {'initial_state': 'PLAYING'}})
+    add_mixer({'initial_state': 'NULL'})
+    add_mixer({'initial_state': 'READY'})
+    add_mixer({'initial_state': 'PAUSED'})
+    add_mixer({'initial_state': 'PLAYING'})
 
-    add_output({'type': 'image', 'props': {'location': output_image_location0, 'initial_state': 'NULL'}})
-    add_output({'type': 'image', 'props': {'location': output_image_location0, 'initial_state': 'READY'}})
-    add_output({'type': 'image', 'props': {'location': output_image_location0, 'initial_state': 'PAUSED'}})
-    add_output({'type': 'image', 'props': {'location': output_image_location0, 'initial_state': 'PLAYING'}})
+    add_output({'type': 'image', 'location': output_image_location0, 'initial_state': 'NULL'})
+    add_output({'type': 'image', 'location': output_image_location0, 'initial_state': 'READY'})
+    add_output({'type': 'image', 'location': output_image_location0, 'initial_state': 'PAUSED'})
+    add_output({'type': 'image', 'location': output_image_location0, 'initial_state': 'PLAYING'})
 
     time.sleep(1)
 

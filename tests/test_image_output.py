@@ -8,11 +8,11 @@ def test_image_output(run_brave, create_config_file):
     config = {
     'default_mixers': [{'sources': {'input1': {}}}],
     'default_inputs': [
-        {'type': 'test_video', 'props': {'pattern': 4, 'zorder': 2}}, # pattern 4 is red
+        {'type': 'test_video', 'pattern': 4, 'zorder': 2}, # pattern 4 is red
     ],
     'default_outputs': [
         {'type': 'local'}, # good for debugging
-        {'type': 'image', 'props': { 'location': output_image_location } }
+        {'type': 'image',  'location': output_image_location } 
     ]
     }
     config_file = create_config_file(config)

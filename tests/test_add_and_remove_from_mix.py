@@ -43,8 +43,8 @@ def set_up_two_sources(run_brave, create_config_file):
 
     config = {
     'default_inputs': [
-        {'type': 'test_video', 'props': {'pattern': 4, 'zorder': 2}}, # pattern 4 is red
-        {'type': 'test_video', 'props': {'pattern': 5, 'zorder': 3}}, # pattern 5 is green
+        {'type': 'test_video', 'pattern': 4, 'zorder': 2}, # pattern 4 is red
+        {'type': 'test_video', 'pattern': 5, 'zorder': 3}, # pattern 5 is green
     ],
     'default_mixers': [
         {
