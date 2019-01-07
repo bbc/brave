@@ -42,7 +42,8 @@ mixersHandler._asCard = (mixer) => {
         title: 'Mixer ' + mixer.id,
         options: mixersHandler._optionButtonsForMixer(mixer),
         body: mixersHandler._mixerCardBody(mixer),
-        state: components.stateBox(mixer, mixersHandler.setState)
+        state: components.stateBox(mixer, mixersHandler.setState),
+        mixOptions: components.getMixOptions(mixer)
     })
 }
 
@@ -65,9 +66,9 @@ mixersHandler._sendMixerCommand = function(mixer, source, command) {
         type: 'POST',
         url: 'api/mixers/' + mixer.id + '/' + command,
         dataType: 'json',
-        data: JSON.stringify({type: 'input', id: source.id}),
+        data: JSON.stringify({source:source.uid}),
         success: function() {
-            showMessage('Success in ' + command + ' for input ' + source.id + ' to mixer ' + mixer.id)
+            showMessage('Success in ' + command + ' for ' + source.uid + ' to ' + mixer.uid)
             updatePage()
         },
         error: function() {

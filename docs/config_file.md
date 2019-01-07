@@ -80,8 +80,12 @@ default_outputs:
     - type: local
       props:
           initial_state: READY
+          input_id: 0
     - type: image
     - type: tcp
+      props:
+          initial_state: READY
+          mixer_id: 1
     - type: rtmp
       props:
           uri: rtmp://domain/path/name
@@ -94,11 +98,10 @@ Each output can then, optionally, have `props` containing key-values pairs of th
 * `width` - the width of the output.
 * `height` - the height of the output.
 * `intial_state` - the state that the output should enter. Permitted values: 'PLAYING', 'PAUSED', 'READY', 'NULL. Defaults to PLAYING.
-* `mixer_id` - the ID of the mixer that the output should treat as a source. If not set, defaults to mixer 0.
+* `mixer_id` and `input_id` - provide one of these to define what the source of the output should be. If neither are set, the first mixer (mixer 0) is assumed. Inputs and mixers are given IDs based on their order in the config file, starting at 0. For example, `input_id: 2` would set the output's source to be the third input defined.
 
 ### `default_overlays`
-`default_overlays` is an array of overlays that should be created when
-Brave starts.
+`default_overlays` is an array of overlays that should be created when Brave starts.
 
 Example:
 

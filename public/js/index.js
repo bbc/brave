@@ -32,6 +32,7 @@ setInterval(updatePage, 5000)
 
 function drawAllItems() {
     $('#cards').empty()
+    if (noItems()) return showNoItemsMessage()
     inputsHandler.draw()
     overlaysHandler.draw()
     mixersHandler.draw()
@@ -57,7 +58,7 @@ function showMessage(m, level) {
     $("#top-message").removeClass('alert-warning alert-success alert-danger alert-info')
     $("#top-message").addClass('alert-' + level)
     if (topMessageInterval) clearInterval(topMessageInterval)
-    topMessageInterval = setInterval(hideMessage, 4000);
+    topMessageInterval = setInterval(hideMessage, 8000);
 }
 
 function hideMessage() {
@@ -98,24 +99,25 @@ function getDimensionsSelect(name, width, height) {
     })
 }
 
-function getSourceSelect(currentProps) {
-    if (currentProps.hasOwnProperty('mixer_id')) {
-        value = 'mixer-' + currentProps.mixer_id
-    }
-    else {
-        value = 'mixer-0'
-    }
-    const sourceOptions = {}
-    mixersHandler.items.forEach(m => {
-        sourceOptions['mixer-' + m.id] = 'Mixer ' + m.id
-    })
-    return formGroup({
+function getSourceSelect(block, isNew) {
+    const options = {
         id: 'source',
         label: 'Source',
         name: 'source',
-        value,
-        options: sourceOptions
+        options: {'none': 'None'},
+    }
+
+    options.value = block.source
+
+    mixersHandler.items.concat(inputsHandler.items).forEach(m => {
+        options.options[m.uid] = prettyUid(m.uid)
+
+        // If creating new, make the first mixer the default one:
+        if (isNew && !options.value) options.value = m.uid
     })
+
+    if (!options.value) options.value = 'none'
+    return formGroup(options)
 }
 
 function splitXyString(s) {
@@ -146,21 +148,6 @@ function splitDimensionsIntoWidthAndHeight(obj) {
         }
     }
     delete obj.dimensions // also deletes if empty string
-    return true
-}
-
-function handleSource(obj) {
-    if (obj.source) {
-        const matches = obj.source.match(/^mixer-(\d+)$/)
-        if (matches) {
-            obj.mixer_id = parseInt(matches[1])
-        }
-        else {
-            showMessage('Cannot understand source ' + obj.source, 'warning')
-            return false
-        }
-    }
-    delete obj.source // also deletes if empty string
     return true
 }
 
@@ -290,6 +277,29 @@ function restartBrave() {
             showMessage('Sorry, an error occurred', 'danger')
         }
     });
+}
+
+function ucFirst(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1)
+}
+
+function prettyUid(uid) {
+    if (!uid) return uid
+    const matches = uid.match(/^(input|mixer|output|overlay)(\d+)$/)
+    if (matches) {
+        return ucFirst(matches[1] + ' ' + matches[2])
+    }
+    else {
+        return uid
+    }
+}
+
+function noItems() {
+    return inputsHandler.items.length + outputsHandler.items.length + mixersHandler.items.length + overlaysHandler.items.length === 0
+}
+
+function showNoItemsMessage() {
+    $('#cards').append('Use the \'Add\' button above to create inputs, mixers, outputs and overlays.')
 }
 
 onPageLoad()

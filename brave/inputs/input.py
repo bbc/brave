@@ -1,5 +1,6 @@
 from gi.repository import Gst
 from brave.inputoutputoverlay import InputOutputOverlay
+import random
 
 
 class Input(InputOutputOverlay):
@@ -7,15 +8,25 @@ class Input(InputOutputOverlay):
     An abstract superclass representing an AV input.
     '''
 
-    def __init__(self, **args):
-        super().__init__(**args)
+    def setup(self):
+        '''
+        Sets up the relevant GStreamer pipeline for this input.
+        '''
         self.create_elements()
+        self.handle_updated_props()
 
         # Set initially to READY, and when there we set to self.props['initial_state']
         self.set_state(Gst.State.READY)
 
     def input_output_overlay_or_mixer(self):
         return 'input'
+
+    def dest_connections(self):
+        '''
+        Returns an array of Connections, describing what this input is connected to.
+        (An input can have any number of connections, each going to a Mixer or Output.)
+        '''
+        return self.session().connections.get_all_for_source(self)
 
     def summarise(self):
         s = super().summarise()
@@ -45,38 +56,14 @@ class Input(InputOutputOverlay):
 
         return s
 
-    def sources(self):
-        '''
-        Returns all the Source instances that are for this input.
-        (There will be one for every mixer instance.)
-        '''
-        sources = []
-        for name, mixer in self.session().mixers.items():
-            sources.append(mixer.sources.get_for_input_or_mixer(self))
-        return [x for x in sources if x is not None]
-
-    def delete(self):
-        self.logger.info('Being deleted')
-        super_delete = super().delete
-        sources = self.sources()
-
-        def iterate_through_sources():
-            if len(sources) == 0:
-                super_delete()
-            else:
-                source = sources.pop()
-                source.delete(callback=iterate_through_sources)
-
-        iterate_through_sources()
-
     def handle_updated_props(self):
         '''
         Called after the props have been set/updated, to update the elements
         '''
         if self.has_video():
             self._update_video_filter_caps()
-            for source in self.sources():
-                source.handle_updated_props()
+            for connection in self.dest_connections():
+                connection.handle_updated_props()
 
     def _create_caps_string(self):
         '''
@@ -84,11 +71,6 @@ class Input(InputOutputOverlay):
         '''
         width = self.props['width'] if 'width' in self.props else 0
         height = self.props['height'] if 'height' in self.props else 0
-        mixer = self.session().mixers[0]
-
-        mix_width, mix_height = None, None
-        if mixer:
-            mix_width, mix_height = mixer.get_dimensions()
 
         # An internal format of 'RGBA' ensures alpha support and no color variation.
         # It then may be set to something else on output (e.g. I420)
@@ -111,20 +93,37 @@ class Input(InputOutputOverlay):
 
         # We have a second capsfilter after the jump between pipelines.
         # We must also set that to be the same caps.
-        for source in self.sources():
-            source.set_new_caps(new_caps)
+        for connection in self.dest_connections():
+            connection.set_new_caps(new_caps)
 
     def on_pipeline_start(self):
         '''
         Called when the stream starts
         '''
-        for source in self.sources():
-            source.on_input_pipeline_start()
+        for connection in self.dest_connections():
+            connection.unblock_intersrc_if_ready()
 
     def default_video_pipeline_string_end(self):
         # A tee is used so that we can connect this input to multiple mixers/outputs
-        return ' ! tee name=final_video_tee allow-not-linked=true'
+        # The fakesink with sync=true ensures the stream acts as a live stream even with no connections.
+        return (' ! queue name=video_output_queue ! tee name=final_video_tee allow-not-linked=true '
+                'final_video_tee. ! queue ! fakesink sync=true')
 
     def default_audio_pipeline_string_end(self):
-        # A tee is used so that we can connect this input to multiple mixers/outputs
-        return ' ! tee name=final_audio_tee allow-not-linked=true'
+        return (' ! queue name=audio_output_queue ! tee name=final_audio_tee allow-not-linked=true '
+                'final_audio_tee. ! queue ! fakesink sync=true')
+
+    def add_element(self, factory_name, who_its_for, audio_or_video, name=None):
+        '''
+        Add an element on the pipeline belonging to this mixer.
+        Note: this method's interface matches mixer.add_element()
+        '''
+        if name is None:
+            name = factory_name
+        name = who_its_for.uid() + '_' + name + '_' + str(random.randint(1, 1000000))
+        input_bin = getattr(self, 'final_' + audio_or_video + '_tee').parent
+        e = Gst.ElementFactory.make(factory_name, name)
+        if not input_bin.add(e):
+            self.logger.error('Unable to add element %s' % factory_name)
+            return None
+        return e

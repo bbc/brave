@@ -45,11 +45,9 @@ class ImageInput(Input):
         pipeline_string = ('uridecodebin name=uridecodebin uri="' + self.props['uri'] +
                            '" ! imagefreeze ! videoconvert ! video/x-raw,pixel-aspect-ratio=1/1,framerate=30/1' +
                            self.default_video_pipeline_string_end())
-        if not self.create_pipeline_from_string(pipeline_string):
-            return False
+        self.create_pipeline_from_string(pipeline_string)
         self.final_video_tee = self.pipeline.get_by_name('final_video_tee')
         self.uridecodebin = self.pipeline.get_by_name('uridecodebin')
-        self.handle_updated_props()
 
     def get_input_cap_props(self):
         '''

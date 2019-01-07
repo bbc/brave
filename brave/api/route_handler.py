@@ -1,9 +1,10 @@
 import brave.helpers
-logger = brave.helpers.get_logger('brave.rest_api')
+logger = brave.helpers.get_logger('api_routes')
 import sanic
 import sanic.response
 from brave.helpers import state_string_to_constant, run_on_master_thread_when_idle
 from brave.outputs.image import ImageOutput
+from sanic.exceptions import InvalidUsage
 
 
 async def all(request):
@@ -42,157 +43,76 @@ async def elements(request):
 
 
 async def delete_input(request, id):
-    if id not in request['session'].inputs:
-        return _user_error_response('No such input ID')
-    request['session'].inputs[id].delete()
+    input = _get_input(request, id)
+    run_on_master_thread_when_idle(input.delete)
     return _status_ok_response()
 
 
 async def delete_output(request, id):
-    if id not in request['session'].outputs:
-        return _user_error_response('No such output ID')
-    run_on_master_thread_when_idle(request['session'].outputs[id].delete)
+    output = _get_output(request, id)
+    run_on_master_thread_when_idle(output.delete)
     return _status_ok_response()
 
 
 async def delete_overlay(request, id):
-    if id not in request['session'].overlays:
-        return _user_error_response('No such overlay ID')
-    request['session'].overlays[id].delete()
+    overlay = _get_overlay(request, id)
+    run_on_master_thread_when_idle(overlay.delete)
     return _status_ok_response()
 
 
 async def delete_mixer(request, id):
-    if id not in request['session'].mixers:
-        return _user_error_response('No such mixer ID')
-    request['session'].mixers[id].delete()
+    mixer = _get_mixer(request, id)
+    run_on_master_thread_when_idle(mixer.delete)
     return _status_ok_response()
 
 
 async def cut_to_source(request, id):
-    if id not in request['session'].mixers or request['session'].mixers[id] is None:
-        return _user_error_response('No such mixer ID')
-    if not request.json:
-        return _user_error_response('Invalid JSON')
-    if 'type' not in request.json or 'id' not in request.json:
-        return _user_error_response("Requires 'type' and 'id' fields in JSON body")
-    if request.json['type'] != 'input':
-        return _user_error_response('Only inputs can be added to a mixer')
-
-    input_id = request.json['id']
-    if input_id not in request['session'].inputs or request['session'].inputs[input_id] is None:
-        return _user_error_response('No such input ID')
-
-    mixer = request['session'].mixers[id]
-    source = mixer.sources.get_or_create(request['session'].inputs[input_id])
-    if not source:
-        return _user_error_response('Input is not source on mixer')
-
-    run_on_master_thread_when_idle(source.cut)
+    connection = _get_connection(request, id, create_if_not_made=True)
+    run_on_master_thread_when_idle(connection.cut)
     return _status_ok_response()
 
 
 async def overlay_source(request, id):
-    if id not in request['session'].mixers or request['session'].mixers[id] is None:
-        return _user_error_response('No such mixer ID')
-    if not request.json:
-        return _user_error_response('Invalid JSON')
-    if 'type' not in request.json or 'id' not in request.json:
-        return _user_error_response("Requires 'type' and 'id' fields in JSON body")
-    if request.json['type'] != 'input':
-        return _user_error_response('Only inputs can be added to a mixer')
-
-    input_id = request.json['id']
-    if input_id not in request['session'].inputs or request['session'].inputs[input_id] is None:
-        return _user_error_response('No such input ID')
-
-    mixer = request['session'].mixers[id]
-    source = mixer.sources.get_or_create(request['session'].inputs[input_id])
-    if not source:
-        return _user_error_response('Input is not source on mixer')
-
-    run_on_master_thread_when_idle(source.add_to_mix)
+    connection = _get_connection(request, id, create_if_not_made=True)
+    run_on_master_thread_when_idle(connection.add_to_mix)
     return _status_ok_response()
 
 
 async def remove_source(request, id):
-    if id not in request['session'].mixers or request['session'].mixers[id] is None:
-        return _user_error_response('No such mixer ID')
-    if not request.json:
-        return _user_error_response('Invalid JSON')
-    if 'type' not in request.json or 'id' not in request.json:
-        return _user_error_response("Requires 'type' and 'id' fields in JSON body")
-    if request.json['type'] != 'input':
-        return _user_error_response('Only inputs can be added to a mixer')
-
-    input_id = request.json['id']
-    if input_id not in request['session'].inputs or request['session'].inputs[input_id] is None:
-        return _user_error_response('No such input ID')
-
-    mixer = request['session'].mixers[id]
-    source = mixer.sources.get_for_input_or_mixer(request['session'].inputs[input_id])
-    if not source:
-        return _user_error_response('Input is not source on mixer')
-
-    run_on_master_thread_when_idle(source.remove_from_mix)
+    connection = _get_connection(request, id, create_if_not_made=False)
+    run_on_master_thread_when_idle(connection.remove_from_mix)
     return _status_ok_response()
 
 
 async def update_input(request, id):
-    if id not in request['session'].inputs or request['session'].inputs[id] is None:
-        return _user_error_response('No such input ID')
-
-    if 'state' in request.json:
-        request.json['state'] = state_string_to_constant(request.json['state'])
-        if not request.json['state']:
-            return _user_error_response('Invalid state')
-    request['session'].inputs[id].update(request.json)
+    _validate_state(request)
+    _get_input(request, id).update(request.json)
     return _status_ok_response()
 
 
 async def update_output(request, id):
-    if id not in request['session'].outputs or request['session'].outputs[id] is None:
-        return _user_error_response('no such output id')
-    if 'state' in request.json:
-        request.json['state'] = state_string_to_constant(request.json['state'])
-        if not request.json['state']:
-            return _user_error_response('Invalid state')
-    request['session'].outputs[id].update(request.json)
+    _validate_state(request)
+    _get_output(request, id).update(request.json)
     return _status_ok_response()
 
 
 async def update_overlay(request, id):
-    if id not in request['session'].overlays or request['session'].overlays[id] is None:
-        return _user_error_response('No such overlay ID')
-    if 'state' in request.json:
-        request.json['state'] = state_string_to_constant(request.json['state'])
-        if not request.json['state']:
-            return _user_error_response('Invalid state')
-    request['session'].overlays[id].update(request.json)
+    _validate_state(request)
+    _get_overlay(request, id).update(request.json)
     return _status_ok_response()
 
 
 async def update_mixer(request, id):
-    if id not in request['session'].mixers or request['session'].mixers[id] is None:
-        return _user_error_response('No such mixer ID')
-    if 'state' in request.json:
-        request.json['state'] = state_string_to_constant(request.json['state'])
-        if not request.json['state']:
-            return _user_error_response('Invalid state')
-    request['session'].mixers[id].update(request.json)
+    _validate_state(request)
+    _get_mixer(request, id).update(request.json)
     return _status_ok_response()
 
 
 async def create_input(request):
     input = request['session'].inputs.add(**request.json)
-    # When an input is created, which mixers should it be added to?
-    # For now, it's added to the first mixer.
-    # TODO find a better way
-    mixer = request['session'].mixers[0]
-    source = mixer.sources.get_or_create(input)
-    run_on_master_thread_when_idle(source.add_to_mix)
+    input.setup()
     logger.info('Created input #%d with details %s' % (input.id, request.json))
-    return sanic.response.json({'id': input.id})
+    return sanic.response.json({'id': input.id, 'uid': input.uid()})
 
 
 async def create_output(request):
@@ -217,11 +137,9 @@ async def get_body(request, id):
     '''
     Returns the body (image contents) of a JPEG output
     '''
-    if id not in request['session'].outputs or request['session'].outputs[id] is None:
-        return _user_error_response('no such output id')
-    output = request['session'].outputs[id]
+    output = _get_output(request, id)
     if type(output) != ImageOutput:
-        return _user_error_response('Output is not an image')
+        raise InvalidUsage('Output is not an image')
 
     try:
         return await sanic.response.file_stream(
@@ -229,7 +147,7 @@ async def get_body(request, id):
             headers={'Cache-Control': 'max-age=1'}
         )
     except FileNotFoundError:
-        return _user_error_response('No such body')
+        raise InvalidUsage('No such body')
 
 
 async def restart(request):
@@ -237,19 +155,50 @@ async def restart(request):
     return _status_ok_response()
 
 
+def _get_output(request, id):
+    if id not in request['session'].outputs or request['session'].outputs[id] is None:
+        raise InvalidUsage('no such output ID')
+    return request['session'].outputs[id]
+
+
+def _get_input(request, id):
+    if id not in request['session'].inputs or request['session'].inputs[id] is None:
+        raise InvalidUsage('no such input ID')
+    return request['session'].inputs[id]
+
+
+def _get_overlay(request, id):
+    if id not in request['session'].overlays or request['session'].overlays[id] is None:
+        raise InvalidUsage('no such overlay ID')
+    return request['session'].overlays[id]
+
+
+def _get_mixer(request, id):
+    if id not in request['session'].mixers or request['session'].mixers[id] is None:
+        raise InvalidUsage('no such mixer ID')
+    return request['session'].mixers[id]
+
+
+def _get_connection(request, id, create_if_not_made):
+    if 'source' not in request.json:
+        raise InvalidUsage('Requires "source" field in JSON body')
+
+    source = request['session'].uid_to_block(request.json['source'])
+    if source is None:
+        raise InvalidUsage('No such item "%s"' % request.json['source'])
+
+    connection = _get_mixer(request, id).connection_for_source(source, create_if_not_made=create_if_not_made)
+    if not connection and create_if_not_made is True:
+        raise InvalidUsage('Unable to connect "%s" to mixer %d' % (request.json['source'], id))
+    return connection
+
+
 def _status_ok_response():
     return sanic.response.json({'status': 'OK'})
 
 
-def _user_error_response(e):
-    return sanic.response.json({'error': str(e)}, 400)
-
-
-def _invalid_configuration_response(e):
-    logger.info('Invalid configuration from user: ' + str(e))
-    return _user_error_response(e)
-
-
-def internal_error_response(e):
-    pretty = 'Internal error' if e is None else e
-    return sanic.response.json({'error': pretty}, 500)
+def _validate_state(request):
+    if 'state' in request.json:
+        request.json['state'] = state_string_to_constant(request.json['state'])
+        if not request.json['state']:
+            raise InvalidUsage('Invalid state. Must be PLAYING, PAUSED, READY or NULL.')

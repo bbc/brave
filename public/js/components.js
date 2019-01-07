@@ -114,3 +114,33 @@ components.volumeInput = (volume) => {
 
 components.hideDetails = () => '<i class="fas fa-caret-down"></i> Hide details'
 components.showDetails = () => '<i class="fas fa-caret-right"></i> Show details'
+
+components.getMixOptions = (src) => {
+    return mixersHandler.items.map(mixer => {
+        if (!mixer.sources) return
+        if (src === mixer) return
+        var foundThis = mixer.sources.find(x => x.uid === src.uid)
+        var inMix = foundThis && foundThis.in_mix ? 'In mix' : 'Not in mix'
+        var div = $('<div class="mix-option"></div>')
+        if (foundThis && foundThis.in_mix) {
+            div.addClass('mix-option-showing')
+            var removeButton = components.removeButton()
+            removeButton.click(() => { mixersHandler.remove(mixer, src); return false })
+            var buttons = $('<div class="option-icons"></div>')
+            buttons.append([removeButton])
+            div.append(buttons)
+        }
+        else {
+            div.addClass('mix-option-hidden')
+            var cutButton = components.cutButton()
+            cutButton.click(() => { mixersHandler.cut(mixer, src); return false })
+            var overlayButton = components.overlayButton()
+            overlayButton.click(() => { mixersHandler.overlay(mixer, src); return false })
+            var buttons = $('<div class="option-icons"></div>')
+            buttons.append([cutButton, overlayButton])
+            div.append(buttons)
+        }
+        div.append('<strong>Mixer ' + mixer.id + ':</strong> ' + inMix)
+        return div
+    }).filter(x => !!x)
+}

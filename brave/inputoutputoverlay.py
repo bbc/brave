@@ -11,10 +11,7 @@ class InputOutputOverlay():
     An abstract superclass representing an input, output, overlay, and mixer.
     '''
     def __init__(self, **args):
-        logger_name = 'brave.%s.%s.%d' % (self.input_output_overlay_or_mixer(), args['type'], args['id'])
-        logger_format = '%%(levelname)s:\033[32m[%s %d]\033[0m %%(message)s' % \
-            (self.input_output_overlay_or_mixer(), args['id'])
-        self.logger = brave.helpers.get_logger(logger_name, logger_format)
+        self.logger = brave.helpers.get_logger(self.input_output_overlay_or_mixer() + str(args['id']))
         self.elements = {}
         self.probes = {}
 
@@ -46,9 +43,8 @@ class InputOutputOverlay():
             setup_messaging(pipe=self.pipeline, parent_object=self)
         except GLib.GError as e:
             self.error_message = str(e)
-            self.logger.error('Failed to create pipeline [' + pipeline_string + ']:' + self.error_message)
-            return False
-        return True
+            self.logger.error('Failed to create pipeline [%s]: %s' % (pipeline_string, self.error_message))
+            raise brave.exceptions.PipelineFailure(self.error_message)
 
     def permitted_props(self):
         '''
@@ -70,7 +66,7 @@ class InputOutputOverlay():
 
     def update(self, updates):
         '''
-        Accepts updates to this elements.
+        Accepts updates to this block.
         Note: may be overridden.
         '''
         if 'state' in updates:
@@ -83,6 +79,12 @@ class InputOutputOverlay():
             self.handle_updated_props()
 
         return True
+
+    def handle_updated_props(self):
+        '''
+        Called when the user has updated certain properties of this block.
+        '''
+        pass  # overwritten by some subclasses
 
     def get_state(self):
         if hasattr(self, 'pipeline'):
@@ -119,10 +121,13 @@ class InputOutputOverlay():
 
     def summarise(self):
         s = {
-            'state': self.get_state().value_nick.upper(),
             'has_audio': self.has_audio(),
-            'has_video': self.has_video()
+            'has_video': self.has_video(),
+            'uid': self.uid()
         }
+
+        if hasattr(self, 'pipeline'):
+            s['state'] = self.get_state().value_nick.upper()
 
         attributes_to_copy = ['id', 'type', 'error_message', 'props', 'current_num_peers']
         for a in attributes_to_copy:
@@ -131,7 +136,35 @@ class InputOutputOverlay():
 
         return s
 
+    def uid(self):
+        return '%s%d' % (self.input_output_overlay_or_mixer(), self.id)
+
+    def source_connections(self):
+        return []
+
+    def dest_connections(self):
+        return []
+
     def delete(self):
+        '''
+        Delete this block.
+        Ensures any connections to/from this block are also deleted.
+        Also ensures any overlays attached to this block are unattached
+        '''
+        self.logger.debug('Being deleted')
+        self.session().overlays.remove_source(self)
+        connections = self.source_connections() + self.dest_connections()
+
+        def iterate_through_connections():
+            if len(connections) == 0:
+                self._delete_with_no_connections()
+            else:
+                connection = connections.pop()
+                connection.delete(callback=iterate_through_connections)
+
+        iterate_through_connections()
+
+    def _delete_with_no_connections(self):
         if not self.pipeline.set_state(Gst.State.NULL):
             self.logger.warning('Unable to set private pipe to NULL before attempting to delete')
 
@@ -142,7 +175,7 @@ class InputOutputOverlay():
         iterator.foreach(remove_element)
         del self.pipeline
         self.collection.pop(self.id)
-        self.session().items_recently_deleted.append({'id': self.id, 'type': self.input_output_overlay_or_mixer()})
+        self.session().report_deleted_item(self)
 
     def set_state(self, state):
         '''
@@ -190,6 +223,15 @@ class InputOutputOverlay():
         and the update should be sent to the user via websocket.
         '''
         self.session().items_recently_updated.append(self)
+
+    def get_dimensions(self):
+        '''
+        Get the width and height of this block.
+        '''
+        if 'width' in self.props and 'height' in self.props:
+            return self.props['width'], self.props['height']
+        else:
+            return None, None
 
     def _set_default_props(self):
         '''

@@ -32,11 +32,11 @@ inputsHandler._drawCards = () => {
 
 inputsHandler._asCard = (input) => {
     return components.card({
-        title: 'Input ' + input.id + ' (' + prettyType(input.type) + ')',
+        title: prettyUid(input.uid) + ' (' + prettyType(input.type) + ')',
         options: inputsHandler._optionButtonsForInput(input),
         body: inputsHandler._inputCardBody(input),
         state: components.stateBox(input, inputsHandler.setState),
-        mixOptions: inputsHandler._getMixOptions(input)
+        mixOptions: components.getMixOptions(input)
     })
 }
 
@@ -75,35 +75,6 @@ inputsHandler._inputCardBody = (input) => {
 
     if (input.hasOwnProperty('error_message')) details.push('<strong>ERROR:</strong> <span style="color:red">' + input.error_message + '</span>')
     return details.map(d => $('<div></div>').append(d))
-}
-
-inputsHandler._getMixOptions = (input) => {
-    return mixersHandler.items.map(mixer => {
-        if (!mixer.sources) return
-        var foundThisInput = mixer.sources.find(i => i.id === input.id && i.type === 'input')
-        var inMix = foundThisInput && foundThisInput.in_mix ? 'In mix' : 'Not in mix'
-        var div = $('<div class="mix-option"></div>')
-        if (foundThisInput && foundThisInput.in_mix) {
-            div.addClass('mix-option-showing')
-            var removeButton = components.removeButton()
-            removeButton.click(() => { mixersHandler.remove(mixer, input); return false })
-            var buttons = $('<div class="option-icons"></div>')
-            buttons.append([removeButton])
-            div.append(buttons)
-        }
-        else {
-            div.addClass('mix-option-hidden')
-            var cutButton = components.cutButton()
-            cutButton.click(() => { mixersHandler.cut(mixer, input); return false })
-            var overlayButton = components.overlayButton()
-            overlayButton.click(() => { mixersHandler.overlay(mixer, input); return false })
-            var buttons = $('<div class="option-icons"></div>')
-            buttons.append([cutButton, overlayButton])
-            div.append(buttons)
-        }
-        div.append('<strong>Mixer ' + mixer.id + ':</strong> ' + inMix)
-        return div
-    }).filter(x => !!x)
 }
 
 inputsHandler._handleNewFormType = function(event) {

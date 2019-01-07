@@ -1,10 +1,10 @@
 import brave.helpers
 import asyncio
 import uvloop
-logger = brave.helpers.get_logger('brave.rest_api')
+logger = brave.helpers.get_logger('api')
 from sanic import Sanic
 import sanic.response
-from sanic.exceptions import NotFound
+from sanic.exceptions import NotFound, InvalidUsage
 import brave.config as config
 import brave.api.websockets_handler
 import brave.api.route_handler
@@ -33,6 +33,10 @@ class RestApi(object):
         async def not_found(request, exception):
             return sanic.response.json({'error': 'Not found'}, 404)
 
+        @app.exception(InvalidUsage)
+        async def invalid_usage(request, exception):
+            return sanic.response.json({'error': 'Invalid request: %s' % exception}, 400)
+
         @app.middleware('request')
         async def give_session_to_each_route_handler(request):
             request['session'] = session
@@ -44,9 +48,13 @@ class RestApi(object):
 
         @app.exception(brave.exceptions.InvalidConfiguration)
         async def invalid_cf(request, exception):
-            msg = 'Invalid configuration from user: ' + str(exception)
+            msg = 'Invalid configuration: ' + str(exception)
             logger.debug(msg)
             return sanic.response.json({'error': msg}, 400)
+
+        @app.exception(brave.exceptions.PipelineFailure)
+        async def pipeline_creation_failure(request, exception):
+            return sanic.response.json({'error': str(exception)}, 500)
 
         app.add_route(route_handler.all, "/api/all")
         app.add_route(route_handler.inputs, "/api/inputs")

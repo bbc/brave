@@ -66,12 +66,7 @@ def default_overlays():
 
 
 def default_mixers():
-    if 'default_mixers' in c and c['default_mixers'] is not None:
-        return c['default_mixers']
-    else:
-        return [{
-            # Standard mixer, no params
-        }]
+    return c['default_mixers'] if ('default_mixers' in c and c['default_mixers'] is not None) else []
 
 
 def default_audio_caps():

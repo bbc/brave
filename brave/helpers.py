@@ -1,16 +1,18 @@
-from gi.repository import Gst, GLib
 import logging
 import os
+import gi
+gi.require_version('Gst', '1.0')
+from gi.repository import Gst, GLib
 
 
-def get_logger(name, format=None):
-    logger = logging.getLogger(name)
-    logger.propagate = False
+def get_logger(name):
+    logger = logging.getLogger('brave.' + name)
     logger.setLevel(os.environ.get('LOG_LEVEL', 'INFO').upper())
-    if format:
-        handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter(format))
-        logger.addHandler(handler)
+    format = '%%(levelname)8s: \033[32m[%10s]\033[0m %%(message)s' % name
+    logger.propagate = False
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter(format))
+    logger.addHandler(handler)
     return logger
 
 
@@ -131,27 +133,26 @@ def run_on_master_thread_when_idle(func, **func_args):
     GLib.idle_add(function_runner, {'func': func, 'func_args': func_args})
 
 
-def unblock_pad(block, name):
-    if hasattr(block, name):
-        if name in block.probes:
-            getattr(block, name).remove_probe(block.probes[name])
-            block.probes.pop(name)
-            block.logger.debug('Removed block from %s' % name)
-        # else it wasn't blocked, no need to worry
-    # else it does not exist, e.g. audio in a video-only situation, so ignore
+block_probes = {}
 
 
-def block_pad(block, name):
-    if hasattr(block, name):
-        if name in block.probes:
-            block.logger.warning('Attempting to block %s but already blocked' % name)
-        else:
-            block.probes[name] = getattr(block, name).add_probe(
-                Gst.PadProbeType.BLOCK_DOWNSTREAM, _blocked_probe_callback, block)
-    else:
-        block.logger.error('Attempting to block pad %s that does not exist' % name)
+def block_pad(pad):
+    '''
+    Block an element's pad. (If already blocked, do nothing.)
+    '''
+    def _callback(*_):
+        return Gst.PadProbeReturn.OK
+
+    global block_probes
+    if pad not in block_probes:
+        block_probes[pad] = pad.add_probe(Gst.PadProbeType.BLOCK_DOWNSTREAM, _callback)
 
 
-def _blocked_probe_callback(self, _, block):
-    block.logger.debug('_blocked_probe_callback called (default version)')
-    return Gst.PadProbeReturn.OK
+def unblock_pad(pad):
+    '''
+    Unblock an element's pad. (If not blocked, do nothing.)
+    '''
+    global block_probes
+    if pad in block_probes:
+        pad.remove_probe(block_probes[pad])
+        del block_probes[pad]

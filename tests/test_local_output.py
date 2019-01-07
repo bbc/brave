@@ -8,8 +8,8 @@ def test_can_only_have_one_local_output(run_brave):
     assert_outputs([])
 
     add_output({'type': 'local'})
-    assert_outputs([{'type': 'local', 'id': 0}])
+    assert_outputs([{'type': 'local', 'id': 1}])
 
     # 400 user error response for making two local outputs:
     add_output({'type': 'local'}, status_code=400)
-    assert_outputs([{'type': 'local', 'id': 0}])
+    assert_outputs([{'type': 'local', 'id': 1}])

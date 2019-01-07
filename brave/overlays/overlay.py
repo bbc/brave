@@ -1,6 +1,5 @@
 from gi.repository import Gst
 from brave.inputoutputoverlay import InputOutputOverlay
-import brave.exceptions
 
 
 class Overlay(InputOutputOverlay):
@@ -9,76 +8,105 @@ class Overlay(InputOutputOverlay):
     '''
 
     def __init__(self, **args):
+        source_uid = None
+        if 'source' in args:
+            source_uid = args['source']
+            del args['source']
+
         super().__init__(**args)
+        self._set_source(source_uid)
         self.visible = self.props['visible']
-        self.create_elements()
-        if self.visible:
-            self._make_visible()
 
     def input_output_overlay_or_mixer(self):
         return 'overlay'
 
-    def permitted_props(self):
-        return {
-            **super().permitted_props(),
-            'mixer_id': {
-                'type': 'int',
-                'default': 0
-            }
-        }
-
     def has_audio(self):
         return False   # no such thing as audio on overlays
 
-    def get_state(self):
-        if not hasattr(self, 'element'):
-            return Gst.State.NULL
-        return self.element.get_state(0).state
+    def summarise(self):
+        s = super().summarise()
+        s['source'] = self.source.uid() if self.source else None
+        return s
 
-    def set_state(self, state):
-        return self.element.set_state(state) == Gst.StateChangeReturn.SUCCESS
+    def update(self, updates):
+        '''
+        Handle updates to this overlay. Overridden to handle update to the input/mixer source.
+        '''
+        if 'source' in updates and self.source != updates['source']:
+            self._set_source(updates['source'])
+            self.report_update_to_user()
+
+        return super().update(updates)
+
+    def _set_source(self, new_source_uid):
+        '''
+        Called when a new source (input or mixer) is set by the user (either creation or update).
+        '''
+        if not hasattr(self, 'source'):
+            self.source = None
+
+        # Special case - user specifying no source
+        if new_source_uid is None:
+            if self.source is None:
+                return
+            self._delete_elements()
+            self.source = None
+            return
+
+        if hasattr(self, 'source') and self.source is not None and self.source.uid() == new_source_uid:
+            return
+
+        # If overlay is visible, then it's attached. We must make it invisible first.
+        visible = hasattr(self, 'visible') and self.visible
+        self._delete_elements()
+
+        self.source = self.session().uid_to_block(new_source_uid, error_if_not_exists=True)
+
+        if self.source is not None:
+            self.create_elements()
+            if visible:
+                self._make_visible()
 
     def handle_updated_props(self):
         '''
         Called after the props have been set/updated, to update the elements
         '''
+        if self.source is None:
+            return
         self.set_element_values_from_props()
         if not self.props['visible'] and self.visible:
+            self.logger.debug('Becoming invisible')
             self._make_invisible()
         if self.props['visible'] and not self.visible:
+            self.logger.debug('Becoming visible')
             self._make_visible()
 
-    def mixer(self):
-        '''
-        Returns the mixer that this overlay is for
-        '''
-        return self.session().mixers[self.props['mixer_id']]
+    def set_element_values_from_props(self):
+        pass
 
     def delete(self):
         '''
         Delete this overlay. Works whether the overlay is visible or not.
         '''
-        self._make_invisible()
-        if not self.mixer().pipeline.remove(self.element):
-            self.logger.warning('Whilst deleting me, unable to remove element')
+        self._delete_elements()
         self.collection.pop(self.id)
-        return True
+        self.session().report_deleted_item(self)
+
+    def _delete_elements(self):
+        if self.source is not None:
+            self._make_invisible()
+            self.element.set_state(Gst.State.NULL)
+            if not self.element.parent.remove(self.element):
+                self.logger.warning('Whilst deleting, unable to remove elements')
 
     def _make_visible(self):
-        self.logger.debug('Becoming visible')
         self.element.sync_state_with_parent()
         self.visible = True
-
-        # Reconsider how overlay elements are linked:
-        self.collection.ensure_overlays_are_correctly_connected(self.mixer())
+        self.collection.ensure_overlays_are_correctly_connected(self.source)
 
     def _make_invisible(self):
-        self.logger.debug('Becoming invisible')
         self.visible = False
-
-        # This will remove the connections to/from this overlay:
-        self.collection.ensure_overlays_are_correctly_connected(self.mixer())
-        self.element.set_state(Gst.State.NULL)
+        self.collection.ensure_overlays_are_correctly_connected(self.source)
 
     def ensure_src_pad_not_blocked(self):
         '''
@@ -90,15 +118,5 @@ class Overlay(InputOutputOverlay):
             src_pad.remove_probe(self.src_block_probe)
             delattr(self, 'src_block_probe')
 
-    def getSortValue(self):
+    def get_sort_value(self):
         return self.id
-
-    def _update_props(self, new_props):
-        '''
-        Overrided to validate that the mixer provided exists.
-        '''
-        if 'mixer_id' in new_props:
-            if new_props['mixer_id'] not in self.session().mixers:
-                raise brave.exceptions.InvalidConfiguration('Invalid mixer ID provided: "%s"' % new_props['mixer_id'])
-
-        super()._update_props(new_props)
