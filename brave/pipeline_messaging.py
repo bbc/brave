@@ -89,6 +89,9 @@ def setup_messaging(pipe, parent_object):
             struct = message.get_structure()
             logger.debug('parse_application: %s' % struct.get_value('text'))
             logger.debug('parse_application: %s' % struct.get_value('tex2t'))
+        elif t == Gst.MessageType.STREAM_COLLECTION:
+            # struct = message.get_structure()
+            logger.info(f'GST STREAM_COLLECTION MESSAGE: {str(t)}: {str(message.src)}')
         else:
             logger.info(f'GST UNHANDLED MESSAGE: {str(t)}: {str(message.src)}')
 

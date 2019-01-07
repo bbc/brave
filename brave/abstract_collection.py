@@ -9,7 +9,7 @@ class AbstractCollection(collections.abc.MutableMapping):
     def __init__(self, session):
         self.session = session
         self._items = {}
-        self._max_id = -1
+        self._max_id = 0
 
     def __getitem__(self, key):
         if key in self._items:
@@ -49,3 +49,12 @@ class AbstractCollection(collections.abc.MutableMapping):
             if hasattr(obj, 'pipeline'):
                 details[id] = get_pipeline_details(obj.pipeline, show_inside_bin_elements)
         return details
+
+    def get_entry_with_lowest_id(self):
+        '''
+        Returns the item with the lowest ID, or None, if there are no items.
+        '''
+        ids = sorted(self._items.keys())
+        if len(ids) == 0:
+            return None
+        return self._items[ids[0]]

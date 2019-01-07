@@ -4,13 +4,13 @@
 
 preview = {
     outputId: null,
-    mixerId: null,
+    source: null,
     type: null
 }
 
 preview.init = () => {
     $('#preview-bar-dropdown').click((change) => {
-        preview._handlePreviewRequest($(change.target).data('type'), $(change.target).data('id'))
+        preview._handlePreviewRequest($(change.target).data('type'), $(change.target).data('source'))
     })
     setInterval(preview._refreshImage, 1000)
 }
@@ -28,14 +28,13 @@ preview._checkWeAreShowingTheRightOutput = () => {
 }
 
 preview._findRightOutputId = () => {
-    if (preview.type === null || preview.mixerId == null) return null
-    const details = outputsHandler.findByDetails({type: preview.type, mixer_id: preview.mixerId})
+    if (preview.type === null || preview.source == null) return null
+    const details = outputsHandler.findByDetails({type: preview.type, source: preview.source})
     return details ? details.id : null
 }
 
 preview._previewOutputId = (type, outputId) => {
     preview.outputId = outputId
-    // preview._drawPreviewMenu()
     preview._delete()
     if (type === null || outputId === null) {
         // Do nothing
@@ -57,25 +56,29 @@ preview._drawPreviewMenu = () => {
     dropdownMenu.empty()
     const items = []
     const noPreviewOption = $('<a />').html('No preview')
-    if (preview.mixerId === null) {
+    if (preview.source === null) {
         noPreviewOption.addClass('active')
     }
     items.push(noPreviewOption)
 
-    mixersHandler.items.forEach(mixer => {
-        const webrtcPreview = $('<a />').data('id', mixer.id).data('type', 'webrtc').html('Mixer ' + mixer.id + ' (as a WebRTC stream)')
-        const imagePreview = $('<a />').data('id', mixer.id).data('type', 'image').html('Mixer ' + mixer.id + ' (as an updating image)')
-        if (preview.mixerId === mixer.id) {
-            if (preview.type === 'webrtc') {
-                webrtcPreview.addClass('active')
-                previewMsg = webrtcPreview.html()
+    const blockTypes = ['mixer', 'input']
+    blockTypes.forEach(blockType => {
+        const blockItems = blockType == 'input' ? inputsHandler.items : mixersHandler.items
+        blockItems.forEach(item => {
+            const webrtcPreview = $('<a />').data('source', item.uid).data('type', 'webrtc').html(prettyUid(item.uid) + ' (as a WebRTC stream)')
+            const imagePreview = $('<a />').data('source', item.uid).data('type', 'image').html(prettyUid(item.uid) + ' (as an updating image)')
+            if (preview.source === item.uid) {
+                if (preview.type === 'webrtc') {
+                    webrtcPreview.addClass('active')
+                    previewMsg = webrtcPreview.html()
+                }
+                else if (preview.type === 'image') {
+                    imagePreview.addClass('active')
+                    previewMsg = imagePreview.html()
+                }
             }
-            else if (preview.type === 'image') {
-                imagePreview.addClass('active')
-                previewMsg = imagePreview.html()
-            }
-        }
-        items.push(webrtcPreview, imagePreview)
+            items.push(webrtcPreview, imagePreview)
+        })
     })
 
     items.forEach(i => {
@@ -105,11 +108,11 @@ preview._removeMuteButton = () => {
     if (currentButton && currentButton.length) currentButton.remove()
 }
 
-preview._handlePreviewRequest = (type, mixerId) => {
-    preview.mixerId = mixerId
+preview._handlePreviewRequest = (type, source) => {
+    preview.source = source
     preview.type = type
-    if (preview._findRightOutputId() === null && type !== null && mixerId !== null) {
-        outputsHandler._requestNewOutput(type, {mixer_id: mixerId})
+    if (preview._findRightOutputId() === null && type !== null && source !== null) {
+        outputsHandler.requestNewOutput({type, source})
     }
     preview._checkWeAreShowingTheRightOutput()
 }

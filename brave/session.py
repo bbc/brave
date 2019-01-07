@@ -1,12 +1,14 @@
 import os
 import sys
+import re
+import brave.exceptions
 from brave.helpers import get_logger
-logger = get_logger('brave.session')
 from gi.repository import Gst, GObject
 from brave.inputs import InputCollection
 from brave.outputs import OutputCollection
 from brave.overlays import OverlayCollection
 from brave.mixers import MixerCollection
+from brave.connections import ConnectionCollection
 import brave.config as config
 assert Gst.VERSION_MINOR > 13, f'GStreamer is version 1.{Gst.VERSION_MINOR}, must be 1.14 or higher'
 PERIODIC_MESSAGE_FREQUENCY = 60
@@ -19,7 +21,7 @@ class Session(object):
     '''
 
     def __init__(self):
-        self.logger = get_logger('brave.session', '%(levelname)s:\033[32m[session]\033[0m %(message)s')
+        self.logger = get_logger('session')
         self.items_recently_updated = []
         self.items_recently_deleted = []
 
@@ -27,6 +29,7 @@ class Session(object):
         self.outputs = OutputCollection(self)
         self.overlays = OverlayCollection(self)
         self.mixers = MixerCollection(self)
+        self.connections = ConnectionCollection(self)
 
     def start(self):
         self._setup_initial_inputs_outputs_mixers_and_overlays()
@@ -57,8 +60,15 @@ class Session(object):
         for mixer_config in config.default_mixers():
             self.mixers.add(**mixer_config)
 
+        for input_config in config.default_inputs():
+            input = self.inputs.add(**input_config)
+            input.setup()
+
         for output_config in config.default_outputs():
             self.outputs.add(**output_config)
+
+        for id, mixer in self.mixers.items():
+            mixer.setup_initial_sources()
 
         if config.enable_video():
             for overlay_config in config.default_overlays():
@@ -66,12 +76,6 @@ class Session(object):
 
         for name, mixer in self.mixers.items():
             mixer.set_state(Gst.State.PLAYING)
-
-        for input_config in config.default_inputs():
-            input = self.inputs.add(**input_config)
-            for id, mixer in self.mixers.items():
-                source = mixer.sources.get_or_create(input)
-                source.add_to_mix()
 
     def print_state_summary(self):
         '''
@@ -86,6 +90,41 @@ class Session(object):
         self.print_state_summary()
         self.logger.debug('...state will print out every %d seconds...' % PERIODIC_MESSAGE_FREQUENCY)
         GObject.timeout_add(PERIODIC_MESSAGE_FREQUENCY * 1000, self.periodic_message)
+
+    def uid_to_block(self, uid, error_if_not_exists=False):
+        '''
+        Given a UID (e.g. 'input2') returns the instance of the relevant block.
+        '''
+        match = re.search(r'^(input|mixer|output)(\d+)$', uid) if isinstance(uid, str) else None
+        if not match:
+            raise brave.exceptions.InvalidConfiguration(
+                'Invalid uid "%s", it must be input/mixer/output then a number' % uid)
+
+        type, id = match.group(1), int(match.group(2))
+        block = self.get_block_by_type(type, id)
+        if error_if_not_exists and not block:
+            raise brave.exceptions.InvalidConfiguration('"%s" does not exist' % uid)
+        return block
+
+    def get_block_by_type(self, type, id):
+        '''
+        Given the block type as a string (input/mixer/output/overlay) and an ID (integer) returns the block instance.
+        '''
+        if type == 'input':
+            collection = self.inputs
+        elif type == 'mixer':
+            collection = self.mixers
+        elif type == 'output':
+            collection = self.outputs
+        elif type == 'overlay':
+            collection = self.overlays
+        else:
+            raise ValueError('Invalid block type "%s"' % type)
+
+        return collection[id] if id in collection else None
+
+    def report_deleted_item(self, item):
+        self.items_recently_deleted.append({'id': item.id, 'block_type': item.input_output_overlay_or_mixer()})
 
 
 def init():

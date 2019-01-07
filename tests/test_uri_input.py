@@ -44,7 +44,7 @@ def test_missing_file_input_from_command_line(run_brave, create_config_file):
 
 def subtest_check_deleted_input_goes_away():
     # Now delete the input, it should go away
-    delete_input(0)
+    delete_input(1)
     time.sleep(1)
     response = api_get('/api/all')
     assert response.status_code == 200

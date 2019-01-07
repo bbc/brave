@@ -7,5 +7,5 @@ class ClockOverlay(TextOverlay):
     '''
 
     def create_elements(self):
-        self.element = self.mixer().add_element('clockoverlay', self)
+        self.element = self.source.add_element('clockoverlay', self, audio_or_video='video')
         self.set_element_values_from_props()

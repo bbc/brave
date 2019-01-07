@@ -25,16 +25,10 @@ class FileOutput(Output):
         }
 
     def create_elements(self):
-        self._create_initial_multiqueue()
         pipeline_string = 'mp4mux name=mux ! filesink name=sink'
 
         if config.enable_video():
-            video_pipeline_string = ('intervideosrc name=intervideosrc ! videoconvert ! '
-                                     'videoscale ! videorate ! '
-                                     f'{self.create_caps_string()} ! '
-                                     'x264enc name=video_encoder ! queue ! mux.')
-
-            pipeline_string = pipeline_string + ' ' + video_pipeline_string
+            pipeline_string += ' ' + self._video_pipeline_start() + 'x264enc name=video_encoder ! queue ! mux.'
 
         if config.enable_audio():
             audio_pipeline_string = ('interaudiosrc name=interaudiosrc ! '
@@ -45,24 +39,16 @@ class FileOutput(Output):
 
             pipeline_string = pipeline_string + ' ' + audio_pipeline_string
 
-        if not self.create_pipeline_from_string(pipeline_string):
-            return
-
+        self.create_pipeline_from_string(pipeline_string)
         self.logger.debug('Writing to the file ' + self.props['location'])
         sink = self.pipeline.get_by_name('sink')
         sink.set_property('location', self.props['location'])
 
         if config.enable_video():
             self.video_encoder = self.pipeline.get_by_name('video_encoder')
-            self.intervideosrc = self.pipeline.get_by_name('intervideosrc')
-            self.intervideosrc_src_pad = self.intervideosrc.get_static_pad('src')
-            self.create_intervideosink_and_connections()
 
         if config.enable_audio():
             self.audio_encoder = self.pipeline.get_by_name('audio_encoder')
-            self.interaudiosrc = self.pipeline.get_by_name('interaudiosrc')
-            self.interaudiosrc_src_pad = self.interaudiosrc.get_static_pad('src')
-            self.create_interaudiosink_and_connections()
 
     def set_state(self, new_state):
         sent_eos = False
@@ -91,4 +77,4 @@ class FileOutput(Output):
 
     def create_caps_string(self):
         # format=I420 ensures the mp4 is playable with QuickTime.
-        return super().create_caps_string() + ',format=I420'
+        return super().create_caps_string(format='I420')

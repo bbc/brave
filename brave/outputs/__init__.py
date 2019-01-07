@@ -14,7 +14,7 @@ class OutputCollection(AbstractCollection):
         args['id'] = self.get_new_id()
 
         if 'type' not in args:
-            raise brave.exceptions.InvalidConfiguration("Invalid output missing 'type'")
+            raise brave.exceptions.InvalidConfiguration("Invalid output, no 'type'")
         elif args['type'] == 'local':
             output = LocalOutput(**args, collection=self)
         elif args['type'] == 'rtmp':

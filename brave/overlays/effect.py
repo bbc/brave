@@ -1,4 +1,5 @@
 from brave.overlays.overlay import Overlay
+from gi.repository import Gst
 
 
 class EffectOverlay(Overlay):
@@ -22,15 +23,14 @@ class EffectOverlay(Overlay):
                     'edgetv': 'EdgeTV effect',
                     'exclusion': 'Exclusion',
                     'optv': 'OpTV effect',
-                    'quarktv': 'QuarkTV effect',
                     'radioactv': 'RadioacTV effect',
                     'revtv': 'RevTV effect',
                     'rippletv': 'RippleTV effect',
-                    'shagadelictv': 'ShagadelicTV',
                     'solarize': 'Solarize',
                     'streaktv': 'StreakTV effect',
                     'vertigotv': 'VertigoTV effect',
                     'warptv': 'WarpTV effect'
+                    # Note: quarktv and shagadelictv are removed as they were unreliable in testing
                 }
             },
             'visible': {
@@ -40,7 +40,14 @@ class EffectOverlay(Overlay):
         }
 
     def create_elements(self):
-        self.element = self.mixer().add_element(self.props['effect_name'], self)
-
-    def set_element_values_from_props(self):
-        pass
+        # The effects filters can mess with the alpha channel.
+        # The best solution I've found is to allow it to move into RGBx, then force a detour via RGB
+        # to remove the alpha channel, before moving back to our default RGBA.
+        # This is done in a 'bin' so that the overlay can be manipulated as one thing.
+        desc = ('videoconvert ! %s ! videoconvert ! capsfilter caps="video/x-raw,format=RGB" ! '
+                'videoconvert ! capsfilter caps="video/x-raw,format=RGBA"') % self.props['effect_name']
+        self.element = Gst.parse_bin_from_description(desc, True)
+        self.element.set_name('%s_bin' % self.uid())
+        place_to_add_elements = getattr(self.source, 'final_video_tee').parent
+        if not place_to_add_elements.add(self.element):
+            self.logger.warning('Unable to add effect overlay bin to the source pipeline')

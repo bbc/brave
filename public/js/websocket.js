@@ -66,12 +66,12 @@ websocket._onMessageReceived = event => {
     } else if (dataParsed.ice != null) {
         webrtc.onIncomingICE(dataParsed.ice);
     } else {
-        console.warn("Unexpected websocket message:", dataParsed);
+        console.warning("Unexpected websocket message:", dataParsed);
     }
 }
 
-websocket._getHandlerForType = function(type) {
-    switch(type) {
+websocket._getHandlerForBlockType = function(t) {
+    switch(t) {
         case 'input':
             return inputsHandler
         case 'output':
@@ -82,11 +82,11 @@ websocket._getHandlerForType = function(type) {
             return overlaysHandler
     }
 
-    console.error('Unknown update type', type)
+    console.error('Unknown block type', t)
 }
 
 websocket._handleUpdate = function(item) {
-    var handler = websocket._getHandlerForType(item.type)
+    var handler = websocket._getHandlerForBlockType(item.block_type)
     if (handler) {
         handler.items = handler.items.filter(x => x.id != item.data.id)
         handler.items.push(item.data)
@@ -96,7 +96,7 @@ websocket._handleUpdate = function(item) {
 }
 
 websocket._handleDelete = function(item) {
-    var handler = websocket._getHandlerForType(item.type)
+    var handler = websocket._getHandlerForBlockType(item.block_type)
     if (handler) {
         handler.items = handler.items.filter(x => x.id != item.id)
         drawAllItems()

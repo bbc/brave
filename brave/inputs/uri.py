@@ -41,8 +41,7 @@ class UriInput(Input):
 
     def create_elements(self):
         # Playbin does all the hard work
-        if not self.create_pipeline_from_string("playbin uri=\"" + self.props['uri'] + "\""):
-            return False
+        self.create_pipeline_from_string("playbin uri=\"" + self.props['uri'] + "\"")
 
         # playbin appears as 'playsink' (because it's a bin with elements inside)
         self.playsink = self.pipeline.get_by_name('playsink')
@@ -56,8 +55,6 @@ class UriInput(Input):
             self.create_audio_elements()
         else:
             self._create_fake_audio()
-
-        self.handle_updated_props()
 
     def _create_fake_video(self):
         fakesink = Gst.ElementFactory.make('fakesink')
@@ -74,6 +71,7 @@ class UriInput(Input):
 
         self.capsfilter = bin.get_by_name('capsfilter')
         self.final_video_tee = bin.get_by_name('final_video_tee')
+        self.video_output_queue = bin.get_by_name('video_output_queue')
         self._update_video_filter_caps()
         self.playsink.set_property('video-sink', bin)
 
