@@ -19,7 +19,7 @@ Instead, follow the instructions at https://techglimpse.com/install-update-autoc
 
 This is well described at https://janikarhunen.fi/how-to-install-python-3-6-1-on-centos-7.html
 
-## Set lib directories
+## Set lib directories
 
 Set these:
 
@@ -29,7 +29,7 @@ export PKG_CONFIG_PATH=/usr/lib64/pkgconfig/
 ```
 
 
-## nasm 2.13
+## nasm 2.13
 
 Required to build x264
 
@@ -109,14 +109,14 @@ opus-1.2.1
 make && sudo make install
 ```
 
-## SRT
+## SRT
 
 This is optional, if you wish to use SRT. It's definitely not available via yum (don't get confused with SRTP!)
 
 Instructions are at  https://github.com/Haivision/srt
 
 
-## GStreamer
+## GStreamer
 
 It's important to install 1.14 (or later). Otherwise WebRTC won't work.
 
@@ -177,7 +177,7 @@ sudo make install
 ```
 
 
-## Install Python libraries
+## Install Python libraries
 
 Simply:
 
@@ -215,7 +215,7 @@ sudo setsebool -P httpd_can_network_connect 1
 
 ## Troubleshooting
 
-### Error message `ValueError: Namespace Gst not available`
+### Error message `ValueError: Namespace Gst not available`
 
 This is when Gst-Python cannot find GStreamer. Check:
 
@@ -224,7 +224,7 @@ This is when Gst-Python cannot find GStreamer. Check:
 * Is it definitely in `/usr/lib64/gstreamer-1.0` ?
 
 
-### A certain element is not installed
+### A certain element is not installed
 
 Use `gst-inspect-1.0` to see what's installed. e.g.
 
@@ -239,6 +239,6 @@ You can also inspect what's installed at a file level, e.g.
 If it's missing, it's probably because dependencies are missing. Google to discover which package it belongs (base/good/bad/ugly). Then capture the output of `autogen.sh` to see what's missing.
 
 
-## Appendix - references
+## Appendix - references
 
 This was very useful: https://gist.github.com/Swap-File/ea4b7a4739ca8c859bd7c3c3d8b087e6
