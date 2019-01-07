@@ -110,7 +110,7 @@ default_overlays:
 ```
 
 Each overlay must have a type (either 'text', 'clock', or 'effect').
-Overlays also have a range of other properties. For the full list, see the [overlays](overlays) page.
+Overlays also have a range of other properties. For the full list, see the [overlays](overlays.md) page.
 
 ### Disabling audio or video
 By default Brave handles video and audio. To disable audio, add the line:

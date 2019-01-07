@@ -20,8 +20,8 @@ The API is found at the same port as the web interface, on the `/api` path. It d
 
 ## General API calls
 
-### `GET /api/all` - Get details on all inputs/outputs/mixers/overlays
-Retrieves information on all created items (blocks). The response is a map (dictonary) with four keys for the four types (`inputs`, `outputs`, `mixers`, and `overlays`). If you only need one of these types, use the relevant call for that, e.g.  [`/api/inputs`](#get-all-inputs).
+### Get details on all inputs/outputs/mixers/overlays
+Retrieve information on all created items (blocks). The response is a map (dictonary) with four keys for the four types (`inputs`, `outputs`, `mixers`, and `overlays`). If you only need one of these types, use the relevant call for that, e.g.  [`/api/inputs`](#get-all-inputs).
 
 - Path: `/api/all`
 - Method: `GET`
@@ -96,7 +96,7 @@ curl http://localhost:5000/api/all
 ```
 
 ### Restart Brave
-Restarts Brave. Resets all settings and connections.
+Restart Brave. This will reset all settings and connections.
 
 - Path: `/api/restart`
 - Method: `POST`
