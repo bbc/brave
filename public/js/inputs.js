@@ -64,6 +64,9 @@ inputsHandler._inputCardBody = (input) => {
     if (input.hasOwnProperty('freq')) details.push('<div><strong>Frequency:</strong> ' + input.freq + 'Hz</div>')
     if (input.hasOwnProperty('pattern')) details.push('<div><strong>Pattern:</strong> ' + inputsHandler.patternTypes[input.pattern] + '</div>')
     if (input.hasOwnProperty('wave')) details.push('<div><strong>Wave:</strong> ' + inputsHandler.waveTypes[input.wave] + '</div>')
+    if (input.hasOwnProperty('device')) details.push('<div><strong>Device Num:</strong> ' + input.device + '</div>')
+    if (input.hasOwnProperty('connection')) details.push('<div><strong>Connection Type:</strong> ' + inputsHandler.decklinkConnection[input.connection] + '</div>')
+    if (input.hasOwnProperty('mode')) details.push('<div><strong>Input Mode:</strong> ' + inputsHandler.decklinkModes[input.mode] + '</div>')
 
     if (input.hasOwnProperty('duration')) {
         var duration = prettyDuration(input.duration)
@@ -161,7 +164,7 @@ inputsHandler._populateForm = function(input) {
         label: 'Device Num',
         name: 'device',
         type: 'number',
-        value: input.props.device || 0
+        value: input.device || 0
     })
 
     var connection = formGroup({
@@ -171,7 +174,7 @@ inputsHandler._populateForm = function(input) {
         type: 'number',
         options: inputsHandler.decklinkConnection,
         initialOption: 'Select connection type',
-        value: input.props.connection || inputsHandler.decklinkConnection[1]
+        value: input.connection || inputsHandler.decklinkConnection[1]
     })
 
     var mode = formGroup({
@@ -181,7 +184,7 @@ inputsHandler._populateForm = function(input) {
         type: 'number',
         options: inputsHandler.decklinkModes,
         initialOption: 'Select input mode',
-        value: input.props.mode || inputsHandler.decklinkModes[17]
+        value: input.mode || inputsHandler.decklinkModes[17]
     })
 
     var isNew = !input.hasOwnProperty('id')
