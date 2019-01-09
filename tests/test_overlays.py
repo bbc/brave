@@ -4,7 +4,7 @@ from PIL import Image
 
 def test_overlay_at_start(run_brave, create_config_file):
     set_up_overlay_at_start(run_brave, create_config_file)
-    assert_overlays([{'id': 1}])
+    assert_overlays([{'id': 1, 'uid': 'overlay1'}])
 
     add_overlay({'type': 'text', 'source': 'mixer1', 'text': 'Overlay #1', 'visible': True})
     time.sleep(1)
