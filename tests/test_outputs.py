@@ -9,7 +9,7 @@ def test_outputs(run_brave):
 
     # Create output, ignore attempts to set an ID
     add_output({'type': 'local', 'id': 99})
-    assert_outputs([{'type': 'local', 'id': 1}])
+    assert_outputs([{'type': 'local', 'id': 1, 'uid': 'output1'}])
 
     # Different types of outputs work:
     add_output({'type': 'image'})

@@ -33,9 +33,11 @@ def subtest_start_brave_with_mixers(run_brave, create_config_file):
 def subtest_assert_two_mixers(mixer_1_props):
     assert_mixers([{
         'id': 1,
+        'uid': 'mixer1',
         **mixer_1_props,
     }, {
         'id': 2,
+        'uid': 'mixer2',
         'width': 640, 'height': 360, 'pattern': 0,
     }])
 
