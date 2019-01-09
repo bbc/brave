@@ -45,7 +45,7 @@ class EffectOverlay(Overlay):
         # to remove the alpha channel, before moving back to our default RGBA.
         # This is done in a 'bin' so that the overlay can be manipulated as one thing.
         desc = ('videoconvert ! %s ! videoconvert ! capsfilter caps="video/x-raw,format=RGB" ! '
-                'videoconvert ! capsfilter caps="video/x-raw,format=RGBA"') % self.props['effect_name']
+                'videoconvert ! capsfilter caps="video/x-raw,format=RGBA"') % self.effect_name
         self.element = Gst.parse_bin_from_description(desc, True)
         self.element.set_name('%s_bin' % self.uid())
         place_to_add_elements = getattr(self.source, 'final_video_tee').parent
