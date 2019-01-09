@@ -118,19 +118,19 @@ async def create_input(request):
 async def create_output(request):
     output = request['session'].outputs.add(**request.json)
     logger.info('Created output #%d with details %s' % (output.id, request.json))
-    return sanic.response.json({'id': output.id})
+    return sanic.response.json({'id': output.id, 'uid': output.uid()})
 
 
 async def create_overlay(request):
     overlay = request['session'].overlays.add(**request.json)
     logger.info('Created overlay #%d with details %s' % (overlay.id, request.json))
-    return _status_ok_response()
+    return sanic.response.json({'id': overlay.id, 'uid': overlay.uid()})
 
 
 async def create_mixer(request):
     mixer = request['session'].mixers.add(**request.json)
     logger.info('Created mixer #%d with details %s' % (mixer.id, request.json))
-    return sanic.response.json({'id': mixer.id})
+    return sanic.response.json({'id': mixer.id, 'uid': mixer.uid()})
 
 
 async def get_body(request, id):
@@ -143,7 +143,7 @@ async def get_body(request, id):
 
     try:
         return await sanic.response.file_stream(
-            output.props['location'],
+            output.location,
             headers={'Cache-Control': 'max-age=1'}
         )
     except FileNotFoundError:
