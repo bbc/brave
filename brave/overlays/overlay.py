@@ -15,7 +15,7 @@ class Overlay(InputOutputOverlay):
 
         super().__init__(**args)
         self._set_source(source_uid)
-        self.visible = self.props['visible']
+        self.visible = self.visible
 
     def input_output_overlay_or_mixer(self):
         return 'overlay'
@@ -35,6 +35,15 @@ class Overlay(InputOutputOverlay):
         if 'source' in updates and self.source != updates['source']:
             self._set_source(updates['source'])
             self.report_update_to_user()
+            del updates['source']
+
+        if 'visible' in updates:
+            if not self.visible and updates['visible']:
+                self.logger.debug('Becoming visible')
+                self._make_visible()
+            if self.visible and not updates['visible']:
+                self.logger.debug('Becoming invisible')
+                self._make_invisible()
 
         return super().update(updates)
 
@@ -74,12 +83,6 @@ class Overlay(InputOutputOverlay):
         if self.source is None:
             return
         self.set_element_values_from_props()
-        if not self.props['visible'] and self.visible:
-            self.logger.debug('Becoming invisible')
-            self._make_invisible()
-        if self.props['visible'] and not self.visible:
-            self.logger.debug('Becoming visible')
-            self._make_visible()
 
     def set_element_values_from_props(self):
         pass

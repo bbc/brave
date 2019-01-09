@@ -39,9 +39,9 @@ class RTMPOutput(Output):
                 'avenc_aac name=audio_encoder ! aacparse ! audio/mpeg, mpegversion=4 ! queue ! mux.'
 
         self.create_pipeline_from_string(pipeline_string)
-        self.pipeline.get_by_name('sink').set_property('location', self.props['uri'] + ' live=1')
+        self.pipeline.get_by_name('sink').set_property('location', self.uri + ' live=1')
 
-        self.logger.info('RTMP output now configured to send to ' + self.props['uri'])
+        self.logger.info('RTMP output now configured to send to ' + self.uri)
 
     def create_caps_string(self):
         # framerate=30/1 because Facebook Live and YouTube live want this framerate.

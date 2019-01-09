@@ -44,7 +44,7 @@ class KvsOutput(Output):
         kvssink = self.pipeline.get_by_name('kvssink')
         kvssink.set_property('access-key', access_key)
         kvssink.set_property('secret-key', secret_key)
-        kvssink.set_property('stream-name', self.props['stream_name'])
+        kvssink.set_property('stream-name', self.stream_name)
 
     def create_caps_string(self):
         return super().create_caps_string(format='I420') + ',pixel-aspect-ratio=1/1,framerate=30/1'

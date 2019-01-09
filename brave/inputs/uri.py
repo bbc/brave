@@ -41,7 +41,7 @@ class UriInput(Input):
 
     def create_elements(self):
         # Playbin does all the hard work
-        self.create_pipeline_from_string("playbin uri=\"" + self.props['uri'] + "\"")
+        self.create_pipeline_from_string("playbin uri=\"" + self.uri + "\"")
 
         # playbin appears as 'playsink' (because it's a bin with elements inside)
         self.playsink = self.pipeline.get_by_name('playsink')
@@ -83,8 +83,6 @@ class UriInput(Input):
         self.final_audio_tee = bin.get_by_name('final_audio_tee')
 
     def update(self, updates):
-        super().update(updates)
-
         # Special case: allow seeking
         if self.has_video() and 'position' in updates:
             try:
@@ -95,6 +93,9 @@ class UriInput(Input):
                     self.logger.warning('Unable to est position to %s' % new_position)
             except ValueError:
                 self.logger.warning('Invalid position %s provided' % updates['position'])
+            del updates['position']
+
+        super().update(updates)
 
     def get_input_cap_props(self):
         '''

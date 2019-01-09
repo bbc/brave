@@ -1,4 +1,4 @@
-##
+#  ##
 ## Video, audio, or both? Default is both
 ##
 enable_video: true
@@ -17,21 +17,17 @@ default_mixer_height: 360
 ##
 default_inputs:
     # - type: uri
-    #   props:
-    #       zorder: 2
-    #       uri: file:///path/to/file.mp4
-    #       width: 640
-    #       height: 360
+    #   zorder: 2
+    #   uri: file:///path/to/file.mp4
+    #   width: 640
+    #   height: 360
     # - type: image
-    #   props:
-    #       uri: https://upload.wikimedia.org/wikipedia/commons/e/eb/BBC.svg
+    #   uri: https://upload.wikimedia.org/wikipedia/commons/e/eb/BBC.svg
     # - type: test_audio
-    #   props:
-    #       freq: 200
+    #   freq: 200
     # - type: test_video
-    #   props:
-    #       zorder: 3
-    #       pattern: 18
+    #   zorder: 3
+    #   pattern: 18
 
 ##
 ## DEFAULT OUTPUTS
@@ -41,13 +37,11 @@ default_inputs:
 default_outputs:
     # - type: local
     # - type: file
-    #   props:
-    #     location: /path/to/file.mp4
+    #   location: /path/to/file.mp4
     # - type: image
     # - type: tcp
     # - type: rtmp
-    #   props:
-    #       uri: rtmp://domain/path/name
+    #   uri: rtmp://domain/path/name
 
 ##
 ## DEFAULT OVERLAYS
@@ -55,16 +49,13 @@ default_outputs:
 ##
 default_overlays:
     # - type: text
-    #   props:
-    #       text: 'I am some text'
-    #       visible: true
+    #   text: 'I am some text'
+    #   visible: true
     # - type: clock
-    #   props:
-    #       valignment: 'top'
-    #       visible: true
+    #   valignment: 'top'
+    #   visible: true
     # - type: effect
-    #   props:
-    #       effect_name: 'warptv'
+    #   effect_name: 'warptv'
     #       visible: true
 
 ##
@@ -74,4 +65,4 @@ default_overlays:
 ##
 default_mixers:
     # Default to one mixer, with no specific props:
-    - props:
+    - {}

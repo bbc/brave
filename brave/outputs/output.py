@@ -31,7 +31,7 @@ class Output(InputOutputOverlay):
 
         self._set_source(source_uid)
 
-        # Set initially to READY, and when there we set to self.props['initial_state']
+        # Set initially to READY, and when there we set to self.initial_state
         self.set_state(Gst.State.READY)
 
     def input_output_overlay_or_mixer(self):
@@ -84,6 +84,7 @@ class Output(InputOutputOverlay):
                 raise brave.exceptions.InvalidConfiguration(
                     'Cannot change an output\'s source whilst it is in PAUSED or PLAYING state')
             self._set_source(updates['source'])
+            del updates['source']
         super().update(updates)
 
     def delete(self):
@@ -101,8 +102,8 @@ class Output(InputOutputOverlay):
 
         # If only one dimension is provided, we calculate the other.
         # Some encoders (jpegenc, possibly others) don't like it if only one metric is present.
-        width = self.props['width'] if 'width' in self.props else None
-        height = self.props['height'] if 'height' in self.props else None
+        width = self.width if hasattr(self, 'width') else 0
+        height = self.height if hasattr(self, 'height') else 0
         if self.source():
             src_width, src_height = self.source().get_dimensions()
             if src_width and src_height:

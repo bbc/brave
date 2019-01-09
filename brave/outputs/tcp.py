@@ -41,9 +41,9 @@ class TCPOutput(Output):
         '''
         Create the elements needed whether this is audio, video, or both
         '''
-        mux_type = 'oggmux' if self.props['container'] == 'ogg' else 'mpegtsmux'
-        video_encoder_type = 'theoraenc' if self.props['container'] == 'ogg' else 'x264enc'
-        audio_encoder_type = 'vorbisenc' if self.props['container'] == 'ogg' else 'avenc_ac3'
+        mux_type = 'oggmux' if self.container == 'ogg' else 'mpegtsmux'
+        video_encoder_type = 'theoraenc' if self.container == 'ogg' else 'x264enc'
+        audio_encoder_type = 'vorbisenc' if self.container == 'ogg' else 'avenc_ac3'
 
         pipeline_string = 'queue leaky=2 name=queue ! tcpserversink name=sink'
 
@@ -56,7 +56,7 @@ class TCPOutput(Output):
             pipeline_string += ' ' + self._video_pipeline_start() + video_encoder_type + ' name=encoder ! queue ! mux.'
 
         if config.enable_audio():
-            audio_bitrate = self.props['audio_bitrate']
+            audio_bitrate = self.audio_bitrate
 
             audio_pipeline_string = ('interaudiosrc name=interaudiosrc ! audioconvert ! '
                                      'audioresample ! %s name=audio_encoder bitrate=%d') % \
@@ -71,24 +71,24 @@ class TCPOutput(Output):
         self.create_pipeline_from_string(pipeline_string)
 
         if config.enable_video():
-            if self.props['container'] == 'mpeg':
+            if self.container == 'mpeg':
                 self.pipeline.get_by_name('encoder').set_property('key-int-max', 120)  # 4x 30fps TODO not hard-code
 
             # tune=zerolatency reduces the delay of TCP output
             # encoder.set_property('tune', 'zerolatency')
 
-        if 'host' not in self.props:
-            self.props['host'] = socket.gethostbyname(socket.gethostname())
-        if 'port' not in self.props:
-            self.props['port'] = self._get_next_available_port()
+        if not hasattr(self, 'host'):
+            self.host = socket.gethostbyname(socket.gethostname())
+        if not hasattr(self, 'port'):
+            self.port = self._get_next_available_port()
 
         sink = self.pipeline.get_by_name('sink')
-        sink.set_property('port', int(self.props['port']))
-        sink.set_property('host', self.props['host'])
+        sink.set_property('port', int(self.port))
+        sink.set_property('host', self.host)
         sink.set_property('recover-policy', 'keyframe')
         sink.set_property('sync', False)
 
-        self.logger.info('TCP output created at tcp://%s:%s' % (self.props['host'], self.props['port']))
+        self.logger.info('TCP output created at tcp://%s:%s' % (self.host, self.port))
 
     def _get_next_available_port(self):
         ports_in_use = self.get_ports_in_use()
@@ -102,8 +102,8 @@ class TCPOutput(Output):
     def get_ports_in_use(self):
         ports_in_use = []
         for name, output in self.session().outputs.items():
-            if 'port' in output.props:
-                ports_in_use.append(int(output.props['port']))
+            if hasattr(self, 'port'):
+                ports_in_use.append(int(output.port))
         return ports_in_use
 
     def create_caps_string(self):

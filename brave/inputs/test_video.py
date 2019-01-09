@@ -48,5 +48,5 @@ class TestVideoInput(Input):
 
     def handle_updated_props(self):
         super().handle_updated_props()
-        if 'pattern' in self.props:
-            self.videotestsrc.set_property('pattern', self.props['pattern'])
+        if hasattr(self, 'pattern'):
+            self.videotestsrc.set_property('pattern', self.pattern)

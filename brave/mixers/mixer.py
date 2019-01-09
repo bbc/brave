@@ -19,7 +19,7 @@ class Mixer(InputOutputOverlay):
         self.request_pad_count = {'video': 0, 'audio': 0}
         self.create_elements()
 
-        # Set initially to READY, and when there we set to self.props['initial_state']
+        # Set initially to READY, and when there we set to self.initial_state
         self.set_state(Gst.State.READY)
 
     def permitted_props(self):
@@ -36,6 +36,8 @@ class Mixer(InputOutputOverlay):
             'pattern': {
                 'type': 'int',
                 'default': 0
+            },
+            'sources': {
             },
         }
 
@@ -167,14 +169,14 @@ class Mixer(InputOutputOverlay):
         return self.mixer_element[audio_or_video].get_request_pad('sink_%d' % self.request_pad_count[audio_or_video])
 
     def handle_updated_props(self):
-        if 'pattern' in self.props:
-            self.videotestsrc.set_property('pattern', self.props['pattern'])
+        if hasattr(self, 'pattern'):
+            self.videotestsrc.set_property('pattern', self.pattern)
 
     def _set_dimensions(self):
         # An internal format of 'RGBA' ensures alpha support and no color variation.
         # It then may be set to something else on output (e.g. I420)
         dimensions_caps_string = 'video/x-raw,pixel-aspect-ratio=1/1,format=RGBA,width=%s,height=%s' % \
-            (self.props['width'], self.props['height'])
+            (self.width, self.height)
         self.logger.debug('Dimensions caps: ' + dimensions_caps_string)
         dimensions_caps = Gst.Caps.from_string(dimensions_caps_string)
         self.capsfilter.set_property('caps', dimensions_caps)

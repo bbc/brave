@@ -44,7 +44,7 @@ class HTMLInput(Input):
         if not config.enable_video():
             return
 
-        self.create_pipeline_from_string('cef url="' + self.props['uri'] + '" ! '
+        self.create_pipeline_from_string('cef url="' + self.uri + '" ! '
                                          ' videoconvert ! video/x-raw,format=ARGB ! '
                                          'queue' + self.default_video_pipeline_string_end())
 

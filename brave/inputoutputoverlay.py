@@ -11,19 +11,15 @@ class InputOutputOverlay():
     An abstract superclass representing an input, output, overlay, and mixer.
     '''
     def __init__(self, **args):
+        for field in ['id', 'type', 'collection']:
+            setattr(self, field, args[field])
         self.logger = brave.helpers.get_logger(self.input_output_overlay_or_mixer() + str(args['id']))
         self.elements = {}
         self.probes = {}
 
-        # Merge in the arguments:
-        for a in args:
-            if a != 'props':
-                setattr(self, a, args[a])
-
         # Handle the props of this input:
         self._set_default_props()
-        if 'props' in args and args['props'] is not None:
-            self._update_props(args['props'])
+        self._update_props(args)
 
         self.check_item_can_be_created()
 
@@ -72,13 +68,11 @@ class InputOutputOverlay():
         if 'state' in updates:
             success = self.set_state(updates['state'])
             if not success:
-                return False
+                return
+            del updates['state']
 
-        if 'props' in updates:
-            self._update_props(updates['props'])
-            self.handle_updated_props()
-
-        return True
+        self._update_props(updates)
+        self.handle_updated_props()
 
     def handle_updated_props(self):
         '''
@@ -123,13 +117,13 @@ class InputOutputOverlay():
         s = {
             'has_audio': self.has_audio(),
             'has_video': self.has_video(),
-            'uid': self.uid()
+            'uid': self.uid(),
         }
 
         if hasattr(self, 'pipeline'):
             s['state'] = self.get_state().value_nick.upper()
 
-        attributes_to_copy = ['id', 'type', 'error_message', 'props', 'current_num_peers']
+        attributes_to_copy = ['id', 'type', 'error_message', 'current_num_peers'] + list(self.permitted_props().keys())
         for a in attributes_to_copy:
             if hasattr(self, a):
                 s[a] = getattr(self, a)
@@ -228,8 +222,8 @@ class InputOutputOverlay():
         '''
         Get the width and height of this block.
         '''
-        if 'width' in self.props and 'height' in self.props:
-            return self.props['width'], self.props['height']
+        if hasattr(self, 'width') and hasattr(self, 'height'):
+            return self.width, self.height
         else:
             return None, None
 
@@ -237,19 +231,22 @@ class InputOutputOverlay():
         '''
         Called by the constructor to set up any default props.
         '''
-        self.props = {}
         for key, details in self.permitted_props().items():
             if 'default' in details:
-                self.props[key] = details['default']
+                setattr(self, key, details['default'])
 
     def _update_props(self, new_props):
         '''
-        Given a dict of new props, updates self.props
+        Given a dict of new props, updates self
         Once complete, call self.handle_updated_props()
         '''
         permitted = self.permitted_props()
 
         for key, value in new_props.items():
+
+            # TODO reconsider 'collection' - better way?
+            if key in ['id', 'type', 'collection']:
+                continue
 
             # First, warn about any known props:
             if key not in permitted:
@@ -258,11 +255,11 @@ class InputOutputOverlay():
 
             # None (null in JSON) means it should be unset (or default if there is one)
             elif value is None:
-                if key in self.props:
-                    self.props.pop(key, None)
+                if hasattr(self, key):
+                    delattr(self, key)
                     if key in self.permitted_props():
                         if 'default' in self.permitted_props()[key]:
-                            self.props[key] = self.permitted_props()[key]['default']
+                            setattr(self, key, self.permitted_props()[key]['default'])
 
             else:
                 # Set the type (int/float/str) if necessary
@@ -287,21 +284,21 @@ class InputOutputOverlay():
                         self.logger.warning('%s not in [%s]' % (value, permitted[key]['permitted_values']))
                         continue
 
-                self.props[key] = value
+                setattr(self, key, value)
 
     def __consider_initial_state(self, new_state):
         '''
         If the user has requested an initial state for this element, this method sets it at the correct time.
         '''
-        should_go_to_initial_state = new_state == Gst.State.READY and 'initial_state' in self.props and \
+        should_go_to_initial_state = new_state == Gst.State.READY and hasattr(self, 'initial_state') and \
             (not hasattr(self, 'initial_state_initiated') or not self.initial_state_initiated)
         if should_go_to_initial_state:
-            self.logger.debug('Now at READY state, time to set initial state of "%s"' % self.props['initial_state'])
-            state_to_change_to = state_string_to_constant(self.props['initial_state'])
+            self.logger.debug('Now at READY state, time to set initial state of "%s"' % self.initial_state)
+            state_to_change_to = state_string_to_constant(self.initial_state)
             if state_to_change_to:
                 self.set_state(state_to_change_to)
             else:
-                self.logger.warning('Unable to set to initial unknown state "%s"' % self.props['initial_state'])
+                self.logger.warning('Unable to set to initial unknown state "%s"' % self.initial_state)
             self.initial_state_initiated = True
 
         return False
