@@ -15,6 +15,9 @@ class UriInput(Input):
             'uri': {
                 'type': 'str',
             },
+            'buffer_duration': {
+                'type': 'int',
+            },
             'volume': {
                 'type': 'float',
                 'default': 0.8
@@ -42,9 +45,8 @@ class UriInput(Input):
     def create_elements(self):
         # Playbin does all the hard work
         self.create_pipeline_from_string("playbin uri=\"" + self.uri + "\"")
-
-        # playbin appears as 'playsink' (because it's a bin with elements inside)
         self.playsink = self.pipeline.get_by_name('playsink')
+        self.playbin = self.playsink.parent
 
         if config.enable_video():
             self.create_video_elements()
@@ -134,3 +136,51 @@ class UriInput(Input):
                 props[audioOrVideo + '_rate'] = structure.get_int('rate').value
 
         return props
+
+    def _can_move_to_playing_state(self):
+        '''
+        Blocks moving into the PLAYING state if buffering is happening
+        '''
+        buffering_stats = self.get_buffering_stats()
+        if not buffering_stats:
+            return True
+        if not buffering_stats.busy:
+            return True
+        self.logger.debug('Buffering, so not moving to PLAYING')
+        return False
+
+    def get_buffering_stats(self):
+        '''
+        Returns an object with 'busy' (whether buffering is in progress)
+        and 'percent' (the amount of buffering retrieved, 100=full buffer)
+        '''
+        query_buffer = Gst.Query.new_buffering(Gst.Format.PERCENT)
+        result = self.pipeline.query(query_buffer)
+        return query_buffer.parse_buffering_percent() if result else None
+
+    def summarise(self):
+        '''
+        Adds buffering stats to the summary
+        '''
+        s = super().summarise()
+        # TODO remove this next line:
+        s['aaaaaaa_buffer_duration_temp'] = self.playbin.get_property('buffer-duration')
+        buffering_stats = self.get_buffering_stats()
+        if buffering_stats:
+            s['buffering_percent'] = buffering_stats.percent
+        return s
+
+    def on_buffering(self, buffering_percent):
+        '''
+        Called to report buffering.
+        '''
+        # If buffering is 100% it might be time to go to the PLAYING state:
+        if buffering_percent == 100:
+            self._consider_changing_state()
+        else:
+            self.report_update_to_user()
+
+    def handle_updated_props(self):
+        super().handle_updated_props()
+        if hasattr(self, 'buffer_duration'):
+            self.playbin.set_property('buffer-duration', self.buffer_duration)

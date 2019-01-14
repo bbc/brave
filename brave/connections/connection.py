@@ -56,8 +56,8 @@ class Connection():
         They will be blocked when first created, as they can fail if the input is not yet sending content.
         This method unblocks them.
         '''
-        if (self.dest.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]) and \
-           (self.source.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]) and \
+        if (self.dest.state in [Gst.State.PLAYING, Gst.State.PAUSED]) and \
+           (self.source.state in [Gst.State.PLAYING, Gst.State.PAUSED]) and \
            self._elements_are_created():
             for audio_or_video in ['audio', 'video']:
                 pad = self._get_intersrc_src_pad(audio_or_video)

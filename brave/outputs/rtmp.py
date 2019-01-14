@@ -46,4 +46,4 @@ class RTMPOutput(Output):
     def create_caps_string(self):
         # framerate=30/1 because Facebook Live and YouTube live want this framerate.
         # profile=baseline may be superflous but some have recommended it for Facebook
-        return super().create_caps_string() + ',framerate=30/1,profile=baseline'
+        return super().create_caps_string(format='I420') + ',framerate=30/1,profile=baseline'

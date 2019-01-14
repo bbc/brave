@@ -296,7 +296,7 @@ inputsHandler._handleFormSubmit = function() {
     if (GOOD_URI_REGEXP[type]) {
         if (newProps.uri) {
             if (!newProps.uri.match(GOOD_URI_REGEXP[type])) {
-                showMessage('uri must start with ' + good_uri_regexp, 'info')
+                showMessage('uri must start with ' + GOOD_URI_REGEXP, 'info')
             }
         }
         else if (isNew) {

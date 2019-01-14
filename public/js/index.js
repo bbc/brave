@@ -39,15 +39,6 @@ function drawAllItems() {
     outputsHandler.draw()
 }
 
-function getStateBox(state, linkClassName) {
-    var allIcons = $('<div class="state-icons"></div>').append([
-        components.stateIcon('NULL', state, linkClassName),
-        components.stateIcon('READY', state, linkClassName),
-        components.stateIcon('PAUSED', state, linkClassName),
-        components.stateIcon('PLAYING', state, linkClassName), ' ' + state])
-    return {value: allIcons, className: state}
-}
-
 var topMessageInterval
 function showMessage(m, level) {
     var VALID_LEVELS = ['warning', 'success', 'danger', 'info']

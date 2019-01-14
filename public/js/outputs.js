@@ -174,7 +174,7 @@ outputsHandler._populateForm = function(output) {
             label: 'Location (URI)',
             name: 'uri',
             type: 'text',
-            value: output.location || '',
+            value: output.uri || '',
             help: 'Example: <code>rtmp://184.72.239.149/vod/BigBuckBunny_115k.mov</code>',
         }));
     }
@@ -258,9 +258,8 @@ outputsHandler._handleFormSubmit = function() {
     }
 
     if (type === 'rtmp') {
-        const uri = newuri || output.uri
         good_uri_regexp = '^rtmp(s?)://'
-        if (!uri || !uri.match(good_uri_regexp)) {
+        if (!newProps.uri || !newProps.uri.match(good_uri_regexp)) {
             showMessage('uri must start with ' + good_uri_regexp)
             return
         }

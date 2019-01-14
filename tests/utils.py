@@ -243,7 +243,6 @@ def assert_overlays(overlays):
 def add_input(details, status_code=200):
     response = api_put('/api/inputs', details)
     assert response.status_code == status_code, 'Expected status code %s but got %s, body was:%s' % (status_code, response.status_code, response.json())
-    time.sleep(0.2)
     return response.json()
 
 

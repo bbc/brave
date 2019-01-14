@@ -12,7 +12,8 @@ All inputs have the following properties:
 | Name | Can be set initially? | Can be updated?? | Description | Default value (if not set) |
 | ---- | --------------------- | ---------------- | ----------- | -------------------------- |
 | `type` | Yes | No | The input type, e.g. `uri`. | N/A - **REQUIRED** |
-| `state` | Yes (but use the key `initial_state`) | Yes | Either `NULL`, `READY`, `PAUSED` or `PLAYING`. [_What are the four states?_](faq.md#what-are-the-four-states) | `PLAYING` |
+| `state` | Yes | Yes | Either `NULL`, `READY`, `PAUSED` or `PLAYING`. [_What are the four states?_](faq.md#what-are-the-four-states) | `PLAYING` |
+| `desired_state` | No (Use `state`) | No (Use `state`) | Set to state that the user has requested, when it has not yet been reached. |
 
 
 ## Input types

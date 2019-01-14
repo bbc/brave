@@ -19,8 +19,8 @@ class Mixer(InputOutputOverlay):
         self.request_pad_count = {'video': 0, 'audio': 0}
         self.create_elements()
 
-        # Set initially to READY, and when there we set to self.initial_state
-        self.set_state(Gst.State.READY)
+        self.setup_complete = True
+        self._consider_changing_state()
 
     def permitted_props(self):
         return {

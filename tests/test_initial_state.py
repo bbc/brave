@@ -2,9 +2,9 @@ import time, pytest, inspect
 from utils import *
 
 
-def test_initial_state_option_on_startup(run_brave, create_config_file):
+def test_state_property_on_startup(run_brave, create_config_file):
     '''
-    Test that if 'initial_state' is set as a property, it is honored.
+    Test that if 'state' is set as a property, it is honored.
     It can be set for inputs, outputs and mixers.
     '''
     output_image_location0 = create_output_image_location()
@@ -12,27 +12,27 @@ def test_initial_state_option_on_startup(run_brave, create_config_file):
 
     config = {
     'default_inputs': [
-        {'type': 'test_video', 'pattern': 4, 'initial_state': 'PLAYING'},
-        {'type': 'test_video', 'pattern': 5, 'initial_state': 'PAUSED'},
-        {'type': 'test_video', 'pattern': 6, 'initial_state': 'READY'},
-        {'type': 'test_video', 'pattern': 7, 'initial_state': 'NULL'},
+        {'type': 'test_video', 'pattern': 4, 'state': 'PLAYING'},
+        {'type': 'test_video', 'pattern': 5, 'state': 'PAUSED'},
+        {'type': 'test_video', 'pattern': 6, 'state': 'READY'},
+        {'type': 'test_video', 'pattern': 7, 'state': 'NULL'},
     ],
     'default_mixers': [
-        {'initial_state': 'PLAYING'},
-        {'initial_state': 'PAUSED'},
-        {'initial_state': 'READY'},
-        {'initial_state': 'NULL'},
+        {'state': 'PLAYING'},
+        {'state': 'PAUSED'},
+        {'state': 'READY'},
+        {'state': 'NULL'},
     ],
     'default_outputs': [
-        {'type': 'image', 'location': output_image_location0, 'initial_state': 'PLAYING'},
-        {'type': 'image', 'location': output_image_location0, 'initial_state': 'PAUSED'},
-        {'type': 'image', 'location': output_image_location0, 'initial_state': 'READY'},
-        {'type': 'image', 'location': output_image_location0, 'initial_state': 'NULL'},
+        {'type': 'image', 'location': output_image_location0, 'state': 'PLAYING'},
+        {'type': 'image', 'location': output_image_location0, 'state': 'PAUSED'},
+        {'type': 'image', 'location': output_image_location0, 'state': 'READY'},
+        {'type': 'image', 'location': output_image_location0, 'state': 'NULL'},
     ]
     }
     config_file = create_config_file(config)
     run_brave(config_file.name)
-    time.sleep(4)
+    time.sleep(3)
     check_brave_is_running()
     response = api_get('/api/all')
     assert response.status_code == 200
@@ -51,9 +51,9 @@ def test_initial_state_option_on_startup(run_brave, create_config_file):
     assert details['outputs'][3]['state'] == 'NULL'
 
 
-def test_initial_state_option_via_api(run_brave):
+def test_state_property_via_api(run_brave):
     '''
-    Test that if 'initial_state' is set as a property, it is honored.
+    Test that if 'state' is set as a property, it is honored.
     It can be set for inputs, outputs and mixers.
     '''
     run_brave()
@@ -63,20 +63,20 @@ def test_initial_state_option_via_api(run_brave):
     assert_everything_in_playing_state(response.json())
     output_image_location0 = create_output_image_location()
 
-    add_input({'type': 'test_audio', 'initial_state': 'NULL'})
-    add_input({'type': 'test_audio', 'initial_state': 'READY'})
-    add_input({'type': 'test_audio', 'initial_state': 'PAUSED'})
-    add_input({'type': 'test_audio', 'initial_state': 'PLAYING'})
+    add_input({'type': 'test_audio', 'state': 'NULL'})
+    add_input({'type': 'test_audio', 'state': 'READY'})
+    add_input({'type': 'test_audio', 'state': 'PAUSED'})
+    add_input({'type': 'test_audio', 'state': 'PLAYING'})
 
-    add_mixer({'initial_state': 'NULL'})
-    add_mixer({'initial_state': 'READY'})
-    add_mixer({'initial_state': 'PAUSED'})
-    add_mixer({'initial_state': 'PLAYING'})
+    add_mixer({'state': 'NULL'})
+    add_mixer({'state': 'READY'})
+    add_mixer({'state': 'PAUSED'})
+    add_mixer({'state': 'PLAYING'})
 
-    add_output({'type': 'image', 'location': output_image_location0, 'initial_state': 'NULL'})
-    add_output({'type': 'image', 'location': output_image_location0, 'initial_state': 'READY'})
-    add_output({'type': 'image', 'location': output_image_location0, 'initial_state': 'PAUSED'})
-    add_output({'type': 'image', 'location': output_image_location0, 'initial_state': 'PLAYING'})
+    add_output({'type': 'image', 'location': output_image_location0, 'state': 'NULL'})
+    add_output({'type': 'image', 'location': output_image_location0, 'state': 'READY'})
+    add_output({'type': 'image', 'location': output_image_location0, 'state': 'PAUSED'})
+    add_output({'type': 'image', 'location': output_image_location0, 'state': 'PLAYING'})
 
     time.sleep(1)
 

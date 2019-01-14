@@ -15,8 +15,8 @@ class Input(InputOutputOverlay):
         self.create_elements()
         self.handle_updated_props()
 
-        # Set initially to READY, and when there we set to self.initial_state
-        self.set_state(Gst.State.READY)
+        self.setup_complete = True
+        self._consider_changing_state()
 
     def input_output_overlay_or_mixer(self):
         return 'input'

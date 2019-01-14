@@ -45,7 +45,7 @@ Example:
 default_inputs:
      - type: test_video
      - type: uri
-       initial_state: PAUSED
+       state: PAUSED
        uri: rtmp://184.72.239.149/vod/BigBuckBunny_115k.mov
      - type: image
        zorder: 2
@@ -80,13 +80,13 @@ Example (creating four outputs of different types):
 ```
 default_outputs:
     - type: local
-      initial_state: READY
+      state: READY
       input_id: 0
       source: mixer1
     - type: image
       source: input1
     - type: tcp
-      initial_state: READY
+      state: READY
       source: mixer1
     - type: rtmp
       uri: rtmp://domain/path/name

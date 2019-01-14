@@ -16,10 +16,14 @@ class InputOutputOverlay():
         self.logger = brave.helpers.get_logger(self.input_output_overlay_or_mixer() + str(args['id']))
         self.elements = {}
         self.probes = {}
+        self.setup_complete = False
+
+        # All blocks go to PLAYING unless the user requests otherwise:
+        self._desired_state = Gst.State.PLAYING
 
         # Handle the props of this input:
-        self._set_default_props()
         self._update_props(args)
+        self._set_default_props()
 
         self.check_item_can_be_created()
 
@@ -48,9 +52,9 @@ class InputOutputOverlay():
         Likely overridden, to extend the list.
         '''
         return {
-            'initial_state': {
+            'state': {
                 'type': 'str',
-                'default': 'PLAYING',
+                'uppercase': True,
                 'permitted_values': {
                     'PLAYING': 'Playing',
                     'PAUSED': 'Paused',
@@ -65,12 +69,6 @@ class InputOutputOverlay():
         Accepts updates to this block.
         Note: may be overridden.
         '''
-        if 'state' in updates:
-            success = self.set_state(updates['state'])
-            if not success:
-                return
-            del updates['state']
-
         self._update_props(updates)
         self.handle_updated_props()
 
@@ -79,12 +77,6 @@ class InputOutputOverlay():
         Called when the user has updated certain properties of this block.
         '''
         pass  # overwritten by some subclasses
-
-    def get_state(self):
-        if hasattr(self, 'pipeline'):
-            return self.pipeline.get_state(0).state
-        else:
-            return Gst.State.NULL
 
     def print_state_summary(self):
         '''
@@ -121,11 +113,14 @@ class InputOutputOverlay():
         }
 
         if hasattr(self, 'pipeline'):
-            s['state'] = self.get_state().value_nick.upper()
+            s['state'] = self.state.value_nick.upper()
+
+        if self.desired_state:
+            s['desired_state'] = self.desired_state.value_nick.upper()
 
         attributes_to_copy = ['id', 'type', 'error_message', 'current_num_peers'] + list(self.permitted_props().keys())
         for a in attributes_to_copy:
-            if hasattr(self, a):
+            if a is not 'state' and hasattr(self, a):
                 s[a] = getattr(self, a)
 
         return s
@@ -159,7 +154,7 @@ class InputOutputOverlay():
         iterate_through_connections()
 
     def _delete_with_no_connections(self):
-        if not self.pipeline.set_state(Gst.State.NULL):
+        if not self.set_pipeline_state(Gst.State.NULL):
             self.logger.warning('Unable to set private pipe to NULL before attempting to delete')
 
         def remove_element(element):
@@ -171,16 +166,29 @@ class InputOutputOverlay():
         self.collection.pop(self.id)
         self.session().report_deleted_item(self)
 
-    def set_state(self, state):
+    def set_desired_state(self, state):
         '''
-        Set the state to NULL/READY/PAUSED/PLAYING.
-        Only works for inputs and outputs that have their own pipeline.
+        Reports a user request to change the state to NULL/READY/PAUSED/PLAYING.
         '''
+        self.desired_state = state
+        return self.set_pipeline_state(state)
+
+    def set_pipeline_state(self, state):
+        '''
+        Set the pipeline's state to NULL/READY/PAUSED/PLAYING.
+        '''
+
         if not hasattr(self, 'pipeline'):
-            self.logger.warning('set_state() called but no pipeline')
+            self.logger.warning('set_pipeline_state() called but no pipeline')
             return False
 
+        # For debugging hanging state changes
+        # print('TEMP About to call pipeline.set_state... may hang...')
+        # import traceback
+        # traceback.print_stack()
         response = self.pipeline.set_state(state)
+        # print('Finished calling pipeline.set_state')
+
         if response == Gst.StateChangeReturn.SUCCESS:
             self.logger.debug(f"Move to state {state.value_nick.upper()} complete")
             return True
@@ -194,21 +202,40 @@ class InputOutputOverlay():
             self.logger.warning(f'Unable to set pipeline to \'{str(state.value_nick.upper())}\' state: {str(response)}')
             return False
 
-    def on_state_change(self, old_state, new_state):
+    def on_state_change(self, old_state, new_state, pending_state):
         '''
         Called when the state of this pipeline has changed.
         '''
-        if old_state == Gst.State.NULL and new_state != Gst.State.NULL and hasattr(self, 'error_message'):
-            delattr(self, 'error_message')
-        self.logger.debug('Pipeline state change from %s to %s' %
-                          (old_state.value_nick.upper(), new_state.value_nick.upper()))
+        if new_state is Gst.State.NULL:
+            # Likely means an error has occured, so remove user request to change state:
+            self.desired_state = None
+
+        if old_state is Gst.State.NULL and new_state is not Gst.State.NULL:
+            if hasattr(self, 'error_message'):
+                delattr(self, 'error_message')
+
+        if self.desired_state == new_state:
+            self.desired_state = None
+
+        in_transition_to_another_state = pending_state is not Gst.State.VOID_PENDING
+        if in_transition_to_another_state:
+            self.logger.debug('Pipeline state change from %s to %s (pending %s)' %
+                              (old_state.value_nick.upper(), new_state.value_nick.upper(),
+                               pending_state.value_nick.upper()))
+        else:
+            self.logger.debug('Pipeline state change from %s to %s' %
+                              (old_state.value_nick.upper(), new_state.value_nick.upper()))
+
+            # If the user's requested another state, now it's time to move to it:
+            self._consider_changing_state()
+            # TODO remove this:
+            # GObject.timeout_add(1, self._consider_changing_state)
 
         starting = (new_state in [Gst.State.PLAYING, Gst.State.PAUSED] and
                     old_state not in [Gst.State.PLAYING, Gst.State.PAUSED])
         if hasattr(self, 'on_pipeline_start') and starting:
             self.on_pipeline_start()
 
-        GObject.timeout_add(1, self.__consider_initial_state, new_state)
         self.report_update_to_user()
 
     def report_update_to_user(self):
@@ -232,7 +259,7 @@ class InputOutputOverlay():
         Called by the constructor to set up any default props.
         '''
         for key, details in self.permitted_props().items():
-            if 'default' in details:
+            if 'default' in details and not hasattr(self, key):
                 setattr(self, key, details['default'])
 
     def _update_props(self, new_props):
@@ -255,6 +282,8 @@ class InputOutputOverlay():
 
             # None (null in JSON) means it should be unset (or default if there is one)
             elif value is None:
+                if 'permitted_values' in permitted[key] and None not in permitted[key]['permitted_values']:
+                    raise brave.exceptions.InvalidConfiguration('Cannot set "%s" property to null' % key)
                 if hasattr(self, key):
                     delattr(self, key)
                     if key in self.permitted_props():
@@ -271,6 +300,8 @@ class InputOutputOverlay():
                             value = float(value)
                         elif permitted[key]['type'] == 'str':
                             value = str(value)
+                            if 'uppercase' in permitted[key] and permitted[key]['uppercase']:
+                                value = value.upper()
                         elif permitted[key]['type'] == 'bool':
                             if type(value) is not bool:
                                 self.logger.warning(f'Property not boolean: "{str(value)}"')
@@ -286,19 +317,77 @@ class InputOutputOverlay():
 
                 setattr(self, key, value)
 
-    def __consider_initial_state(self, new_state):
-        '''
-        If the user has requested an initial state for this element, this method sets it at the correct time.
-        '''
-        should_go_to_initial_state = new_state == Gst.State.READY and hasattr(self, 'initial_state') and \
-            (not hasattr(self, 'initial_state_initiated') or not self.initial_state_initiated)
-        if should_go_to_initial_state:
-            self.logger.debug('Now at READY state, time to set initial state of "%s"' % self.initial_state)
-            state_to_change_to = state_string_to_constant(self.initial_state)
-            if state_to_change_to:
-                self.set_state(state_to_change_to)
-            else:
-                self.logger.warning('Unable to set to initial unknown state "%s"' % self.initial_state)
-            self.initial_state_initiated = True
+    @property
+    def state(self):
+        return self.pipeline.get_state(0).state if hasattr(self, 'pipeline') else Gst.State.NULL
 
-        return False
+    @state.setter
+    def state(self, new_state):
+        '''
+        Allows the state to be set. Can be either a string (e.g. 'READY') or the Gst constant.
+        '''
+        if new_state is None:
+            self._desired_state = None
+            return
+
+        if new_state not in [Gst.State.PLAYING, Gst.State.PAUSED, Gst.State.READY, Gst.State.NULL]:
+            converted_state = state_string_to_constant(new_state)
+            if not converted_state:
+                raise brave.exceptions.InvalidConfiguration('Invalid state "%s"' % new_state)
+            else:
+                new_state = converted_state
+
+        self.desired_state = new_state
+
+        if self.setup_complete:
+            self._consider_changing_state()
+
+    @state.deleter
+    def state(self):
+        pass
+
+    @property
+    def desired_state(self):
+        return self._desired_state
+
+    @desired_state.setter
+    def desired_state(self, new_state):
+        self._desired_state = new_state
+
+    @desired_state.deleter
+    def desired_state(self):
+        self._desired_state = None
+
+    def _consider_changing_state(self):
+        '''
+        Called when the block is first started, or the state changes, to decide
+        if an additional change needs to be made.
+        '''
+        if not self.setup_complete or not self.desired_state:
+            return
+
+        if self.state == self.desired_state:
+            return
+
+        if self.state is Gst.State.NULL:
+            # We go NULL -> READY as a default.
+            # If the user wants to go further (i.e. PAUSED/PLAYING) then this method will be called again.
+            self.set_pipeline_state(Gst.State.READY)
+            return
+
+        if not self.desired_state:
+            return
+
+        if self.desired_state is Gst.State.PLAYING:
+            # Force a manual strip through the PAUSED state. This allows buffering to occur.
+            if self.state is not Gst.State.PAUSED:
+                self.set_pipeline_state(Gst.State.PAUSED)
+                return
+            # Some block types want to wait until their buffer is full before proceeding to PLAYING:
+            if not self._can_move_to_playing_state():
+                return
+
+        self.set_pipeline_state(self.desired_state)
+
+    def _can_move_to_playing_state(self):
+        return True  # Overridden by some subclasses

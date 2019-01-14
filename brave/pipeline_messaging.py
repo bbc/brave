@@ -20,7 +20,7 @@ def setup_messaging(pipe, parent_object):
             is_pipeline_state_change = isinstance(message.src, Gst.Pipeline)
             if is_pipeline_state_change:
                 old_state, new_state, pending_state = message.parse_state_changed()
-                parent_object.on_state_change(old_state, new_state)
+                parent_object.on_state_change(old_state, new_state, pending_state)
         elif t == Gst.MessageType.ERROR:
             pipe.set_state(Gst.State.NULL)
             err, debug = message.parse_error()
@@ -73,8 +73,11 @@ def setup_messaging(pipe, parent_object):
         elif t == Gst.MessageType.HAVE_CONTEXT:
             logger.debug(f'Message from GStreamer: {str(message.src.get_name())} has context')
         elif t == Gst.MessageType.BUFFERING:
+            buffering_percent = message.parse_buffering()
             logger.debug('%s has reported %s%% buffering: %s' %
-                         (message.src.get_name(), message.parse_buffering(), message.parse_buffering_stats()))
+                         (message.src.get_name(), buffering_percent, message.parse_buffering_stats()))
+            if hasattr(parent_object, 'on_buffering'):
+                parent_object.on_buffering(buffering_percent)
         elif t == Gst.MessageType.QOS:
             pass
             # Also can consider parse_qos_stats() and parse_qos_values()
