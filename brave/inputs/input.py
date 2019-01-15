@@ -15,7 +15,7 @@ class Input(InputOutputOverlay):
         self.create_elements()
         self.handle_updated_props()
 
-        # Set initially to READY, and when there we set to self.props['initial_state']
+        # Set initially to READY, and when there we set to self.initial_state
         self.set_state(Gst.State.READY)
 
     def input_output_overlay_or_mixer(self):
@@ -69,8 +69,8 @@ class Input(InputOutputOverlay):
         '''
         Returns the preferred caps (a string defining things such as width, height and framerate)
         '''
-        width = self.props['width'] if 'width' in self.props else 0
-        height = self.props['height'] if 'height' in self.props else 0
+        width = self.width if hasattr(self, 'width') else 0
+        height = self.height if hasattr(self, 'height') else 0
 
         # An internal format of 'RGBA' ensures alpha support and no color variation.
         # It then may be set to something else on output (e.g. I420)

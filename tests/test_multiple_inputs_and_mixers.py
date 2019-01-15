@@ -18,8 +18,8 @@ MIXER2 = {
 }
 
 # INPUT1 is RED and INPUT2 is GREEN:
-INPUT1 = {'type': 'test_video', 'props': { 'pattern': 4, 'zorder': 10 } }
-INPUT2 = {'type': 'test_video', 'props': { 'pattern': 5, 'zorder': 20 } }
+INPUT1 = {'type': 'test_video',  'pattern': 4, 'zorder': 10 }
+INPUT2 = {'type': 'test_video',  'pattern': 5, 'zorder': 20 }
 OUTPUT1 = {'type': 'image', 'source': 'mixer1'}
 OUTPUT2 = {'type': 'image', 'source': 'mixer2'}
 
@@ -50,7 +50,7 @@ def subtest_ensure_one_mixer_does_not_affect_another():
 
 def subtest_addition_of_input():
     # Create a third input. This is BLUE
-    new_input = add_input({'type': 'test_video', 'props': {'pattern': 6, 'zorder': 30}})
+    new_input = add_input({'type': 'test_video', 'pattern': 6, 'zorder': 30})
     cut_to_source(new_input['uid'], 1)
     time.sleep(3)
 
@@ -72,8 +72,8 @@ def subtest_overlay_of_new_input():
 def subtest_start_brave_with_mixers(run_brave, create_config_file):
     config = {
         'default_mixers': [
-            {'props': MIXER1, 'sources': {'input1': {}, 'input2': {}}},
-            {'props': MIXER2, 'sources': {'input1': {}, 'input2': {}}},
+            {**MIXER1, 'sources': {'input1': {}, 'input2': {}}},
+            {**MIXER2, 'sources': {'input1': {}, 'input2': {}}},
         ],
         'default_inputs': [INPUT1, INPUT2],
         'default_outputs': [OUTPUT1, OUTPUT2]
@@ -83,8 +83,8 @@ def subtest_start_brave_with_mixers(run_brave, create_config_file):
     check_brave_is_running()
     time.sleep(4)
     assert_mixers([
-        {'id': 1, 'props': MIXER1},
-        {'id': 2, 'props': MIXER2}
+        {'id': 1, **MIXER1},
+        {'id': 2, **MIXER2}
     ])
     assert_inputs([INPUT1, INPUT2])
     assert_outputs([OUTPUT1, OUTPUT2])

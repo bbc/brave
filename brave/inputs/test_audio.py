@@ -34,7 +34,7 @@ class TestAudioInput(Input):
 
     def handle_updated_props(self):
         super().handle_updated_props()
-        if 'wave' in self.props:
-            self.audiotestsrc.set_property('wave', int(self.props['wave']))
-        if 'freq' in self.props:
-            self.audiotestsrc.set_property('freq', self.props['freq'])
+        if hasattr(self, 'wave'):
+            self.audiotestsrc.set_property('wave', int(self.wave))
+        if hasattr(self, 'freq'):
+            self.audiotestsrc.set_property('freq', self.freq)

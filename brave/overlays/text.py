@@ -34,8 +34,8 @@ class TextOverlay(Overlay):
         self.set_element_values_from_props()
 
     def set_element_values_from_props(self):
-        self.element.set_property('text', self.props['text'])
-        self.element.set_property('valignment', self.props['valignment'])
+        self.element.set_property('text', self.text)
+        self.element.set_property('valignment', self.valignment)
         self.element.set_property('halignment', 'left')
         self.element.set_property('font-desc', 'Sans, 44')
         self.element.set_property('shaded-background', True)

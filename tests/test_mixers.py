@@ -23,7 +23,7 @@ def subtest_start_brave_with_mixers(run_brave, create_config_file):
         'width': 640,
         'height': 360
     }
-    config = {'default_mixers': [{'props': MIXER1}, {'props': MIXER2}]}
+    config = {'default_mixers': [MIXER1, MIXER2]}
     config_file = create_config_file(config)
     run_brave(config_file.name)
     time.sleep(1)
@@ -33,18 +33,20 @@ def subtest_start_brave_with_mixers(run_brave, create_config_file):
 def subtest_assert_two_mixers(mixer_1_props):
     assert_mixers([{
         'id': 1,
-        'props': mixer_1_props,
+        'uid': 'mixer1',
+        **mixer_1_props,
     }, {
         'id': 2,
-        'props': {'width': 640, 'height': 360, 'pattern': 0},
+        'uid': 'mixer2',
+        'width': 640, 'height': 360, 'pattern': 0,
     }])
 
 def subtest_change_mixer_pattern():
-    update_mixer(1, {'props': {'pattern': 7}})
+    update_mixer(1, {'pattern': 7})
 
 
 def subtest_change_width_and_height():
-    update_mixer(1, {'props': {'width': 200, 'height': 300}})
+    update_mixer(1, {'width': 200, 'height': 300})
 
 
 def subtest_delete_mixers():
@@ -61,11 +63,11 @@ def test_mixer_from_api(run_brave):
     run_brave()
 
     # There is one mixer by default
-    assert_mixers([{'id': 1, 'props': {'width': 640, 'height': 360}}])
+    assert_mixers([{'id': 1, 'width': 640, 'height': 360}])
 
     # Create input, ignore attempts to set an ID
-    add_mixer({'props': {'width': 200, 'height': 200}})
+    add_mixer({'width': 200, 'height': 200})
     time.sleep(1)
-    assert_mixers([{'id': 1, 'props': {'width': 640, 'height': 360}},
-                   {'id': 2, 'props': {'width': 200, 'height': 200}}])
+    assert_mixers([{'id': 1, 'width': 640, 'height': 360},
+                   {'id': 2, 'width': 200, 'height': 200}])
     subtest_delete_mixers()

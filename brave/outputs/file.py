@@ -40,9 +40,9 @@ class FileOutput(Output):
             pipeline_string = pipeline_string + ' ' + audio_pipeline_string
 
         self.create_pipeline_from_string(pipeline_string)
-        self.logger.debug('Writing to the file ' + self.props['location'])
+        self.logger.debug('Writing to the file ' + self.location)
         sink = self.pipeline.get_by_name('sink')
-        sink.set_property('location', self.props['location'])
+        sink.set_property('location', self.location)
 
         if config.enable_video():
             self.video_encoder = self.pipeline.get_by_name('video_encoder')

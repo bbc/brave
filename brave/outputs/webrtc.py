@@ -53,7 +53,7 @@ class WebRTCOutput(Output):
         if config.enable_video():
 
             video_caps = 'application/x-rtp,format=RGB,media=video,encoding-name=VP8,payload=97,width=%d,height=%d' % \
-                (self.props['width'], self.props['height'])
+                (self.width, self.height)
 
             # vp8enc has 'target-bitrate' which can be reduced from its default (256000)
             # Setting keyframe-max-dist lower reduces impact of packet loss on dodgy networks

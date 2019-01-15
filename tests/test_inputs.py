@@ -10,7 +10,7 @@ def test_inputs(run_brave):
     # Create input, ignore attempts to set an ID
     add_input({'type': 'test_video', 'id': 99})
     time.sleep(2)
-    assert_inputs([{'type': 'test_video', 'id': 1}])
+    assert_inputs([{'type': 'test_video', 'id': 1, 'uid': 'input1'}])
 
     # Different types of inputs work:
     add_input({'type': 'test_audio'})
@@ -35,15 +35,15 @@ def test_inputs(run_brave):
     assert_inputs([{'type': 'test_video', 'id': 1}, {'type': 'test_audio', 'id': 2}])
 
     # Add a property to existing input
-    update_input(1, {'props': {'pattern': 5}})
-    assert_inputs([{'type': 'test_video', 'id': 1, 'props': {'pattern': 5}}, {'type': 'test_audio', 'id': 2}])
+    update_input(1, {'pattern': 5})
+    assert_inputs([{'type': 'test_video', 'id': 1, 'pattern': 5}, {'type': 'test_audio', 'id': 2}])
 
     # Add a bad property to existing input
-    update_input(2, {'props': {'not_real': 100}}, 400)
+    update_input(2, {'not_real': 100}, 400)
     assert_inputs([{'type': 'test_video', 'id': 1}, {'type': 'test_audio', 'id': 2}])
 
     # Add a property to missing input
-    update_input(55, {'props': {'pattern': 6}}, 400)
+    update_input(55, {'pattern': 6}, 400)
 
     # Removing an existing input works:
     delete_input(1)

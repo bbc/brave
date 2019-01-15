@@ -99,20 +99,20 @@ class ConnectionToMixer(Connection):
         if 'video' not in self._mix_request_pad:
             return
 
-        if 'xpos' in self.source.props:
-            self._mix_request_pad['video'].set_property('xpos', self.source.props['xpos'])
-        if 'ypos' in self.source.props:
-            self._mix_request_pad['video'].set_property('ypos', self.source.props['ypos'])
+        if hasattr(self.source, 'xpos'):
+            self._mix_request_pad['video'].set_property('xpos', self.source.xpos)
+        if hasattr(self.source, 'ypos'):
+            self._mix_request_pad['video'].set_property('ypos', self.source.ypos)
         self._set_mixer_width_and_height()
 
         # Setting zorder to what's already set can cause a segfault.
-        if 'zorder' in self.source.props:
+        if hasattr(self.source, 'zorder'):
             current_zorder = self._mix_request_pad['video'].get_property('zorder')
-            if current_zorder != self.source.props['zorder']:
+            if current_zorder != self.source.zorder:
                 self.logger.debug('Setting zorder to %d (current state: %s)' %
-                                  (self.source.props['zorder'],
+                                  (self.source.zorder,
                                    self.dest.mixer_element['video'].get_state(0).state.value_nick.upper()))
-                self._mix_request_pad['video'].set_property('zorder', self.source.props['zorder'])
+                self._mix_request_pad['video'].set_property('zorder', self.source.zorder)
 
     def _handle_audio_mix_props(self):
         '''
@@ -121,31 +121,31 @@ class ConnectionToMixer(Connection):
         if 'audio' not in self._mix_request_pad:
             return
 
-        if 'volume' in self.source.props:
+        if hasattr(self.source, 'volume'):
             prev_volume = self._mix_request_pad['audio'].get_property('volume')
-            volume = self.source.props['volume']
+            volume = self.source.volume
 
             if volume != prev_volume:
                 self._mix_request_pad['audio'].set_property('volume', float(volume))
 
     def _set_mixer_width_and_height(self):
         # First stage: go with mixer's size
-        width = self.dest.props['width']
-        height = self.dest.props['height']
+        width = self.dest.width
+        height = self.dest.height
 
         # Second stage: if input is smaller, go with that
-        if 'width' in self.source.props and self.source.props['width'] < width:
-            width = self.source.props['width']
-        if 'height' in self.source.props and self.source.props['height'] < height:
-            height = self.source.props['height']
+        if hasattr(self.source, 'width') and self.source.width < width:
+            width = self.source.width
+        if hasattr(self.source, 'height') and self.source.height < height:
+            height = self.source.height
 
         # Third stage: if positioned to go off the side, reduce the size.
-        if 'xpos' in self.source.props:
-            if width + self.source.props['xpos'] > self.dest.props['width']:
-                width = self.dest.props['width'] - self.source.props['xpos']
-        if 'ypos' in self.source.props:
-            if height + self.source.props['ypos'] > self.dest.props['height']:
-                height = self.dest.props['height'] - self.source.props['ypos']
+        if hasattr(self.source, 'xpos'):
+            if width + self.source.xpos > self.dest.width:
+                width = self.dest.width - self.source.xpos
+        if hasattr(self.source, 'ypos'):
+            if height + self.source.ypos > self.dest.height:
+                height = self.dest.height - self.source.ypos
 
         self._mix_request_pad['video'].set_property('width', width)
         self._mix_request_pad['video'].set_property('height', height)

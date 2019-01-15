@@ -35,7 +35,7 @@ class ImageOutput(Output):
         return False
 
     def create_caps_string(self):
-        return super().create_caps_string(format='RGB') + ',framerate=1/' + str(self.props['update_frequency'])
+        return super().create_caps_string(format='RGB') + ',framerate=1/' + str(self.update_frequency)
 
     def create_elements(self):
         if not config.enable_video():
@@ -44,10 +44,10 @@ class ImageOutput(Output):
         pipeline_string = self._video_pipeline_start() + 'jpegenc ! multifilesink name=sink'
         self.create_pipeline_from_string(pipeline_string)
         sink = self.pipeline.get_by_name('sink')
-        sink.set_property('location', self.props['location'])
+        sink.set_property('location', self.location)
 
     def __delete_file_if_exists(self):
         try:
-            os.remove(self.props['location'])
+            os.remove(self.location)
         except FileNotFoundError:
             pass

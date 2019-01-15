@@ -55,9 +55,9 @@ mixersHandler._optionButtonsForMixer = (mixer) => {
 
 mixersHandler._mixerCardBody = (mixer) => {
     var details = []
-    if (mixer.props.hasOwnProperty('pattern')) details.push('<div><strong>Background:</strong> ' + inputsHandler.patternTypes[mixer.props.pattern] + '</div>')
-    if (mixer.props.hasOwnProperty('width') &&
-        mixer.props.hasOwnProperty('height')) details.push('<div><strong>Dimension:</strong> ' + prettyDimensions(mixer.props) + '</div>')
+    if (mixer.hasOwnProperty('pattern')) details.push('<div><strong>Background:</strong> ' + inputsHandler.patternTypes[mixer.pattern] + '</div>')
+    if (mixer.hasOwnProperty('width') &&
+        mixer.hasOwnProperty('height')) details.push('<div><strong>Dimension:</strong> ' + prettyDimensions(mixer) + '</div>')
     return details
 }
 
@@ -88,13 +88,11 @@ mixersHandler._populateForm = function(mixer) {
     var form = mixersHandler.currentForm
     form.empty()
 
-    if (!mixer.props) mixer.props = {}
-
     if (mixer.hasOwnProperty('id')) {
         form.append('<input type="hidden" name="id" value="' + mixer.id + '">')
     }
 
-    form.append(getDimensionsSelect('dimensions', mixer.props.width, mixer.props.height))
+    form.append(getDimensionsSelect('dimensions', mixer.width, mixer.height))
 
     form.append(formGroup({
         id: 'mixer-pattern',
@@ -102,7 +100,7 @@ mixersHandler._populateForm = function(mixer) {
         name: 'pattern',
         options: inputsHandler.patternTypes,
         initialOption: 'Select a pattern...',
-        value: mixer.props.pattern
+        value: mixer.pattern
     }))
 }
 
@@ -122,7 +120,7 @@ mixersHandler._handleFormSubmit = function() {
     })
     splitDimensionsIntoWidthAndHeight(newProps)
     console.log('Submitting new mixer with values', newProps)
-    mixersHandler._submitCreateOrEdit(id, {props: newProps})
+    mixersHandler._submitCreateOrEdit(id, newProps)
     hideModal();
 }
 
