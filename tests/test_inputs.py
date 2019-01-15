@@ -9,7 +9,6 @@ def test_inputs(run_brave):
 
     # Create input, ignore attempts to set an ID
     add_input({'type': 'test_video', 'id': 99})
-
     time.sleep(2)
     assert_inputs([{'type': 'test_video', 'id': 1, 'uid': 'input1'}])
 

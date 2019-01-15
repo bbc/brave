@@ -154,9 +154,7 @@ class UriInput(Input):
         Blocks moving into the PLAYING state if buffering is happening
         '''
         buffering_stats = self.get_buffering_stats()
-        if not buffering_stats:
-            return True
-        if not buffering_stats.busy:
+        if not buffering_stats or not buffering_stats.busy:
             return True
         self.logger.debug('Buffering, so not moving to PLAYING')
         return False

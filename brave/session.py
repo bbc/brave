@@ -71,9 +71,6 @@ class Session(object):
             for overlay_config in config.default_overlays():
                 self.overlays.add(**overlay_config)
 
-        # for name, mixer in self.mixers.items():
-        #     mixer.set_state(Gst.State.PLAYING)
-
     def print_state_summary(self):
         '''
         Prints the state of all elements to STDOUT.
