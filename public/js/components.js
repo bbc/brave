@@ -90,7 +90,6 @@ components.stateBox = (item, onClick) => {
         return false
     })
     let msg = stateBoxDetails.value
-    console.log('msg=', msg)
     if (item.position) msg.append(' ', prettyDuration(item.position))
     return $('<div></div>')
         .append(msg)

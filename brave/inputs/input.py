@@ -43,7 +43,9 @@ class Input(InputOutputOverlay):
                 s['buffer_size'] = self.pipeline.get_property('buffer-size')
             has_buffer_duration, _, _ = self.pipeline.lookup('buffer-duration')
             if has_buffer_duration:
-                s['buffer_duration'] = self.pipeline.get_property('buffer-duration')
+                buffer_duration = self.pipeline.get_property('buffer-duration')
+                if buffer_duration != -1:
+                    s['buffer_duration'] = buffer_duration
 
             # playbin will respond with duration=-1 when not known.
             if (s['duration'] == -1):

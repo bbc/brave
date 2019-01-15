@@ -227,9 +227,8 @@ class InputOutputOverlay():
                               (old_state.value_nick.upper(), new_state.value_nick.upper()))
 
             # If the user's requested another state, now it's time to move to it:
-            self._consider_changing_state()
-            # TODO remove this:
-            # GObject.timeout_add(1, self._consider_changing_state)
+            # Doing it in a separate thread may not be necessary.
+            GObject.timeout_add(1, self._consider_changing_state)
 
         starting = (new_state in [Gst.State.PLAYING, Gst.State.PAUSED] and
                     old_state not in [Gst.State.PLAYING, Gst.State.PAUSED])

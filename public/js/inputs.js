@@ -3,6 +3,7 @@
 //
 inputsHandler = {}
 inputsHandler.items = []
+const GstSecond = 1000000000
 
 inputsHandler.draw = function() {
     inputsHandler._drawCards()
@@ -21,9 +22,9 @@ inputsHandler.showFormToEdit = function(input) {
 }
 
 inputsHandler.seek = function(input) {
-    var end = input.duration/1000000000
+    var end = input.duration/GstSecond
     secondsSeek = prompt("What should input " + input.id + "seek to, in seconds. (0=start, " + end + "=end)");
-    inputsHandler._submitCreateOrEdit(input.id, {position:secondsSeek*1000000000})
+    inputsHandler._submitCreateOrEdit(input.id, {position:secondsSeek*GstSecond})
 }
 
 inputsHandler._drawCards = () => {
@@ -60,6 +61,7 @@ inputsHandler._inputCardBody = (input) => {
     if (input.hasOwnProperty('audio_channels')) details.push('<div><strong>Audio channels:</strong> ' + input.audio_channels + '</div>')
     if (input.hasOwnProperty('audio_rate')) details.push('<div><strong>Audio rate:</strong> ' + input.audio_rate + '</div>')
     if (input.hasOwnProperty('volume')) details.push('<div><strong>Volume:</strong> ' + (100 * input.volume) + '&#37;</div>')
+    if (input.hasOwnProperty('loop')) details.push('<div><strong>Loop:</strong> ' + (input.loop ? 'Yes' : 'No') + '</div>')
     if (input.hasOwnProperty('input_volume')) details.push('<div><strong>Input volume:</strong> ' + input.input_volume + '</div>')
     if (input.hasOwnProperty('freq')) details.push('<div><strong>Frequency:</strong> ' + input.freq + 'Hz</div>')
     if (input.hasOwnProperty('pattern')) details.push('<div><strong>Pattern:</strong> ' + inputsHandler.patternTypes[input.pattern] + '</div>')
@@ -70,7 +72,12 @@ inputsHandler._inputCardBody = (input) => {
 
     if (input.hasOwnProperty('duration')) {
         var duration = prettyDuration(input.duration)
-        if (duration !== null) details.push('<strong>duration:</strong> ' + duration)
+        if (duration !== null) details.push('<strong>Duration:</strong> ' + duration)
+    }
+
+    if (input.hasOwnProperty('buffer_duration')) {
+        var duration = prettyDuration(input.buffer_duration)
+        if (duration !== null) details.push('<strong>Buffer duration:</strong> ' + duration)
     }
 
     if (input.hasOwnProperty('error_message')) details.push('<strong>ERROR:</strong> <span style="color:red">' + input.error_message + '</span>')
@@ -109,6 +116,23 @@ inputsHandler._populateForm = function(input) {
         type: 'text',
         value: (input.xpos || 0) + 'x' + (input.ypos || 0),
         help: 'In the format <samp>&lt;width&gt;x&lt;height&gt;</samp>. The default, <samp>0x0</samp>, puts it in the top-left corner.'
+    })
+
+    const loopBox = formGroup({
+        id: 'input-loop',
+        type: 'checkbox',
+        name: 'loop',
+        label: 'Loop (content replays once finished)',
+        value: input.loop
+    })
+
+    const bufferDuationBox = formGroup({
+        id: 'input-buffer-duration',
+        label: 'Buffer duaration (seconds)',
+        name: 'buffer_duration',
+        type: 'number',
+        value: input.buffer_duration / GstSecond,
+        help: 'Amount to buffer input, in seconds. Leave blank for default.'
     })
 
     var zOrderBox = formGroup({
@@ -232,10 +256,12 @@ inputsHandler._populateForm = function(input) {
     }
     else if (input.type === 'uri') {
         if (isNew) form.append(uriRow);
+        form.append(loopBox);
         form.append(positionBox);
         form.append(sizeBox);
         form.append(zOrderBox);
         form.append(components.volumeInput(input.volume));
+        form.append(bufferDuationBox)
     }
     else if (input.type === 'html') {
         if (isNew) form.append(uriRow);
@@ -262,7 +288,7 @@ inputsHandler._handleFormSubmit = function() {
     const input = isNew ? {} : inputsHandler.findById(id)
     const newProps = {}
 
-    fields = ['type', 'uri', 'position', 'zorder', 'dimensions', 'freq', 'volume', 'input_volume', 'pattern', 'wave']
+    fields = ['type', 'uri', 'position', 'zorder', 'dimensions', 'freq', 'volume', 'input_volume', 'pattern', 'wave', 'buffer_duration']
     fields.forEach(function(f) {
         var input = form.find('[name="' + f + '"]')
         if (input && input.val() !== null && input.val() !== '') {
@@ -270,7 +296,11 @@ inputsHandler._handleFormSubmit = function() {
         }
     })
 
+    const loop_entry = form.find('[name="loop"]')
+    if (loop_entry) newProps.loop = loop_entry.is(":checked")
+
     if (newProps.volume) newProps.volume /= 100 // convert percentage
+    if (newProps.buffer_duration) newProps.buffer_duration *= GstSecond
 
     splitDimensionsIntoWidthAndHeight(newProps)
     splitPositionIntoXposAndYpos(newProps)
@@ -442,7 +472,7 @@ inputsHandler.decklinkConnection = [
 
 function prettyDuration(d) {
     if (d < 0) return null
-    var seconds = Math.floor(d / 1000000000)
+    var seconds = Math.floor(d / GstSecond)
     var minutes = Math.floor(seconds/60)
     var justSeconds = seconds % 60
     return minutes + ':' + (justSeconds < 10 ? '0' : '') + justSeconds

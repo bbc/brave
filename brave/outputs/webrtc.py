@@ -104,6 +104,12 @@ class WebRTCOutput(Output):
         self.peers[ws]['webrtcbin'].connect('on-ice-candidate', self._send_ice_candidate_message, ws)
         # In the future, use connect('pad-added' here if the client's return video is wanted
 
+        # Going to READY first, before PLAYING, appears to prevent a race-condition that can
+        # intermittently cause _on_negotiation_needed to not be called.
+        if not self.pipeline.set_state(Gst.State.READY):
+            self.logger.warning('Unable to enter READY state now that we have a peer')
+            return
+
         if not self.pipeline.set_state(Gst.State.PLAYING):
             self.logger.warning('Unable to enter PLAYING state now that we have a peer')
         else:
