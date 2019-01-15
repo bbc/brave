@@ -40,7 +40,7 @@ components.unmutedButton = () => {
     return $("<a href=\"#\" class=\"fas fa-volume-up\" title=\"Mute\"></a>")
 }
 
-components.stateIcon = (state, currentState, linkClassName) => {
+components.stateIcon = (state, currentState) => {
     var selected = state == currentState
     var icons = {
         'PLAYING': 'fa-play',
@@ -83,7 +83,7 @@ components.card = (block) => {
 }
 
 components.stateBox = (item, onClick) => {
-    const stateBoxDetails = getStateBox(item.state)
+    const stateBoxDetails = components._stateIcons(item)
     stateBoxDetails.value.click(function(change) {
         var state = change.target.dataset.state
         onClick(item.id, state)
@@ -94,6 +94,22 @@ components.stateBox = (item, onClick) => {
     return $('<div></div>')
         .append(msg)
         .addClass(stateBoxDetails.className)
+}
+
+components._stateIcons = (item) => {
+    let desc = ' ' + item.state
+    if (item.hasOwnProperty('buffering_percent') && item.buffering_percent !== 100) {
+        desc = ' BUFFERING (' + item.buffering_percent + '%)'
+    }
+    else if (item.desired_state && item.desired_state !== item.state) {
+        desc = ' ' + item.state + ' &rarr; ' + item.desired_state
+    }
+    const allIcons = $('<div class="state-icons"></div>').append([
+        components.stateIcon('NULL', item.state),
+        components.stateIcon('READY', item.state),
+        components.stateIcon('PAUSED', item.state),
+        components.stateIcon('PLAYING', item.state), desc])
+    return {value: allIcons, className: item.state}
 }
 
 components.volumeInput = (volume) => {

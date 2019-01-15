@@ -30,9 +30,8 @@ class Output(InputOutputOverlay):
             self.interaudiosrc_src_pad = self.interaudiosrc.get_static_pad('src')
 
         self._set_source(source_uid)
-
-        # Set initially to READY, and when there we set to self.initial_state
-        self.set_state(Gst.State.READY)
+        self.setup_complete = True
+        self._consider_changing_state()
 
     def input_output_overlay_or_mixer(self):
         return 'output'
@@ -80,7 +79,7 @@ class Output(InputOutputOverlay):
         Overridden update() method to handle an update the source of this output.
         '''
         if 'source' in updates and (not self.source() or updates['source'] != self.source().uid):
-            if self.get_state() in [Gst.State.PLAYING, Gst.State.PAUSED]:
+            if self.state in [Gst.State.PLAYING, Gst.State.PAUSED]:
                 raise brave.exceptions.InvalidConfiguration(
                     'Cannot change an output\'s source whilst it is in PAUSED or PLAYING state')
             self._set_source(updates['source'])

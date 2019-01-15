@@ -9,7 +9,8 @@ All outputs have the following properties:
 | `id` | No | No | ID of the output. Positive integer. Starts at 1 and increases by 1 for each new output. | n/a  |
 | `uid` | No | No | Unqiue ID - a string in the format 'outputX' where X is the ID | n/a  |
 | `type` | Yes | No | The output type, e.g. `rtmp`. | N/A - *REQUIRED* |
-| `state` | Yes (but use the key `initial_state`) | Yes | Either `NULL`, `READY`, `PAUSED` or `PLAYING`. [_What are the four states?_](faq.md#what-are-the-four-states) | `PLAYING` |
+| `state` | Yes | Yes | Either `NULL`, `READY`, `PAUSED` or `PLAYING`. [_What are the four states?_](faq.md#what-are-the-four-states) | `PLAYING` |
+| `desired_state` | No (Use `state`) | No (Use `state`) | Set to state that the user has requested, when it has not yet been reached. |
 | `source` | Yes | Yes, but only if the output is in the `READY` or `NULL` states. | The source of the output - either an [input](inputs.md), or a [mixer](mixers.md), or `null`. | None (`null`) |
 
 ## Output types

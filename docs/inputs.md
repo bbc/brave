@@ -12,7 +12,8 @@ All inputs have the following properties:
 | Name | Can be set initially? | Can be updated?? | Description | Default value (if not set) |
 | ---- | --------------------- | ---------------- | ----------- | -------------------------- |
 | `type` | Yes | No | The input type, e.g. `uri`. | N/A - **REQUIRED** |
-| `state` | Yes (but use the key `initial_state`) | Yes | Either `NULL`, `READY`, `PAUSED` or `PLAYING`. [_What are the four states?_](faq.md#what-are-the-four-states) | `PLAYING` |
+| `state` | Yes | Yes | Either `NULL`, `READY`, `PAUSED` or `PLAYING`. [_What are the four states?_](faq.md#what-are-the-four-states) | `PLAYING` |
+| `desired_state` | No (Use `state`) | No (Use `state`) | Set to state that the user has requested, when it has not yet been reached. |
 
 
 ## Input types
@@ -47,9 +48,10 @@ In addition to the common properties above, this input type also has the followi
 | `uri` | Yes | No | The URI of the image | n/a - REQUIRED PROPERTY |
 | `width` and `height` | Yes | Yes | Override of the width and height (both non-negative integers) | None (will appear full-screen on mixer/output) |
 | `volume` | Yes | Yes | The volume. Floating point value, between 0 (silent) and 1 (full volume). | 0.8 |
-| `position` | No (should be possible in a future release) | Yes | The current position (time) of the media. It's in nanoseconds (so divide the number by 1000000000 to turn into seconds.) | 0 |
-| `duration` | No (should be possible in a future release) | Yes | The duration of the content, or `-1` if there is no duration (e.g. for a live stream). | The asset duration, or `-1` |
-
+| `position` | No (should be possible in a future release) | Yes | The current position (time) of the media. It's in nanoseconds (so divide the number by 1000000000 to turn into seconds). | 0 |
+| `duration` | No | Yes | The duration of the content, or `-1` if there is no duration (e.g. for a live stream). | The asset duration, or `-1` |
+| `buffer_duration` | Yes | Yes | The size of the buffer, in nanoseconds (so divide the number by 1000000000 to turn into seconds). | 2 seconds (GStreamer default) |
+| `loop` | Yes | Yes | Should the content loop when it reaches the end? Either `true` or `false`. | `false` |
 
 ### image
 The `image` input type is for when an image (JPEG, PNG, etc.) should be displayed on the video. This can be used as a way of adding graphics. PNG images with transparent backgrounds are supported (and work well when overlayed on video). Animated GIFs are not supported.

@@ -2,7 +2,7 @@ import brave.helpers
 logger = brave.helpers.get_logger('api_routes')
 import sanic
 import sanic.response
-from brave.helpers import state_string_to_constant, run_on_master_thread_when_idle
+from brave.helpers import run_on_master_thread_when_idle
 from brave.outputs.image import ImageOutput
 from sanic.exceptions import InvalidUsage
 
@@ -85,25 +85,21 @@ async def remove_source(request, id):
 
 
 async def update_input(request, id):
-    _validate_state(request)
     _get_input(request, id).update(request.json)
     return _status_ok_response()
 
 
 async def update_output(request, id):
-    _validate_state(request)
     _get_output(request, id).update(request.json)
     return _status_ok_response()
 
 
 async def update_overlay(request, id):
-    _validate_state(request)
     _get_overlay(request, id).update(request.json)
     return _status_ok_response()
 
 
 async def update_mixer(request, id):
-    _validate_state(request)
     _get_mixer(request, id).update(request.json)
     return _status_ok_response()
 
@@ -195,10 +191,3 @@ def _get_connection(request, id, create_if_not_made):
 
 def _status_ok_response():
     return sanic.response.json({'status': 'OK'})
-
-
-def _validate_state(request):
-    if 'state' in request.json:
-        request.json['state'] = state_string_to_constant(request.json['state'])
-        if not request.json['state']:
-            raise InvalidUsage('Invalid state. Must be PLAYING, PAUSED, READY or NULL.')

@@ -42,12 +42,9 @@ class Session(object):
         '''
         Called when the user has requested the service to end.
         '''
-        for name, input in self.inputs.items():
-            input.set_state(Gst.State.NULL)
-        for name, output in self.outputs.items():
-            output.set_state(Gst.State.NULL)
-        for name, mixer in self.mixers.items():
-            mixer.set_state(Gst.State.NULL)
+        for block_collection in [self.inputs, self.mixers, self.outputs]:
+            for name, block in block_collection.items():
+                block.set_pipeline_state(Gst.State.NULL)
         if hasattr(self, 'mainloop'):
             self.mainloop.quit()
         if restart:
@@ -73,9 +70,6 @@ class Session(object):
         if config.enable_video():
             for overlay_config in config.default_overlays():
                 self.overlays.add(**overlay_config)
-
-        for name, mixer in self.mixers.items():
-            mixer.set_state(Gst.State.PLAYING)
 
     def print_state_summary(self):
         '''

@@ -39,15 +39,6 @@ function drawAllItems() {
     outputsHandler.draw()
 }
 
-function getStateBox(state, linkClassName) {
-    var allIcons = $('<div class="state-icons"></div>').append([
-        components.stateIcon('NULL', state, linkClassName),
-        components.stateIcon('READY', state, linkClassName),
-        components.stateIcon('PAUSED', state, linkClassName),
-        components.stateIcon('PLAYING', state, linkClassName), ' ' + state])
-    return {value: allIcons, className: state}
-}
-
 var topMessageInterval
 function showMessage(m, level) {
     var VALID_LEVELS = ['warning', 'success', 'danger', 'info']
@@ -212,12 +203,21 @@ function formGroup(details) {
     var label = $(document.createElement('label'))
     label.html(details.label)
     label.attr('for', details.id)
-    e.append(label)
-    if (details.options) {
+    if (details.type === 'checkbox') {
+        const input = $('<input type="checkbox" />')
+        input.attr('id', details.id)
+        input.attr('name', details.name)
+        if (details.value) input.attr('checked', 'checked')
+        if (e.value) input.checked = true
+        e.append(input, ' ', label)
+    }
+    else if (details.options) {
+        e.append(label)
         var s = getSelect(details.name, details.value, details.initialOption, details.options, details.alwaysShowUnselectedOption)
         e.append(s)
     }
     else {
+        e.append(label)
         var input = $(document.createElement('input'))
         input.addClass('form-control form-control-sm')
         var fields = ['min', 'max', 'step', 'name', 'type', 'id', 'value',
@@ -230,8 +230,6 @@ function formGroup(details) {
             let showPerc = (event) => msg.text(event.value + '%')
             showPerc({value: details['data-slider-value']})
             input.on("slide", showPerc)
-            // input.css('padding', '32px')
-            // input.css('margin', '32px')
             e.append(msg)
         }
     }

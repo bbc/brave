@@ -26,7 +26,6 @@ overlaysHandler._drawCards = () => {
 }
 
 overlaysHandler._asCard = (overlay) => {
-    var stateBoxDetails = getStateBox(overlay.state, "change-state-overlay-" + overlay.id)
     return components.card({
         title: 'Overlay ' + overlay.id + ' (' + prettyType(overlay.type) + ')',
         options: overlaysHandler._optionButtonsForOverlay(overlay),

@@ -15,6 +15,13 @@ class UriInput(Input):
             'uri': {
                 'type': 'str',
             },
+            'buffer_duration': {
+                'type': 'int',
+            },
+            'loop': {
+                'type': 'bool',
+                'default': False
+            },
             'volume': {
                 'type': 'float',
                 'default': 0.8
@@ -40,11 +47,18 @@ class UriInput(Input):
         }
 
     def create_elements(self):
-        # Playbin does all the hard work
-        self.create_pipeline_from_string("playbin uri=\"" + self.uri + "\"")
-
-        # playbin appears as 'playsink' (because it's a bin with elements inside)
+        # Playbin or playbin3 does all the hard work.
+        # Playbin3 works better for continuous playback.
+        # But it does not handle RTMP inputs as well.
+        # See http://gstreamer-devel.966125.n4.nabble.com/Behavior-differences-between-
+        #   decodebin3-and-decodebin-and-vtdec-hw-not-working-on-OSX-td4680895.html
+        is_rtmp = self.uri.startswith('rtmp')
+        playbin_element = 'playbin' if is_rtmp else 'playbin3'
+        self.create_pipeline_from_string(playbin_element)
         self.playsink = self.pipeline.get_by_name('playsink')
+        self.playbin = self.playsink.parent
+        self.playbin.set_property('uri', self.uri)
+        self.playbin.connect('about-to-finish', self.__on_about_to_finish)
 
         if config.enable_video():
             self.create_video_elements()
@@ -90,7 +104,7 @@ class UriInput(Input):
                 if self.pipeline.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, new_position):
                     self.logger.debug('Successfully updated position to %s' % new_position)
                 else:
-                    self.logger.warning('Unable to est position to %s' % new_position)
+                    self.logger.warning('Unable to set position to %s' % new_position)
             except ValueError:
                 self.logger.warning('Invalid position %s provided' % updates['position'])
             del updates['position']
@@ -134,3 +148,52 @@ class UriInput(Input):
                 props[audioOrVideo + '_rate'] = structure.get_int('rate').value
 
         return props
+
+    def _can_move_to_playing_state(self):
+        '''
+        Blocks moving into the PLAYING state if buffering is happening
+        '''
+        buffering_stats = self.get_buffering_stats()
+        if not buffering_stats or not buffering_stats.busy:
+            return True
+        self.logger.debug('Buffering, so not moving to PLAYING')
+        return False
+
+    def get_buffering_stats(self):
+        '''
+        Returns an object with 'busy' (whether buffering is in progress)
+        and 'percent' (the amount of buffering retrieved, 100=full buffer)
+        '''
+        query_buffer = Gst.Query.new_buffering(Gst.Format.PERCENT)
+        result = self.pipeline.query(query_buffer)
+        return query_buffer.parse_buffering_percent() if result else None
+
+    def summarise(self):
+        '''
+        Adds buffering stats to the summary
+        '''
+        s = super().summarise()
+        buffering_stats = self.get_buffering_stats()
+        if buffering_stats:
+            s['buffering_percent'] = buffering_stats.percent
+        return s
+
+    def on_buffering(self, buffering_percent):
+        '''
+        Called to report buffering.
+        '''
+        # If buffering is 100% it might be time to go to the PLAYING state:
+        if buffering_percent == 100:
+            self._consider_changing_state()
+        else:
+            self.report_update_to_user()
+
+    def handle_updated_props(self):
+        super().handle_updated_props()
+        if hasattr(self, 'buffer_duration'):
+            self.playbin.set_property('buffer-duration', self.buffer_duration)
+
+    def __on_about_to_finish(self, playbin):
+        if self.loop:
+            self.logger.debug('About to finish, looping')
+            playbin.set_property('uri', self.uri)

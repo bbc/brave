@@ -50,7 +50,7 @@ class FileOutput(Output):
         if config.enable_audio():
             self.audio_encoder = self.pipeline.get_by_name('audio_encoder')
 
-    def set_state(self, new_state):
+    def set_pipeline_state(self, new_state):
         sent_eos = False
         # If this is ending the file creation (identified by moving to READY or NULL)
         # we must send an EOS so that the file is completed correctly.
@@ -71,9 +71,9 @@ class FileOutput(Output):
         # (Separate code will then catch the EOS successful message and cause a state change.)
         # Otherwise, lets go ahead and set the state of the pipeline.
         if sent_eos:
-            return True
+            return
 
-        return super().set_state(new_state)
+        return super().set_pipeline_state(new_state)
 
     def create_caps_string(self):
         # format=I420 ensures the mp4 is playable with QuickTime.

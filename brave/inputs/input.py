@@ -15,8 +15,8 @@ class Input(InputOutputOverlay):
         self.create_elements()
         self.handle_updated_props()
 
-        # Set initially to READY, and when there we set to self.initial_state
-        self.set_state(Gst.State.READY)
+        self.setup_complete = True
+        self._consider_changing_state()
 
     def input_output_overlay_or_mixer(self):
         return 'input'
@@ -43,7 +43,9 @@ class Input(InputOutputOverlay):
                 s['buffer_size'] = self.pipeline.get_property('buffer-size')
             has_buffer_duration, _, _ = self.pipeline.lookup('buffer-duration')
             if has_buffer_duration:
-                s['buffer_duration'] = self.pipeline.get_property('buffer-duration')
+                buffer_duration = self.pipeline.get_property('buffer-duration')
+                if buffer_duration != -1:
+                    s['buffer_duration'] = buffer_duration
 
             # playbin will respond with duration=-1 when not known.
             if (s['duration'] == -1):
