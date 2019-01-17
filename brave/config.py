@@ -19,7 +19,7 @@ def init(filename=DEFAULT_CONFIG_FILENAME):
 def api_host():
     if 'HOST' in os.environ:
         return os.environ['HOST']
-    return c['api_host'] if 'api_host' in c else '127.0.0.1'
+    return c['api_host'] if 'api_host' in c else '0.0.0.0'
 
 
 def api_port():
