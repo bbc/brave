@@ -1,6 +1,6 @@
 enable_video: false
 
-default_inputs:
+inputs:
     - type: test_audio
       props:
           freq: 200
@@ -13,5 +13,5 @@ default_inputs:
           freq: 600
           volume: 0.2
 
-default_outputs:
+outputs:
     - type: local

@@ -49,11 +49,11 @@ overlaysHandler._overlayCardBody = (overlay) => {
 }
 
 overlaysHandler.overlay = (overlay) => {
-    overlaysHandler._submitCreateOrEdit(overlay.id, {visible: true})
+    submitCreateOrEdit('overlay', overlay.id, {visible: true})
 }
 
 overlaysHandler.remove = (overlay) => {
-    overlaysHandler._submitCreateOrEdit(overlay.id, {visible: false})
+    submitCreateOrEdit('overlay', overlay.id, {visible: false})
 }
 
 overlaysHandler._getMixOptions = (overlay) => {
@@ -211,30 +211,8 @@ overlaysHandler._handleFormSubmit = function() {
     }
 
     if (newProps.source === 'none') newProps.source = null
-    console.log('Submitting new overlay with values', newProps)
-    overlaysHandler._submitCreateOrEdit(id, newProps)
+    submitCreateOrEdit('overlay', id, newProps)
     hideModal();
-}
-
-
-overlaysHandler._submitCreateOrEdit = function (id, values) {
-    var putOrPost = (id != null) ? 'POST' : 'PUT'
-    var url = (id != null) ? 'api/overlays/' + id : 'api/overlays'
-    $.ajax({
-        contentType: 'application/json',
-        type: putOrPost,
-        url: url,
-        dataType: 'json',
-        data: JSON.stringify(values),
-        success: function() {
-            showMessage('Successfully created/updated overlay', 'success')
-            updatePage()
-        },
-        error: function(response) {
-            showMessage(response.responseJSON && response.responseJSON.error ?
-                'Error updating overlay: ' + response.responseJSON.error : 'Error updating overlay')
-        }
-    });
 }
 
 overlaysHandler.valignmentTypes = {

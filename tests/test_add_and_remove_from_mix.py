@@ -4,57 +4,57 @@ from PIL import Image
 
 def test_adding_and_removing_sources_to_a_mix(run_brave, create_config_file):
     set_up_two_sources(run_brave, create_config_file)
-    assert_api_returns_right_mixer_sources([{'id': 1, 'block_type': 'input', 'in_mix': True}, {'id': 2, 'block_type': 'input', 'in_mix': True}])
+    assert_api_returns_right_mixer_sources([{'uid': 'input1', 'in_mix': True}, {'uid': 'input2', 'in_mix': True}])
     remove_source('input2', 1)
-    assert_api_returns_right_mixer_sources([{'id': 1, 'block_type': 'input', 'in_mix': True}, {'id': 2, 'block_type': 'input', 'in_mix': False}])
+    assert_api_returns_right_mixer_sources([{'uid': 'input1', 'in_mix': True}, {'uid': 'input2', 'in_mix': False}])
     remove_source('input2', 1)  # Prove it's safe to do repeatedly
-    assert_api_returns_right_mixer_sources([{'id': 1, 'block_type': 'input', 'in_mix': True}, {'id': 2, 'block_type': 'input', 'in_mix': False}])
+    assert_api_returns_right_mixer_sources([{'uid': 'input1', 'in_mix': True}, {'uid': 'input2', 'in_mix': False}])
     remove_source('input1', 1)
-    assert_api_returns_right_mixer_sources([{'id': 1, 'block_type': 'input', 'in_mix': False}, {'id': 2, 'block_type': 'input', 'in_mix': False}])
+    assert_api_returns_right_mixer_sources([{'uid': 'input1', 'in_mix': False}, {'uid': 'input2', 'in_mix': False}])
     overlay_source('input2', 1)
-    assert_api_returns_right_mixer_sources([{'id': 1, 'block_type': 'input', 'in_mix': False}, {'id': 2, 'block_type': 'input', 'in_mix': True}])
+    assert_api_returns_right_mixer_sources([{'uid': 'input1', 'in_mix': False}, {'uid': 'input2', 'in_mix': True}])
     overlay_source('input2', 1) # Prove it's safe to do repeatedly
-    assert_api_returns_right_mixer_sources([{'id': 1, 'block_type': 'input', 'in_mix': False}, {'id': 2, 'block_type': 'input', 'in_mix': True}])
+    assert_api_returns_right_mixer_sources([{'uid': 'input1', 'in_mix': False}, {'uid': 'input2', 'in_mix': True}])
     overlay_source('input1', 1)
-    assert_api_returns_right_mixer_sources([{'id': 1, 'block_type': 'input', 'in_mix': True}, {'id': 2, 'block_type': 'input', 'in_mix': True}])
+    assert_api_returns_right_mixer_sources([{'uid': 'input1', 'in_mix': True}, {'uid': 'input2', 'in_mix': True}])
 
 
 def test_removing_input_whilst_in_a_mix(run_brave, create_config_file):
     set_up_two_sources(run_brave, create_config_file)
-    assert_api_returns_right_mixer_sources([{'id': 1, 'block_type': 'input', 'in_mix': True}, {'id': 2, 'block_type': 'input', 'in_mix': True}])
+    assert_api_returns_right_mixer_sources([{'uid': 'input1', 'in_mix': True}, {'uid': 'input2', 'in_mix': True}])
     assert_number_of_sinks_on_mixer(3) # 3 because there's always a dummy one with test video src
     delete_input(2)
-    assert_api_returns_right_mixer_sources([{'id': 1, 'block_type': 'input', 'in_mix': True}])
+    assert_api_returns_right_mixer_sources([{'uid': 'input1', 'in_mix': True}])
     assert_number_of_sinks_on_mixer(2)
 
 
 def test_switching(run_brave, create_config_file):
     set_up_two_sources(run_brave, create_config_file)
-    assert_api_returns_right_mixer_sources([{'id': 1, 'block_type': 'input', 'in_mix': True}, {'id': 2, 'block_type': 'input', 'in_mix': True}])
+    assert_api_returns_right_mixer_sources([{'uid': 'input1', 'in_mix': True}, {'uid': 'input2', 'in_mix': True}])
     cut_to_source('input2', 1)
-    assert_api_returns_right_mixer_sources([{'id': 1, 'block_type': 'input', 'in_mix': False}, {'id': 2, 'block_type': 'input', 'in_mix': True}])
+    assert_api_returns_right_mixer_sources([{'uid': 'input1', 'in_mix': False}, {'uid': 'input2', 'in_mix': True}])
     cut_to_source('input1', 1)
-    assert_api_returns_right_mixer_sources([{'id': 1, 'block_type': 'input', 'in_mix': True}, {'id': 2, 'block_type': 'input', 'in_mix': False}])
+    assert_api_returns_right_mixer_sources([{'uid': 'input1', 'in_mix': True}, {'uid': 'input2', 'in_mix': False}])
     cut_to_source('input1', 1)
-    assert_api_returns_right_mixer_sources([{'id': 1, 'block_type': 'input', 'in_mix': True}, {'id': 2, 'block_type': 'input', 'in_mix': False}])
+    assert_api_returns_right_mixer_sources([{'uid': 'input1', 'in_mix': True}, {'uid': 'input2', 'in_mix': False}])
 
 def set_up_two_sources(run_brave, create_config_file):
     output_video_location = create_output_video_location()
 
     config = {
-    'default_inputs': [
+    'inputs': [
         {'type': 'test_video', 'pattern': 4, 'zorder': 2}, # pattern 4 is red
         {'type': 'test_video', 'pattern': 5, 'zorder': 3}, # pattern 5 is green
     ],
-    'default_mixers': [
+    'mixers': [
         {
-            'sources': {
-                'input1': {},
-                'input2': {},
-            }
+            'sources': [
+                {'uid': 'input1'},
+                {'uid': 'input2'},
+            ]
         }
     ],
-    'default_outputs': [
+    'outputs': [
         # {'block_type': 'local'} # good for debugging
     ]
     }
@@ -67,9 +67,6 @@ def set_up_two_sources(run_brave, create_config_file):
 def assert_api_returns_right_mixer_sources(inputs):
     response = api_get('/api/all')
     assert response.status_code == 200
-    for i in inputs:
-        i['uid'] = '%s%d' % (i['block_type'], i['id'])
-
     if len(inputs) == 0:
         assert ('sources' not in response.json()['mixers'][0]) or \
                (len(response.json()['mixers'][0]['sources']) == 0)

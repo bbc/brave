@@ -2,7 +2,7 @@ enable_audio: false
 default_mixer_width: 640
 default_mixer_height: 360
 
-default_inputs:
+inputs:
     - type: test_video
       props:
           pattern: 18
@@ -28,5 +28,5 @@ default_inputs:
           xpos: 320
           ypos: 180
 
-default_outputs:
+outputs:
     - type: local

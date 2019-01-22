@@ -52,8 +52,8 @@ def test_set_up_effect_overlay_in_config_file(run_brave, create_config_file):
     output_video_location = create_output_video_location()
 
     config = {
-    'default_mixers': [{}],
-    'default_overlays': [
+    'mixers': [{}],
+    'overlays': [
         {'type': 'effect', 'source': 'mixer1', 'effect_name': 'burn', 'visible': True},
         {'type': 'effect', 'source': 'mixer1', 'effect_name': 'vertigotv', 'visible': False}
     ]

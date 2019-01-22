@@ -33,7 +33,7 @@ class AbstractCollection(collections.abc.MutableMapping):
         self._max_id += 1
         return self._max_id
 
-    def summarise(self):
+    def summarise(self, for_config_file=False):
         s = []
         for id, obj in self.items():
             s.append(obj.summarise())

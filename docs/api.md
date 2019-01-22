@@ -100,7 +100,21 @@ Restart Brave. This will reset all settings and connections.
 
 #### Command-line curl example
 ```
-curl -X POST -d {}  http://localhost:5000/api/restart
+curl -X POST -d {'config':'original'}  http://localhost:5000/api/restart
+```
+
+### Get config as YAML
+Get the current config in YAML. This can then be saved as a file which is
+accepted by another Brave instance on startup.
+
+- Path: `/api/config/current.yaml`
+- Method: `GET`
+
+#### Command-line curl example
+```
+curl http://127.0.0.1:5000/api/config/current.yaml > /tmp/config.yaml
+# Which you could then pass to Brave on another occasion, e.g.
+brave.py -c /tmp/config.yaml
 ```
 
 ## Inputs
@@ -123,6 +137,8 @@ Create a new input. There are different types of inputs. You must specify a `typ
 
 - Path: `/api/inputs`
 - Method: `PUT`
+- Body: JSON, containing one key `type` set to either `original` or `current`.
+If set to `original`, restarts Brave with the orginal config file from when the current process started. If `current`, restarts Brave with the current config, so that the exact setup can be recreated.
 
 #### Command-line curl example
 ```
@@ -195,6 +211,10 @@ curl -X PUT -d '{}' http://localhost:5000/api/mixers
 
 # Create a mixer, of size 1280x720, with a black background
 curl -X PUT -d '{"pattern": 2, "width": 1280, "height": 720}' http://localhost:5000/api/mixers
+
+# Create a mixer, taking input1 as a source
+curl -X PUT -d '{"sources": [{"uid": "input1"}]}' http://localhost:5000/api/mixers
+
 ```
 
 #### Example response

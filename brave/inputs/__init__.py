@@ -10,7 +10,8 @@ import brave.exceptions
 
 class InputCollection(AbstractCollection):
     def add(self, **args):
-        args['id'] = self.get_new_id()
+        if 'id' not in args:
+            args['id'] = self.get_new_id()
 
         if 'type' not in args:
             raise brave.exceptions.InvalidConfiguration("Invalid input missing 'type'")

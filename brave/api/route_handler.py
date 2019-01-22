@@ -5,6 +5,7 @@ import sanic.response
 from brave.helpers import run_on_master_thread_when_idle
 from brave.outputs.image import ImageOutput
 from sanic.exceptions import InvalidUsage
+import brave.config_file
 
 
 async def all(request):
@@ -108,25 +109,26 @@ async def create_input(request):
     input = request['session'].inputs.add(**request.json)
     input.setup()
     logger.info('Created input #%d with details %s' % (input.id, request.json))
-    return sanic.response.json({'id': input.id, 'uid': input.uid()})
+    return sanic.response.json({'id': input.id, 'uid': input.uid})
 
 
 async def create_output(request):
     output = request['session'].outputs.add(**request.json)
     logger.info('Created output #%d with details %s' % (output.id, request.json))
-    return sanic.response.json({'id': output.id, 'uid': output.uid()})
+    return sanic.response.json({'id': output.id, 'uid': output.uid})
 
 
 async def create_overlay(request):
     overlay = request['session'].overlays.add(**request.json)
     logger.info('Created overlay #%d with details %s' % (overlay.id, request.json))
-    return sanic.response.json({'id': overlay.id, 'uid': overlay.uid()})
+    return sanic.response.json({'id': overlay.id, 'uid': overlay.uid})
 
 
 async def create_mixer(request):
     mixer = request['session'].mixers.add(**request.json)
+    mixer.setup_initial_sources()
     logger.info('Created mixer #%d with details %s' % (mixer.id, request.json))
-    return sanic.response.json({'id': mixer.id, 'uid': mixer.uid()})
+    return sanic.response.json({'id': mixer.id, 'uid': mixer.uid})
 
 
 async def get_body(request, id):
@@ -147,8 +149,18 @@ async def get_body(request, id):
 
 
 async def restart(request):
-    run_on_master_thread_when_idle(request['session'].end, restart=True)
+    if 'config' not in request.json:
+        raise InvalidUsage('Body must contain "config" key')
+    if request.json['config'] not in ['original', 'current']:
+        raise InvalidUsage('Body "config" key must have value "original" or "current"')
+    run_on_master_thread_when_idle(request['session'].end, restart=True,
+                                   use_current_config=request.json['config'] == 'current')
     return _status_ok_response()
+
+
+async def config_yaml(request):
+    return sanic.response.text(brave.config_file.as_yaml(request['session']),
+                               headers={'Content-Type': 'application/x-yaml'})
 
 
 def _get_output(request, id):

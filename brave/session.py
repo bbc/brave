@@ -2,6 +2,7 @@ import os
 import sys
 import re
 import brave.exceptions
+import brave.config_file
 from brave.helpers import get_logger
 from gi.repository import Gst, GObject
 from brave.inputs import InputCollection
@@ -38,37 +39,57 @@ class Session(object):
         self.mainloop.run()
         self.logger.debug('Mainloop has ended')
 
-    def end(self, restart=False):
+    def end(self, restart=False, use_current_config=False):
         '''
         Called when the user has requested the service to end.
         '''
+
+        # If we're restarting, we need to know the arguements used to start us
+        args = sys.argv
+        if restart and use_current_config:
+            args = self._put_current_config_in_args(args)
+
         for block_collection in [self.inputs, self.mixers, self.outputs]:
             for name, block in block_collection.items():
                 block.set_pipeline_state(Gst.State.NULL)
         if hasattr(self, 'mainloop'):
             self.mainloop.quit()
+
         if restart:
-            os.execl(sys.executable, sys.executable, *sys.argv)
+            os.execl(sys.executable, sys.executable, *args)
+
+    def _put_current_config_in_args(self, args):
+        '''
+        Given an array of args to start Brave, changes the config file within it
+        to refer to the config file with the current state.
+        '''
+
+        config_file_name = brave.config_file.as_yaml_file(self)
+        if len(args) > 2 and args[-2] == '-c':
+            args[-1] = config_file_name
+        else:
+            args.extend(['-c', config_file_name])
+        return args
 
     def _setup_initial_inputs_outputs_mixers_and_overlays(self):
         '''
         Create the inputs/outputs/mixers/overlays declared in the config file.
         '''
-        for mixer_config in config.default_mixers():
+        for mixer_config in config.mixers():
             self.mixers.add(**mixer_config)
 
-        for input_config in config.default_inputs():
+        for input_config in config.inputs():
             input = self.inputs.add(**input_config)
             input.setup()
 
-        for output_config in config.default_outputs():
+        for output_config in config.outputs():
             self.outputs.add(**output_config)
 
         for id, mixer in self.mixers.items():
             mixer.setup_initial_sources()
 
         if config.enable_video():
-            for overlay_config in config.default_overlays():
+            for overlay_config in config.overlays():
                 self.overlays.add(**overlay_config)
 
     def print_state_summary(self):

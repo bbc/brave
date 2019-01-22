@@ -91,11 +91,7 @@ outputsHandler._outputCardBody = (output) => {
 }
 
 outputsHandler.requestNewOutput = function(args) {
-    outputsHandler._submitCreateOrEdit(null, args, (response) => {
-        if (!response || !response.hasOwnProperty('id')) {
-            showMessage('Unable to create output', 'warning')
-        }
-    })
+    submitCreateOrEdit('output', null, args)
 }
 
 function getVideoElement() {
@@ -271,31 +267,10 @@ outputsHandler._handleFormSubmit = function() {
     }
 
     if (newProps.source === 'none') newProps.source = null
-    outputsHandler._submitCreateOrEdit(output.id, newProps, outputsHandler._onNewOutputSuccess)
+    submitCreateOrEdit('output', output.id, newProps)
     hideModal();
 }
 
-outputsHandler._onNewOutputSuccess = function() {
-    showMessage('Successfully created a new output', 'success')
-    updatePage()
-}
-
-outputsHandler._submitCreateOrEdit = function(id, values, onSuccess) {
-    var type = (id != null) ? 'POST' : 'PUT'
-    var url = (id != null) ? 'api/outputs/' + id : 'api/outputs'
-    $.ajax({
-        contentType: 'application/json',
-        type, url,
-        dataType: 'json',
-        data: JSON.stringify(values),
-        success: onSuccess,
-        error: function(response) {
-            showMessage(response.responseJSON && response.responseJSON.error ?
-                'Error creating output: ' + response.responseJSON.error : 'Error creating output')
-        }
-    });
-}
-
 outputsHandler.setState = function(id, state) {
-    return outputsHandler._submitCreateOrEdit(id, {state})
+    submitCreateOrEdit('output', id, {state})
 }

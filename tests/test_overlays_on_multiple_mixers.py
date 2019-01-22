@@ -33,7 +33,7 @@ def test_overlay_on_unknown_mixer_via_api_returns_error(run_brave, create_config
 
 
 def test_overlay_on_unknown_mixer_in_config_returns_error(run_brave, create_config_file):
-    config = {'default_overlays': [
+    config = {'overlays': [
         {'type': 'text', 'source': 'mixer999', 'text': 'No such mixer', 'visible': False},
     ]}
     config_file = create_config_file(config)
@@ -68,8 +68,8 @@ def test_overlay_can_start_without_a_source(run_brave, create_config_file):
     output_video_location = create_output_video_location()
 
     config = {
-    'default_overlays': [{'type': 'text', 'source': None, 'text': 'foo', 'visible': False}],
-    'default_mixers': [{}]
+    'overlays': [{'type': 'text', 'source': None, 'text': 'foo', 'visible': False}],
+    'mixers': [{}]
     }
     config_file = create_config_file(config)
     run_brave(config_file.name)
@@ -92,12 +92,12 @@ def init_three_overlays(run_brave, create_config_file):
     output_video_location = create_output_video_location()
 
     config = {
-    'default_overlays': [
+    'overlays': [
         {'type': 'text', 'source': 'mixer2', 'text': 'Overlay #1', 'visible': False},
         {'type': 'text', 'source': 'mixer2', 'text': 'Overlay #2', 'visible': True},
         {'type': 'text', 'source': 'mixer1', 'text': 'Overlay #3', 'visible': True}
     ],
-    'default_mixers': [
+    'mixers': [
         {},
         {}
     ]

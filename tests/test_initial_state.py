@@ -11,19 +11,19 @@ def test_state_property_on_startup(run_brave, create_config_file):
     output_image_location1 = create_output_image_location()
 
     config = {
-    'default_inputs': [
+    'inputs': [
         {'type': 'test_video', 'pattern': 4, 'state': 'PLAYING'},
         {'type': 'test_video', 'pattern': 5, 'state': 'PAUSED'},
         {'type': 'test_video', 'pattern': 6, 'state': 'READY'},
         {'type': 'test_video', 'pattern': 7, 'state': 'NULL'},
     ],
-    'default_mixers': [
+    'mixers': [
         {'state': 'PLAYING'},
         {'state': 'PAUSED'},
         {'state': 'READY'},
         {'state': 'NULL'},
     ],
-    'default_outputs': [
+    'outputs': [
         {'type': 'image', 'location': output_image_location0, 'state': 'PLAYING'},
         {'type': 'image', 'location': output_image_location0, 'state': 'PAUSED'},
         {'type': 'image', 'location': output_image_location0, 'state': 'READY'},

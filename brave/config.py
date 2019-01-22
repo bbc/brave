@@ -16,6 +16,10 @@ def init(filename=DEFAULT_CONFIG_FILENAME):
         exit(1)
 
 
+def raw():
+    return {**c}
+
+
 def api_host():
     if 'HOST' in os.environ:
         return os.environ['HOST']
@@ -44,29 +48,29 @@ def default_mixer_height():
     return c['default_mixer_height'] if 'default_mixer_height' in c else 360
 
 
-def default_inputs():
-    if 'default_inputs' in c and c['default_inputs'] is not None:
-        return c['default_inputs']
+def inputs():
+    if 'inputs' in c and c['inputs'] is not None:
+        return c['inputs']
     else:
         return []
 
 
-def default_outputs():
-    if 'default_outputs' in c and c['default_outputs'] is not None:
-        return c['default_outputs']
+def outputs():
+    if 'outputs' in c and c['outputs'] is not None:
+        return c['outputs']
     else:
         return []
 
 
-def default_overlays():
-    if 'default_overlays' in c and c['default_overlays'] is not None:
-        return c['default_overlays']
+def overlays():
+    if 'overlays' in c and c['overlays'] is not None:
+        return c['overlays']
     else:
         return []
 
 
-def default_mixers():
-    return c['default_mixers'] if ('default_mixers' in c and c['default_mixers'] is not None) else []
+def mixers():
+    return c['mixers'] if ('mixers' in c and c['mixers'] is not None) else []
 
 
 def default_audio_caps():

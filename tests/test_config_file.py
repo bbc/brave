@@ -1,4 +1,5 @@
 import time, pytest, inspect
+import yaml
 from utils import *
 
 
@@ -13,7 +14,7 @@ def test_brave_with_missing_config_file(run_brave):
 
 
 def test_brave_with_invalid_input_type(run_brave, create_config_file):
-    config = {'default_inputs': [{'type': 'not-a-valid-type'}]}
+    config = {'inputs': [{'type': 'not-a-valid-type'}]}
     config_file = create_config_file(config)
     run_brave(config_file.name)
     check_return_value(1)
@@ -25,13 +26,13 @@ def test_brave_with_full_config_file(run_brave, create_config_file):
     file_asset = test_directory() + '/assets/5_second_video.mp4'
 
     config = {
-    'default_inputs': [
+    'inputs': [
         {'type': 'test_video'},
         {'type': 'test_audio',  'freq': 200 } ,
         {'type': 'test_audio',  'freq': 600 } ,
         {'type': 'uri',  'uri': 'file://' + file_asset }
     ],
-    'default_outputs': [
+    'outputs': [
         {'type': 'local', 'source': 'input4'},
         {'type': 'tcp'},
         {'type': 'file', 'source': 'input1',  'location': output_video_location},

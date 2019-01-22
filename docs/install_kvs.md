@@ -56,7 +56,7 @@ You can instruct Brave to output the stream either by adding it to Brave's confi
 Here is an example config file to set up one stream:
 
 ```
-default_outputs:
+outputs:
     - type: kvs
       stream_name: 'name-of-your-stream'
 ```

@@ -6,11 +6,11 @@ def test_image_output(run_brave, create_config_file):
     output_image_location = create_output_image_location()
 
     config = {
-    'default_mixers': [{'sources': {'input1': {}}}],
-    'default_inputs': [
+    'mixers': [{'sources': [{'uid': 'input1'}]}],
+    'inputs': [
         {'type': 'test_video', 'pattern': 4, 'zorder': 2}, # pattern 4 is red
     ],
-    'default_outputs': [
+    'outputs': [
         {'type': 'local'}, # good for debugging
         {'type': 'image',  'location': output_image_location } 
     ]

@@ -6,7 +6,7 @@ FIVE_SECOND_VIDEO = 'file://' + test_directory() + '/assets/5_second_video.mp4'
 
 def test_uri_input_from_command_line(run_brave, create_config_file):
     config = {
-        'default_inputs': [
+        'inputs': [
             {'type': 'uri', 'uri': FIVE_SECOND_VIDEO},
         ]
    }
@@ -23,7 +23,7 @@ def test_uri_input_from_command_line(run_brave, create_config_file):
 
 def test_loop(run_brave, create_config_file):
     config = {
-        'default_inputs': [
+        'inputs': [
             {'type': 'uri', 'uri': FIVE_SECOND_VIDEO},
             {'type': 'uri', 'uri': FIVE_SECOND_VIDEO, 'loop': True},
         ]
@@ -55,7 +55,7 @@ def test_loop(run_brave, create_config_file):
 def test_missing_file_input_from_command_line(run_brave, create_config_file):
     uri = 'file:///does-not-exist'
     config = {
-        'default_inputs': [
+        'inputs': [
             {'type': 'uri', 'uri': uri},
         ]
     }

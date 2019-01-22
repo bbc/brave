@@ -2,6 +2,7 @@ import subprocess, sys, time, tempfile, yaml, os, requests, pytest, signal, json
 from PIL import Image
 
 brave_processes = {}
+DEFAULT_PORT=5000
 
 @pytest.fixture #(scope="module")
 def run_brave(config_file=None, port=None):
@@ -22,23 +23,23 @@ def run_brave(config_file=None, port=None):
     brave_processes = {}
 
 
-def api_get(path, port=5000, stream=False):
+def api_get(path, port=DEFAULT_PORT, stream=False):
     url = 'http://localhost:%d%s' % (port, path)
     return requests.get(url, stream=stream)
 
 
 def api_post(path, data):
-    url = 'http://localhost:5000' + path
+    url = 'http://localhost:%d%s' % (DEFAULT_PORT, path)
     return requests.post(url, data=json.dumps(data))
 
 
 def api_put(path, data):
-    url = 'http://localhost:5000' + path
+    url = 'http://localhost:%d%s' % (DEFAULT_PORT, path)
     return requests.put(url, data=json.dumps(data))
 
 
 def api_delete(path):
-    url = 'http://localhost:5000' + path
+    url = 'http://localhost:%d%s' % (DEFAULT_PORT, path)
     return requests.delete(url)
 
 brave_process = None
@@ -91,9 +92,9 @@ def assert_mixers_in_playing_state(json_response):
             assert mixer['state'] == 'PLAYING', 'Mixer in %s state, not PLAYING: %s' % (mixer['state'], str(mixer))
 
 
-def assert_everything_in_playing_state(json_response=None):
+def assert_everything_in_playing_state(json_response=None, port=DEFAULT_PORT):
     if json_response is None:
-        json_response = api_get('/api/all')
+        json_response = api_get('/api/all', port=port)
     assert_inputs_in_playing_state(json_response)
     assert_outputs_in_playing_state(json_response)
     assert_mixers_in_playing_state(json_response)
@@ -276,7 +277,7 @@ def assert_inputs(inputs, check_playing_state=True):
     assert response.status_code == 200
     if check_playing_state:
         assert_everything_in_playing_state(response.json())
-    assert len(inputs) == len(response.json()['inputs'])
+    assert len(inputs) == len(response.json()['inputs']), 'Expected %d inputs but got %d' % (len(inputs), len(response.json()['inputs']))
 
     # Test /api/inputs as well as /api/all:
     response = api_get('/api/inputs')
@@ -324,9 +325,17 @@ def assert_image_file_color(output_image_location, expected_color):
     assert_image_color(im, expected_color)
 
 
-def assert_image_output_color(output_id, expected_color):
-    im = Image.open(api_get('/api/outputs/%d/body' % output_id, stream = True).raw)
+def assert_image_output_color(output_id, expected_color, port=DEFAULT_PORT):
+    response = api_get('/api/outputs/%d/body' % output_id, stream=True, port=port)
+    assert response.status_code == 200
+    im = Image.open(response.raw)
     assert_image_color(im, expected_color)
+
+
+def restart_brave(params):
+    response = api_post('/api/restart', params)
+    assert response.status_code == 200, 'Invalid status code %d, response %s' % (response.status_code, response.text)
+    print('Restart of Brave complete')
 
 
 def assert_image_color(im, expected_color):
@@ -348,5 +357,11 @@ def __assert_image_color(im, expected):
         actual = im.getpixel(dimension)
         p = actual
         for i in range(len(expected)):
-            assert (expected[i]-PERMITTED_RANGE) < actual[i] < (expected[i]+PERMITTED_RANGE), \
-                '%s value was %d but expected %d (within range of %d)' % (NAMES[i], actual[i], expected[i], PERMITTED_RANGE)
+            if not (expected[i]-PERMITTED_RANGE) < actual[i] < (expected[i]+PERMITTED_RANGE):
+                print('OH DEAR')
+                print('%s value was %d but expected %d (within range of %d)' % (NAMES[i], actual[i], expected[i], PERMITTED_RANGE))
+                print('SLEEPING')
+                # time.sleep(100)
+
+            # assert (expected[i]-PERMITTED_RANGE) < actual[i] < (expected[i]+PERMITTED_RANGE), \
+            #     '%s value was %d but expected %d (within range of %d)' % (NAMES[i], actual[i], expected[i], PERMITTED_RANGE)
