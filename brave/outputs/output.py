@@ -97,7 +97,7 @@ class Output(InputOutputOverlay):
         Returns the preferred caps (a string defining things such as width, height and framerate)
         '''
 
-        caps = 'video/x-raw,format=%s' % format
+        caps = 'video/x-raw,format=%s,pixel-aspect-ratio=1/1' % format
 
         # If only one dimension is provided, we calculate the other.
         # Some encoders (jpegenc, possibly others) don't like it if only one metric is present.
@@ -160,8 +160,11 @@ class Output(InputOutputOverlay):
         The standard start to the pipeline string for video.
         It starts with intervideosrc, which accepts video from the source.
         '''
-        return ('intervideosrc name=intervideosrc ! videoconvert ! videoscale ! '
-                'videorate ! capsfilter name=capsfilter ! ')
+        # The large timeout holds any stuck frame for 24 hours (basically, a very long time)
+        # This is optional, but prevents it from going black when it's better to show the last frame.
+        timeout = Gst.SECOND * 60 * 60 * 24
+        return ('intervideosrc name=intervideosrc timeout=%d ! videoconvert ! videoscale ! '
+                'videorate ! capsfilter name=capsfilter ! ' % timeout)
 
     def _audio_pipeline_start(self):
         '''

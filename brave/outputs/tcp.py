@@ -15,13 +15,15 @@ class TCPOutput(Output):
                 'type': 'str'
             },
             'port': {
-                'type': 'str'
+                'type': 'int'
             },
             'width': {
-                'type': 'int'
+                'type': 'int',
+                'default': config.default_mixer_width()
             },
             'height': {
-                'type': 'int'
+                'type': 'int',
+                'default': config.default_mixer_height()
             },
             'audio_bitrate': {
                 'type': 'int',
@@ -45,7 +47,7 @@ class TCPOutput(Output):
         video_encoder_type = 'theoraenc' if self.container == 'ogg' else 'x264enc'
         audio_encoder_type = 'vorbisenc' if self.container == 'ogg' else 'avenc_ac3'
 
-        pipeline_string = 'queue leaky=2 name=queue ! tcpserversink name=sink'
+        pipeline_string = 'queue name=queue ! tcpserversink name=sink'
 
         # We only want a mux if there's video:
         has_mux = config.enable_video
@@ -58,11 +60,12 @@ class TCPOutput(Output):
         if config.enable_audio():
             audio_bitrate = self.audio_bitrate
 
-            audio_pipeline_string = ('interaudiosrc name=interaudiosrc ! audioconvert ! '
-                                     'audioresample ! %s name=audio_encoder bitrate=%d') % \
+            # Having default_audio_caps() in the pipeline stops them from changing and interrupting the encoder.
+            audio_pipeline_string = ('interaudiosrc name=interaudiosrc ! ' + config.default_audio_caps() +
+                                     ' ! audioconvert ! audioresample ! %s name=audio_encoder bitrate=%d') % \
                 (audio_encoder_type, audio_bitrate)
             if has_mux:
-                audio_pipeline_string += f' ! queue max-size-bytes={10*(2 ** 20)} ! mux.'
+                audio_pipeline_string += f' ! queue ! mux.'
             else:
                 audio_pipeline_string += ' ! queue.'
 
@@ -71,11 +74,13 @@ class TCPOutput(Output):
         self.create_pipeline_from_string(pipeline_string)
 
         if config.enable_video():
+            # pass
             if self.container == 'mpeg':
-                self.pipeline.get_by_name('encoder').set_property('key-int-max', 120)  # 4x 30fps TODO not hard-code
+                # Testing has shown 60 (i.e. once every 2s at 30 fps) works best
+                self.pipeline.get_by_name('encoder').set_property('key-int-max', 60)
 
             # tune=zerolatency reduces the delay of TCP output
-            # encoder.set_property('tune', 'zerolatency')
+            # self.pipeline.get_by_name('encoder').set_property('tune', 'zerolatency')
 
         if not hasattr(self, 'host'):
             self.host = socket.gethostbyname(socket.gethostname())

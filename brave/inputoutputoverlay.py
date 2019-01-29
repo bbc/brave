@@ -273,6 +273,8 @@ class InputOutputOverlay():
         Called by the constructor to set up any default props.
         '''
         for key, details in self.permitted_props().items():
+            if 'required' in details and details['required'] and not hasattr(self, key):
+                raise brave.exceptions.InvalidConfiguration('"%s" property is required' % key)
             if 'default' in details and not hasattr(self, key):
                 setattr(self, key, details['default'])
 
@@ -305,6 +307,8 @@ class InputOutputOverlay():
             if value is None:
                 if 'permitted_values' in prop_details and None not in prop_details['permitted_values']:
                     raise brave.exceptions.InvalidConfiguration('Cannot set "%s" property to null' % key)
+                if 'required' in prop_details and not prop_details['required']:
+                    raise brave.exceptions.InvalidConfiguration('"%s" is a required property, cannot be null' % key)
                 if hasattr(self, key):
                     delattr(self, key)
                     if key in self.permitted_props():

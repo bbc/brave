@@ -19,7 +19,7 @@ Example usage includes:
 
 Brave is based on GStreamer. It is, in one sense, a RESTful API for GStreamer (for live audio/video handling).
 
-Read on to learn more, or see the [FAQ](docs/faq.md), [API guide](docs/api.md) and [Config file guide](docs/config_file.md).
+To learn more, read below, or see the [FAQ](docs/faq.md), [API guide](docs/api.md), [How-to guide](docs/howto.md) and [Config file guide](docs/config_file.md).
 
 ### Architecture diagram
 ![Architecture diagram](docs/assets/arch.png "Architecture diagram")

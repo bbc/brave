@@ -72,6 +72,9 @@ inputsHandler._inputCardBody = (input) => {
     if (input.hasOwnProperty('device')) details.push('<div><strong>Device Num:</strong> ' + input.device + '</div>')
     if (input.hasOwnProperty('connection')) details.push('<div><strong>Connection Type:</strong> ' + inputsHandler.decklinkConnection[input.connection] + '</div>')
     if (input.hasOwnProperty('mode')) details.push('<div><strong>Input Mode:</strong> ' + inputsHandler.decklinkModes[input.mode] + '</div>')
+    if (input.hasOwnProperty('host')) details.push('<div><strong>Host:</strong> ' + input.host + '</div>')
+    if (input.hasOwnProperty('port')) details.push('<div><strong>Port:</strong> ' + input.port + '</div>')
+    if (input.hasOwnProperty('container')) details.push('<div><strong>Container:</strong> ' + input.container + '</div>')
 
     if (input.hasOwnProperty('duration')) {
         var duration = prettyDuration(input.duration)
@@ -144,6 +147,30 @@ inputsHandler._populateForm = function(input) {
         name: 'zorder',
         type: 'number',
         value: input.zorder || inputsHandler.getNextZorder()
+    })
+
+    const hostBox = formGroup({
+        id: 'input-host',
+        label: 'Hostname',
+        name: 'host',
+        type: 'text',
+        value: input.host
+    })
+
+    const portBox = formGroup({
+        id: 'input-port',
+        label: 'Port',
+        name: 'port',
+        type: 'number',
+        value: input.port
+    })
+
+    const containerBox = formGroup({
+        id: 'input-container',
+        label: 'Container',
+        name: 'container',
+        options: {mpeg: 'MPEG', ogg: 'OGG'},
+        value: (input.container || 'mpeg')
     })
 
     var uriRow = formGroup({
@@ -219,6 +246,7 @@ inputsHandler._populateForm = function(input) {
         var options = {
             'uri': 'URI (for files, RTMP, RTSP and HLS)',
             'image': 'Image',
+            'tcp_client': 'TCP Client (receive from a TCP server)',
             'html': 'HTML (for showing a web page)',
             'decklink': 'Decklink Device',
             'test_video': 'Test video stream',
@@ -280,6 +308,12 @@ inputsHandler._populateForm = function(input) {
         form.append(sizeBox);
         form.append(zOrderBox);
     }
+    else if (input.type === 'tcp_client') {
+        if (isNew) form.append(hostBox)
+        if (isNew) form.append(portBox)
+        if (isNew) form.append(containerBox)
+        form.append(components.volumeInput(input.volume))
+    }
     form.find('select[name="type"]').change(inputsHandler._handleNewFormType);
 }
 
@@ -291,7 +325,7 @@ inputsHandler._handleFormSubmit = function() {
     const input = isNew ? {} : inputsHandler.findById(id)
     const newProps = {}
 
-    fields = ['type', 'uri', 'position', 'zorder', 'dimensions', 'freq', 'volume', 'input_volume', 'pattern', 'wave', 'buffer_duration']
+    fields = ['type', 'uri', 'position', 'zorder', 'dimensions', 'freq', 'volume', 'input_volume', 'pattern', 'wave', 'buffer_duration', 'host', 'port', 'container']
     fields.forEach(function(f) {
         var input = form.find('[name="' + f + '"]')
         if (input && input.val() !== null && input.val() !== '') {

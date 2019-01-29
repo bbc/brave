@@ -80,7 +80,7 @@ class UriInput(Input):
 
     def create_video_elements(self):
         bin_as_string = ('videoconvert ! videoscale ! capsfilter name=capsfilter ! '
-                         'queue' + self.default_video_pipeline_string_end())
+                         'queue ! ' + self.default_video_pipeline_string_end())
         bin = Gst.parse_bin_from_description(bin_as_string, True)
 
         self.capsfilter = bin.get_by_name('capsfilter')
