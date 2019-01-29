@@ -28,33 +28,34 @@ class Input(InputOutputOverlay):
         '''
         return self.session().connections.get_all_for_source(self)
 
-    def summarise(self):
-        s = super().summarise()
+    def summarise(self, for_config_file=False):
+        s = super().summarise(for_config_file)
 
-        if hasattr(self, 'pipeline'):
-            s['position'] = int(str(self.pipeline.query_position(Gst.Format.TIME).cur))
-            s['duration'] = int(str(self.pipeline.query_duration(Gst.Format.TIME).duration))
+        if not for_config_file:
+            if hasattr(self, 'pipeline'):
+                s['position'] = int(str(self.pipeline.query_position(Gst.Format.TIME).cur))
+                s['duration'] = int(str(self.pipeline.query_duration(Gst.Format.TIME).duration))
 
-            has_connection_speed, _, _ = self.pipeline.lookup('connection-speed')
-            if has_connection_speed:
-                s['connection_speed'] = self.pipeline.get_property('connection-speed')
-            has_buffer_size, _, _ = self.pipeline.lookup('buffer-size')
-            if has_buffer_size:
-                s['buffer_size'] = self.pipeline.get_property('buffer-size')
-            has_buffer_duration, _, _ = self.pipeline.lookup('buffer-duration')
-            if has_buffer_duration:
-                buffer_duration = self.pipeline.get_property('buffer-duration')
-                if buffer_duration != -1:
-                    s['buffer_duration'] = buffer_duration
+                has_connection_speed, _, _ = self.pipeline.lookup('connection-speed')
+                if has_connection_speed:
+                    s['connection_speed'] = self.pipeline.get_property('connection-speed')
+                has_buffer_size, _, _ = self.pipeline.lookup('buffer-size')
+                if has_buffer_size:
+                    s['buffer_size'] = self.pipeline.get_property('buffer-size')
+                has_buffer_duration, _, _ = self.pipeline.lookup('buffer-duration')
+                if has_buffer_duration:
+                    buffer_duration = self.pipeline.get_property('buffer-duration')
+                    if buffer_duration != -1:
+                        s['buffer_duration'] = buffer_duration
 
-            # playbin will respond with duration=-1 when not known.
-            if (s['duration'] == -1):
-                s.pop('duration', None)
+                # playbin will respond with duration=-1 when not known.
+                if (s['duration'] == -1):
+                    s.pop('duration', None)
 
-        if hasattr(self, 'get_input_cap_props'):
-            cap_props = self.get_input_cap_props()
-            if cap_props:
-                s = {**s, **cap_props}
+            if hasattr(self, 'get_input_cap_props'):
+                cap_props = self.get_input_cap_props()
+                if cap_props:
+                    s = {**s, **cap_props}
 
         return s
 
@@ -122,7 +123,7 @@ class Input(InputOutputOverlay):
         '''
         if name is None:
             name = factory_name
-        name = who_its_for.uid() + '_' + name + '_' + str(random.randint(1, 1000000))
+        name = who_its_for.uid + '_' + name + '_' + str(random.randint(1, 1000000))
         input_bin = getattr(self, 'final_' + audio_or_video + '_tee').parent
         e = Gst.ElementFactory.make(factory_name, name)
         if not input_bin.add(e):

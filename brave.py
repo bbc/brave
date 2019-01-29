@@ -57,15 +57,7 @@ def start_brave():
         session.end()
 
     signal.signal(signal.SIGINT, keyboard_exit)
-
-    try:
-        session.start()
-    except brave.exceptions.InvalidConfiguration as e:
-        print('Invalid configuration: %s' % e)
-        sys.exit(1)
-    except brave.exceptions.PipelineFailure as e:
-        print('Failed to create GStreamer pipeline: %s' % e)
-        sys.exit(1)
+    session.start()
 
 
 if __name__ == '__main__':
@@ -73,5 +65,12 @@ if __name__ == '__main__':
     if not check_gstreamer_plugins():
         sys.exit(1)
     args = setup_args()
-    setup_config(args)
-    start_brave()
+    try:
+        setup_config(args)
+        start_brave()
+    except brave.exceptions.InvalidConfiguration as e:
+        print('Invalid configuration: %s' % e)
+        sys.exit(1)
+    except brave.exceptions.PipelineFailure as e:
+        print('Failed to create GStreamer pipeline: %s' % e)
+        sys.exit(1)

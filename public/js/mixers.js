@@ -18,7 +18,7 @@ mixersHandler.draw = function() {
 }
 
 mixersHandler.setState = function(id, state) {
-    return mixersHandler._submitCreateOrEdit(id, {state})
+    submitCreateOrEdit('mixer', id, {state})
 }
 
 mixersHandler.remove = (mixer, source) => {
@@ -119,34 +119,12 @@ mixersHandler._handleFormSubmit = function() {
         }
     })
     splitDimensionsIntoWidthAndHeight(newProps)
-    console.log('Submitting new mixer with values', newProps)
-    mixersHandler._submitCreateOrEdit(id, newProps)
+    submitCreateOrEdit('mixer', id, newProps)
     hideModal();
 }
 
 mixersHandler.create = () => {
-    mixersHandler._submitCreateOrEdit(null, {})
-}
-
-
-mixersHandler._submitCreateOrEdit = function (id, values) {
-    var putOrPost = (id != null) ? 'POST' : 'PUT'
-    var url = (id != null) ? 'api/mixers/' + id : 'api/mixers'
-    $.ajax({
-        contentType: 'application/json',
-        type: putOrPost,
-        url: url,
-        dataType: 'json',
-        data: JSON.stringify(values),
-        success: function() {
-            showMessage('Successfully created/updated mixer', 'success')
-            updatePage()
-        },
-        error: function(response) {
-            showMessage(response.responseJSON && response.responseJSON.error ?
-                'Error updating mixer: ' + response.responseJSON.error : 'Error updating mixer')
-        }
-    });
+    submitCreateOrEdit('mixer', null, {})
 }
 
 mixersHandler.delete = function(mixer) {

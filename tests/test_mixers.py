@@ -23,7 +23,7 @@ def subtest_start_brave_with_mixers(run_brave, create_config_file):
         'width': 640,
         'height': 360
     }
-    config = {'default_mixers': [MIXER1, MIXER2]}
+    config = {'mixers': [MIXER1, MIXER2]}
     config_file = create_config_file(config)
     run_brave(config_file.name)
     time.sleep(1)

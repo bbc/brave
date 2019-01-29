@@ -36,13 +36,13 @@ def set_up_overlay_at_start(run_brave, create_config_file):
     output_video_location = create_output_video_location()
 
     config = {
-    'default_mixers': [
+    'mixers': [
         {}
     ],
-    'default_overlays': [
+    'overlays': [
         {'type': 'text', 'source': 'mixer1', 'text': 'Overlay #1', 'visible': True}
     ],
-    'default_outputs': [
+    'outputs': [
         # {'type': 'local'} # good for debugging
         {'type': 'local'}
     ]

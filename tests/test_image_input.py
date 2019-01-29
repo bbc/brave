@@ -6,11 +6,11 @@ def test_image_input_from_command_line(run_brave, create_config_file):
     image_uri = 'file://' + test_directory() + '/assets/image_640_360.png'
     config = {
         'enable_audio': False, # useful for debugging TODO remove
-        'default_inputs': [
+        'inputs': [
             # {'type': 'test_video', 'pattern': 4, 'zorder': 2}, # pattern 4 is red
             {'type': 'image', 'uri': image_uri}, # pattern 4 is red
         ],
-        'default_outputs': [
+        'outputs': [
             {'type': 'local'} # good for debugging
         ]
     }

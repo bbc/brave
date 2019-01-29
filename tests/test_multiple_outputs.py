@@ -4,11 +4,11 @@ from utils import *
 
 def start_with_multiple_outputs(run_brave, create_config_file, output_image_location1, output_image_location2):
     config = {
-    'default_mixers': [
+    'mixers': [
         {'pattern': 4}, # 4 is red
         {'pattern': 5} # 5 is green
     ],
-    'default_outputs': [
+    'outputs': [
         {'type': 'image', 'source': 'mixer2',  'location': output_image_location1 },
         {'type': 'image',  'location': output_image_location2 } 
         # ,{'type': 'local'}
@@ -40,7 +40,7 @@ def test_multiple_outputs_at_startup(run_brave, create_config_file):
 
 def test_output_at_startup_to_missing_mixer(run_brave, create_config_file):
     config = {
-    'default_outputs': [
+    'outputs': [
         {'type': 'image', 'source': 'mixer2'},
     ]
     }

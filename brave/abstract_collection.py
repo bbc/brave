@@ -9,7 +9,7 @@ class AbstractCollection(collections.abc.MutableMapping):
     def __init__(self, session):
         self.session = session
         self._items = {}
-        self._max_id = 0
+        self._next_id = 1
 
     def __getitem__(self, key):
         if key in self._items:
@@ -30,10 +30,11 @@ class AbstractCollection(collections.abc.MutableMapping):
         return len(self._items)
 
     def get_new_id(self):
-        self._max_id += 1
-        return self._max_id
+        while self._next_id in self._items:
+            self._next_id += 1
+        return self._next_id
 
-    def summarise(self):
+    def summarise(self, for_config_file=False):
         s = []
         for id, obj in self.items():
             s.append(obj.summarise())

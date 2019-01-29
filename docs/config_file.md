@@ -37,12 +37,12 @@ Config files are written in [YAML](http://yaml.org/), and are simple to create b
 The following options can be included in the config file.
 
 ### Inputs
-Use the `default_inputs` entry to provide an array of inputs that should be created when Brave starts.
+Use the `inputs` entry to provide an array of inputs that should be created when Brave starts.
 
 Example:
 
 ```
-default_inputs:
+inputs:
      - type: test_video
      - type: uri
        state: PAUSED
@@ -56,13 +56,13 @@ Each input must have a type (e.g. `uri`). Inputs also have a range of other prop
 
 
 ### Mixers
-Use the `default_mixers` entry to provide an array of inputs that should be created when Brave starts. If omitted, one mixer will automatically be created.
+Use the `mixers` entry to provide an array of inputs that should be created when Brave starts. If omitted, one mixer will automatically be created.
 
 
 Example:
 
 ```
-default_mixers:
+mixers:
     - width: 640
       height: 360
       pattern: 6
@@ -73,12 +73,12 @@ default_mixers:
 Unlike inputs, outputs and overlays, mixers do not have a type. The [mixers](mixers.md) page shows the properties that a mixer can have.
 
 ### Outputs
-Use `default_outputs` to define an array of outputs that should be created when Brave starts.
+Use `outputs` to define an array of outputs that should be created when Brave starts.
 
 Example (creating four outputs of different types):
 
 ```
-default_outputs:
+outputs:
     - type: local
       state: READY
       input_id: 0
@@ -95,12 +95,12 @@ default_outputs:
 Each output must have a type (either 'rtmp', 'tcp', 'image', 'file', 'local', or 'webrtc'). Outputs also have a range of other properties. For the full list, see the [outputs](outputs.md) page.
 
 ### Overlays
-`default_overlays` is an array of overlays that should be created when Brave starts.
+`overlays` is an array of overlays that should be created when Brave starts.
 
 Example:
 
 ```
-default_overlays:
+overlays:
     - type: text
       text: 'I am some text'
       visible: true

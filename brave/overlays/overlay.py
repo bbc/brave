@@ -23,9 +23,9 @@ class Overlay(InputOutputOverlay):
     def has_audio(self):
         return False   # no such thing as audio on overlays
 
-    def summarise(self):
-        s = super().summarise()
-        s['source'] = self.source.uid() if self.source else None
+    def summarise(self, for_config_file=False):
+        s = super().summarise(for_config_file)
+        s['source'] = self.source.uid if self.source else None
         return s
 
     def update(self, updates):
@@ -62,7 +62,7 @@ class Overlay(InputOutputOverlay):
             self.source = None
             return
 
-        if hasattr(self, 'source') and self.source is not None and self.source.uid() == new_source_uid:
+        if hasattr(self, 'source') and self.source is not None and self.source.uid == new_source_uid:
             return
 
         # If overlay is visible, then it's attached. We must make it invisible first.

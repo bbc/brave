@@ -9,7 +9,7 @@ function onPageLoad() {
         $('#new-overlay-button').click(overlaysHandler.showFormToAdd)
         $('#new-output-button').click(outputsHandler.showFormToAdd)
         $('#refresh-page-button').click(updatePage)
-        $('#restart-brave-button').click(restartBrave)
+        $('#restart-brave-button').click(restartBraveConfirmation)
         $("#top-message").hide();
         updatePage();
         websocket.setup()
@@ -261,11 +261,21 @@ function hideModal() {
     $('#primary-modal .modal-footer').empty()
 }
 
-function restartBrave() {
+function restartBraveConfirmation() {
+    const label = 'Should the current configuration (inputs, etc.) be retained?'
+    var currentConfigButton = $('<button type="button" class="btn btn-primary">Yes, restart Brave and keep the current configuration</button>')
+    currentConfigButton.click(() => { restartBrave('current') })
+    var originalConfigButton = $('<button type="button" class="btn btn-primary">No, restart Brave with the original configuration</button>')
+    originalConfigButton.click(() => { restartBrave('original') })
+    showModal(label, [currentConfigButton, '<br /><br />', originalConfigButton])
+}
+
+function restartBrave(config) {
+    hideModal()
     $.ajax({
         type: 'POST',
         url: 'api/restart',
-        body: "{}",
+        data: JSON.stringify({config}),
         dataType: "json",
         contentType: "application/json",
         success: function() {
@@ -298,6 +308,32 @@ function noItems() {
 
 function showNoItemsMessage() {
     $('#cards').append('Use the \'Add\' button above to create inputs, mixers, outputs and overlays.')
+}
+
+function submitCreateOrEdit(blockType, id, values) {
+    const isUpdate = (id !== null && id !== undefined)
+    const type = isUpdate ? 'POST' : 'PUT'
+    const url = `api/${blockType}s` + (isUpdate ? `/${id}` : '')
+    $.ajax({
+        contentType: 'application/json',
+        type, url,
+        dataType: 'json',
+        data: JSON.stringify(values),
+        success: response => {
+            const msg = isUpdate ?
+                `Successfully updated ${blockType} ${id}` :
+                `Successfully created ${blockType} ${response.id}`
+            showMessage(msg, 'success')
+            updatePage()
+        },
+        error: response => {
+            let msg = `Error creating ${blockType}` + (isUpdate ? ` ${id}` : '')
+            if (response.responseJSON && response.responseJSON.error) {
+                msg += ': ' + response.responseJSON.error
+            }
+            showMessage(msg, 'warning')
+        }
+    });
 }
 
 onPageLoad()

@@ -15,7 +15,7 @@ default_mixer_height: 360
 ## Here you can define inputs that should exist at startup.
 ## Types available: 'uri', 'image', 'test_video', 'test_audio'
 ##
-default_inputs:
+inputs:
     # - type: uri
     #   zorder: 2
     #   uri: file:///path/to/file.mp4
@@ -34,7 +34,7 @@ default_inputs:
 ## Here you can define inputs that should exist at startup.
 ## Types available: 'rtmp', 'tcp, 'image', 'file', 'local'
 ##
-default_outputs:
+outputs:
     # - type: local
     # - type: file
     #   location: /path/to/file.mp4
@@ -47,7 +47,7 @@ default_outputs:
 ## DEFAULT OVERLAYS
 ## Types available: 'text', 'clock', 'effect'
 ##
-default_overlays:
+overlays:
     # - type: text
     #   text: 'I am some text'
     #   visible: true
@@ -63,6 +63,6 @@ default_overlays:
 ## No 'type' field requided for mixers.
 ## 'props' can have 'width' and 'height' and 'pattern' (all integers)
 ##
-default_mixers:
+mixers:
     # Default to one mixer, with no specific props:
     - {}

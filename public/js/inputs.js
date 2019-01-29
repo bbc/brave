@@ -24,7 +24,7 @@ inputsHandler.showFormToEdit = function(input) {
 inputsHandler.seek = function(input) {
     var end = input.duration/GstSecond
     secondsSeek = prompt("What should input " + input.id + "seek to, in seconds. (0=start, " + end + "=end)");
-    inputsHandler._submitCreateOrEdit(input.id, {position:secondsSeek*GstSecond})
+    submitCreateOrEdit('input', input.id, {position:secondsSeek*GstSecond})
 }
 
 inputsHandler._drawCards = () => {
@@ -42,10 +42,13 @@ inputsHandler._asCard = (input) => {
 }
 
 inputsHandler._optionButtonsForInput = (input) => {
-    var editButton   = components.editButton().click(() => { inputsHandler.showFormToEdit(input); return false })
-    var deleteButton = components.deleteButton().click(() => { inputsHandler.delete(input); return false })
-    var seekButton   = components.seekButton().click(() => { inputsHandler.seek(input); return false })
-    return [editButton, deleteButton, seekButton]
+    const buttons = []
+    buttons.push(components.editButton().click(() => { inputsHandler.showFormToEdit(input); return false }))
+    buttons.push(components.deleteButton().click(() => { inputsHandler.delete(input); return false }))
+    if (input.type === 'uri') {
+        buttons.push(components.seekButton().click(() => { inputsHandler.seek(input); return false }))
+    }
+    return buttons
 }
 
 inputsHandler._inputCardBody = (input) => {
@@ -296,8 +299,8 @@ inputsHandler._handleFormSubmit = function() {
         }
     })
 
-    const loop_entry = form.find('[name="loop"]')
-    if (loop_entry) newProps.loop = loop_entry.is(":checked")
+    const loopEntry = form.find('[name="loop"]')
+    if (loopEntry && loopEntry.length > 0) newProps.loop = loopEntry.is(":checked")
 
     if (newProps.volume) newProps.volume /= 100 // convert percentage
     if (newProps.buffer_duration) newProps.buffer_duration *= GstSecond
@@ -339,7 +342,7 @@ inputsHandler._handleFormSubmit = function() {
         return
     }
 
-    inputsHandler._submitCreateOrEdit(id, newProps)
+    submitCreateOrEdit('input', id, newProps)
     hideModal();
 }
 
@@ -360,26 +363,8 @@ inputsHandler.delete = function(input) {
     return false
 }
 
-inputsHandler._submitCreateOrEdit = function (id, values) {
-    const type = (id != null) ? 'POST' : 'PUT'
-    const url = (id != null) ? 'api/inputs/' + id : 'api/inputs'
-    $.ajax({
-        contentType: 'application/json',
-        type, url,
-        dataType: 'json',
-        data: JSON.stringify(values),
-        success: function() {
-            showMessage('Successfully created or updated an input', 'success')
-            updatePage()
-        },
-        error: function() {
-            showMessage('Sorry, an error occurred', 'danger')
-        }
-    });
-}
-
 inputsHandler.setState = function(id, state) {
-    return inputsHandler._submitCreateOrEdit(id, {state})
+    return submitCreateOrEdit('input', id, {state})
 }
 
 inputsHandler.patternTypes = [

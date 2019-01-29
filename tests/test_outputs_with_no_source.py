@@ -28,8 +28,8 @@ def start_with_two_outputs(run_brave, create_config_file):
     output_video_location = create_output_video_location()
 
     config = {
-    'default_mixers': [{}],
-    'default_outputs': [
+    'mixers': [{}],
+    'outputs': [
         {'type': 'image', 'source': None},
         {'type': 'image'},  # Will default to mixer1
     ]

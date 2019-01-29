@@ -168,14 +168,15 @@ class UriInput(Input):
         result = self.pipeline.query(query_buffer)
         return query_buffer.parse_buffering_percent() if result else None
 
-    def summarise(self):
+    def summarise(self, for_config_file=False):
         '''
         Adds buffering stats to the summary
         '''
-        s = super().summarise()
-        buffering_stats = self.get_buffering_stats()
-        if buffering_stats:
-            s['buffering_percent'] = buffering_stats.percent
+        s = super().summarise(for_config_file)
+        if not for_config_file:
+            buffering_stats = self.get_buffering_stats()
+            if buffering_stats:
+                s['buffering_percent'] = buffering_stats.percent
         return s
 
     def on_buffering(self, buffering_percent):

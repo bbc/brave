@@ -71,12 +71,12 @@ def subtest_overlay_of_new_input():
 
 def subtest_start_brave_with_mixers(run_brave, create_config_file):
     config = {
-        'default_mixers': [
-            {**MIXER1, 'sources': {'input1': {}, 'input2': {}}},
-            {**MIXER2, 'sources': {'input1': {}, 'input2': {}}},
+        'mixers': [
+            {**MIXER1, 'sources': [{'uid': 'input1'}, {'uid': 'input2'}]},
+            {**MIXER2, 'sources': [{'uid': 'input1'}, {'uid': 'input2'}]}
         ],
-        'default_inputs': [INPUT1, INPUT2],
-        'default_outputs': [OUTPUT1, OUTPUT2]
+        'inputs': [INPUT1, INPUT2],
+        'outputs': [OUTPUT1, OUTPUT2]
     }
     config_file = create_config_file(config)
     run_brave(config_file.name)

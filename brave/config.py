@@ -1,5 +1,6 @@
 import yaml
 import os
+import brave.exceptions
 DEFAULT_CONFIG_FILENAME = 'config/default.yaml'
 c = {}
 
@@ -14,6 +15,12 @@ def init(filename=DEFAULT_CONFIG_FILENAME):
     except FileNotFoundError as e:
         print('Unable to open config file "%s": %s' % (filename, e))
         exit(1)
+
+    _validate()
+
+
+def raw():
+    return {**c}
 
 
 def api_host():
@@ -44,29 +51,29 @@ def default_mixer_height():
     return c['default_mixer_height'] if 'default_mixer_height' in c else 360
 
 
-def default_inputs():
-    if 'default_inputs' in c and c['default_inputs'] is not None:
-        return c['default_inputs']
+def inputs():
+    if 'inputs' in c and c['inputs'] is not None:
+        return c['inputs']
     else:
         return []
 
 
-def default_outputs():
-    if 'default_outputs' in c and c['default_outputs'] is not None:
-        return c['default_outputs']
+def outputs():
+    if 'outputs' in c and c['outputs'] is not None:
+        return c['outputs']
     else:
         return []
 
 
-def default_overlays():
-    if 'default_overlays' in c and c['default_overlays'] is not None:
-        return c['default_overlays']
+def overlays():
+    if 'overlays' in c and c['overlays'] is not None:
+        return c['overlays']
     else:
         return []
 
 
-def default_mixers():
-    return c['default_mixers'] if ('default_mixers' in c and c['default_mixers'] is not None) else []
+def mixers():
+    return c['mixers'] if ('mixers' in c and c['mixers'] is not None) else []
 
 
 def default_audio_caps():
@@ -85,3 +92,19 @@ def turn_server():
     if 'TURN_SERVER' in os.environ:
         return os.environ['TURN_SERVER']
     return c['turn_server'] if 'turn_server' in c else None
+
+
+def _validate():
+    for type in ['inputs', 'outputs', 'overlays', 'mixers']:
+        if type in c and c[type] is not None:
+            if not isinstance(c[type], list):
+                raise brave.exceptions.InvalidConfiguration(
+                    'Config entry "%s" must be an array (list). It is currently: %s' % (type, c[type]))
+            for entry in c[type]:
+                if not isinstance(entry, dict):
+                    raise brave.exceptions.InvalidConfiguration(
+                        'Config entry "%s" contains an entry that is not a dictionary: %s' % (type, c[type]))
+                for key, value in entry.items():
+                    if not isinstance(key, str):
+                        raise brave.exceptions.InvalidConfiguration(
+                            'Config entry "%s" contains an entry with key "%s" that is not a string' % (type, key))

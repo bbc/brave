@@ -47,7 +47,7 @@ class EffectOverlay(Overlay):
         desc = ('videoconvert ! %s ! videoconvert ! capsfilter caps="video/x-raw,format=RGB" ! '
                 'videoconvert ! capsfilter caps="video/x-raw,format=RGBA"') % self.effect_name
         self.element = Gst.parse_bin_from_description(desc, True)
-        self.element.set_name('%s_bin' % self.uid())
+        self.element.set_name('%s_bin' % self.uid)
         place_to_add_elements = getattr(self.source, 'final_video_tee').parent
         if not place_to_add_elements.add(self.element):
             self.logger.warning('Unable to add effect overlay bin to the source pipeline')

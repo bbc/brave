@@ -36,9 +36,9 @@ class Output(InputOutputOverlay):
     def input_output_overlay_or_mixer(self):
         return 'output'
 
-    def summarise(self):
-        s = super().summarise()
-        s['source'] = self.source().uid() if self.source() else None
+    def summarise(self, for_config_file=False):
+        s = super().summarise(for_config_file)
+        s['source'] = self.source().uid if self.source() else None
         return s
 
     def source(self):
@@ -149,7 +149,7 @@ class Output(InputOutputOverlay):
             return
 
         if self.source():
-            self.logger.info('Request to change source from %s to %s' % (self.source().uid(), new_src.uid()))
+            self.logger.info('Request to change source from %s to %s' % (self.source().uid, new_src.uid))
             self.source_connection().delete()
 
         self.session().connections.get_or_add_connection_between_source_and_dest(new_src, self)

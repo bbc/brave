@@ -74,24 +74,26 @@ class Mixer(InputOutputOverlay):
         This method sets them up.
         '''
         if hasattr(self, 'sources'):
-            for uid, details in self.sources.items():
-                source_block = self.session().uid_to_block(uid)
+            if not isinstance(self.sources, list):
+                raise brave.exceptions.InvalidConfiguration('%s "sources" property not a list' % self.uid)
+            for details in self.sources:
+                if not details['uid']:
+                    raise brave.exceptions.InvalidConfiguration('%s "sources" property missing a uid' % self.uid)
+                source_block = self.session().uid_to_block(details['uid'])
                 if source_block:
                     connection = self.connection_for_source(source_block, create_if_not_made=True)
                     connection.add_to_mix()
                 else:
                     raise brave.exceptions.InvalidConfiguration(
-                        'Unknown block "%s" requested as source of mixer %d' % (uid, self.id))
+                        '%s "sources" property references unknown block "%s"' % (self.uid, details['uid']))
 
-    def summarise(self):
-        s = super().summarise()
+    def summarise(self, for_config_file=False):
+        s = super().summarise(for_config_file)
 
         s['sources'] = []
         for connection in self.source_connections():
             pretty = {
-                'uid': connection.source.uid(),
-                'id': connection.source.id,
-                'block_type': connection.source.input_output_overlay_or_mixer(),
+                'uid': connection.source.uid,
                 'in_mix': connection.in_mix()
             }
             s['sources'].append(pretty)
@@ -106,7 +108,7 @@ class Mixer(InputOutputOverlay):
         assert audio_or_video in ['audio', 'video']
         if name is None:
             name = factory_name
-        name = who_its_for.uid() + '_' + name + '_' + str(random.randint(1, 1000000))
+        name = who_its_for.uid + '_' + name + '_' + str(random.randint(1, 1000000))
         e = Gst.ElementFactory.make(factory_name, name)
         if not e:
             raise Exception('Unable to make GStreamer element "' + str(factory_name) +

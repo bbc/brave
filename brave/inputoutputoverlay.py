@@ -22,7 +22,7 @@ class InputOutputOverlay():
         self._desired_state = Gst.State.PLAYING
 
         # Handle the props of this input:
-        self._update_props(args)
+        self._set_props(args, updating=False)
         self._set_default_props()
 
         self.check_item_can_be_created()
@@ -52,6 +52,10 @@ class InputOutputOverlay():
         Likely overridden, to extend the list.
         '''
         return {
+            'id': {
+                'type': 'int',
+                'updatable': False
+            },
             'state': {
                 'type': 'str',
                 'uppercase': True,
@@ -69,7 +73,7 @@ class InputOutputOverlay():
         Accepts updates to this block.
         Note: may be overridden.
         '''
-        self._update_props(updates)
+        self._set_props(updates, updating=True)
         self.handle_updated_props()
 
     def handle_updated_props(self):
@@ -105,26 +109,37 @@ class InputOutputOverlay():
     def has_audio(self):
         return config.enable_audio()
 
-    def summarise(self):
-        s = {
-            'has_audio': self.has_audio(),
-            'has_video': self.has_video(),
-            'uid': self.uid(),
-        }
+    def summarise(self, for_config_file=False):
+        '''
+        Get a summary of this object
+        'for_config_file' property limits to what is put in a Brave config file.
+        '''
+        attributes_to_copy = ['type'] + list(self.permitted_props().keys())
+        s = {}
 
-        if hasattr(self, 'pipeline'):
-            s['state'] = self.state.value_nick.upper()
+        if for_config_file:
+            if self.desired_state:
+                s['state'] = self.desired_state.value_nick.upper()
+            else:
+                s['state'] = self.state.value_nick.upper()
+        else:
+            attributes_to_copy += ['error_message', 'current_num_peers', 'uid']
+            s['has_audio'] = self.has_audio()
+            s['has_video'] = self.has_video()
 
-        if self.desired_state:
-            s['desired_state'] = self.desired_state.value_nick.upper()
+            if hasattr(self, 'pipeline'):
+                s['state'] = self.state.value_nick.upper()
 
-        attributes_to_copy = ['id', 'type', 'error_message', 'current_num_peers'] + list(self.permitted_props().keys())
+            if self.desired_state:
+                s['desired_state'] = self.desired_state.value_nick.upper()
+
         for a in attributes_to_copy:
             if a is not 'state' and hasattr(self, a):
                 s[a] = getattr(self, a)
 
         return s
 
+    @property
     def uid(self):
         return '%s%d' % (self.input_output_overlay_or_mixer(), self.id)
 
@@ -261,7 +276,7 @@ class InputOutputOverlay():
             if 'default' in details and not hasattr(self, key):
                 setattr(self, key, details['default'])
 
-    def _update_props(self, new_props):
+    def _set_props(self, new_props, updating):
         '''
         Given a dict of new props, updates self
         Once complete, call self.handle_updated_props()
@@ -271,7 +286,7 @@ class InputOutputOverlay():
         for key, value in new_props.items():
 
             # TODO reconsider 'collection' - better way?
-            if key in ['id', 'type', 'collection']:
+            if key in ['type', 'collection']:
                 continue
 
             # First, warn about any known props:
@@ -279,9 +294,16 @@ class InputOutputOverlay():
                 raise brave.exceptions.InvalidConfiguration(
                     'Invalid prop provided to %s: "%s"' % (self.input_output_overlay_or_mixer(), key))
 
+            prop_details = permitted[key]
+
+            # Some properties cannot be updated once set
+            if updating and 'updatable' in prop_details and not prop_details['updatable']:
+                if hasattr(self, key) and getattr(self, key) != value:
+                    raise brave.exceptions.InvalidConfiguration('Cannot update "%s" field' % key)
+
             # None (null in JSON) means it should be unset (or default if there is one)
-            elif value is None:
-                if 'permitted_values' in permitted[key] and None not in permitted[key]['permitted_values']:
+            if value is None:
+                if 'permitted_values' in prop_details and None not in prop_details['permitted_values']:
                     raise brave.exceptions.InvalidConfiguration('Cannot set "%s" property to null' % key)
                 if hasattr(self, key):
                     delattr(self, key)
@@ -291,27 +313,27 @@ class InputOutputOverlay():
 
             else:
                 # Set the type (int/float/str) if necessary
-                if 'type' in permitted[key]:
+                if 'type' in prop_details:
                     try:
-                        if permitted[key]['type'] == 'int':
+                        if prop_details['type'] == 'int':
                             value = int(value)
-                        elif permitted[key]['type'] == 'float':
+                        elif prop_details['type'] == 'float':
                             value = float(value)
-                        elif permitted[key]['type'] == 'str':
+                        elif prop_details['type'] == 'str':
                             value = str(value)
-                            if 'uppercase' in permitted[key] and permitted[key]['uppercase']:
+                            if 'uppercase' in prop_details and prop_details['uppercase']:
                                 value = value.upper()
-                        elif permitted[key]['type'] == 'bool':
+                        elif prop_details['type'] == 'bool':
                             if type(value) is not bool:
                                 self.logger.warning(f'Property not boolean: "{str(value)}"')
                         else:
-                            self.logger.warning(f'Do not know of type "{permitted[key]["type"]}"')
+                            self.logger.warning(f'Do not know of type "{prop_details["type"]}"')
                     except ValueError:
                         self.logger.warning(f'Updated property "{str(value)}" is not a valid {type}, ignoring')
 
-                if 'permitted_values' in permitted[key]:
-                    if value not in permitted[key]['permitted_values']:
-                        self.logger.warning('%s not in [%s]' % (value, permitted[key]['permitted_values']))
+                if 'permitted_values' in prop_details:
+                    if value not in prop_details['permitted_values']:
+                        self.logger.warning('%s not in [%s]' % (value, prop_details['permitted_values']))
                         continue
 
                 setattr(self, key, value)
