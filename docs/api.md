@@ -97,6 +97,8 @@ Restart Brave. This will reset all settings and connections.
 
 - Path: `/api/restart`
 - Method: `POST`
+- Request body: JSON, containing one key `config` set to either `original` or `current`.
+If set to `original`, restarts Brave with the orginal config file from when the current process started. If `current`, restarts Brave with the current config, so that the exact setup can be recreated.
 
 #### Command-line curl example
 ```
@@ -137,8 +139,7 @@ Create a new input. There are different types of inputs. You must specify a `typ
 
 - Path: `/api/inputs`
 - Method: `PUT`
-- Body: JSON, containing one key `type` set to either `original` or `current`.
-If set to `original`, restarts Brave with the orginal config file from when the current process started. If `current`, restarts Brave with the current config, so that the exact setup can be recreated.
+- Request body: JSON, containing a dictionary with the required parameters.
 
 #### Command-line curl example
 ```
@@ -158,7 +159,7 @@ Update an existing input. The `id` (integer) of the input is required in the pat
 
 - Path: `/api/inputs/<id>`
 - Method: `POST`
-- Request body: JSON containing the changes
+- Request body: JSON, containing a dictionary with the changes.
 
 #### Command-line curl example
 ```
@@ -203,6 +204,7 @@ Create a new mixer. Optionally, provide, width, height and pattern. See [Mixers]
 
 - Path: `/api/mixers`
 - Method: `PUT`
+- Request body: JSON, containing a dictionary with the required parameters.
 
 #### Command-line curl example
 ```
@@ -230,6 +232,7 @@ Update an existing mixer. The `id` (integer) of the mixer is required in the pat
 
 - Path: `/api/mixers/<id>`
 - Method: `POST`
+- Request body: JSON, containing a dictionary with the changes.
 
 #### Command-line curl example
 ```
@@ -318,6 +321,7 @@ Create a new output. There are different types of outputs. You must specify a `t
 
 - Path: `/api/outputs`
 - Method: `PUT`
+- Request body: JSON, containing a dictionary with the required parameters.
 
 #### Command-line curl example
 ```
@@ -387,6 +391,7 @@ Create a new overlay. There are different types of overlays. You must specify a 
 
 - Path: `/api/overlays`
 - Method: `PUT`
+- Request body: JSON, containing a dictionary with the required parameters.
 
 #### Command-line curl example
 ```
@@ -407,7 +412,7 @@ Update an existing overlay. The `id` (integer) of the overlay is required in the
 
 - Path: `/api/overlays/<id>`
 - Method: `POST`
-- Request body: JSON containing the changes
+- Request body: JSON, containing a dictionary with the changes.
 
 #### Command-line curl example
 ```

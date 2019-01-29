@@ -21,11 +21,18 @@ RUN apt-get update && \
     libcairo2-dev \
     libgirepository1.0-dev \
     pkg-config \
-    python3-dev python3-wheel python3-gst-1.0 python3-pip python3-gi
+    python3-dev \
+    python3-wheel \
+    python3-gst-1.0 \
+    python3-pip \
+    python3-gi \
+    python3-websockets \
+    python3-psutil \
+    python3-uvloop
 
 RUN git clone --depth 1 https://github.com/bbc/brave.git && \
     cd brave && \
-    pip3 install pipenv && \
+    pip3 install pipenv sanic && \
     pipenv install --ignore-pipfile && \
     mkdir -p /usr/local/share/brave/output_images/
 

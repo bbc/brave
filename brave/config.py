@@ -1,5 +1,6 @@
 import yaml
 import os
+import brave.exceptions
 DEFAULT_CONFIG_FILENAME = 'config/default.yaml'
 c = {}
 
@@ -15,6 +16,8 @@ def init(filename=DEFAULT_CONFIG_FILENAME):
         print('Unable to open config file "%s": %s' % (filename, e))
         exit(1)
 
+    _validate()
+
 
 def raw():
     return {**c}
@@ -23,7 +26,7 @@ def raw():
 def api_host():
     if 'HOST' in os.environ:
         return os.environ['HOST']
-    return c['api_host'] if 'api_host' in c else '127.0.0.1'
+    return c['api_host'] if 'api_host' in c else '0.0.0.0'
 
 
 def api_port():
@@ -89,3 +92,19 @@ def turn_server():
     if 'TURN_SERVER' in os.environ:
         return os.environ['TURN_SERVER']
     return c['turn_server'] if 'turn_server' in c else None
+
+
+def _validate():
+    for type in ['inputs', 'outputs', 'overlays', 'mixers']:
+        if type in c and c[type] is not None:
+            if not isinstance(c[type], list):
+                raise brave.exceptions.InvalidConfiguration(
+                    'Config entry "%s" must be an array (list). It is currently: %s' % (type, c[type]))
+            for entry in c[type]:
+                if not isinstance(entry, dict):
+                    raise brave.exceptions.InvalidConfiguration(
+                        'Config entry "%s" contains an entry that is not a dictionary: %s' % (type, c[type]))
+                for key, value in entry.items():
+                    if not isinstance(key, str):
+                        raise brave.exceptions.InvalidConfiguration(
+                            'Config entry "%s" contains an entry with key "%s" that is not a string' % (type, key))
