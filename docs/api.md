@@ -95,8 +95,10 @@ curl http://localhost:5000/api/all
 ### Restart Brave
 Restart Brave. This will reset all settings and connections.
 
-- Path: `/api/restart`
-- Method: `POST`
+- *Path:* `/api/restart`
+- *Method:* `POST`
+- *Body:* JSON, containing one key `config` set to either `original` or `current`.
+If set to `original`, restarts Brave with the orginal config file from when the current process started. If `current`, restarts Brave with the current config, so that the exact setup can be recreated.
 
 #### Command-line curl example
 ```
@@ -135,10 +137,9 @@ curl http://localhost:5000/api/inputs
 ### Create an input
 Create a new input. There are different types of inputs. You must specify a `type`, and [depending on the input type chosen](./inputs.md), there may be other required or optional parameters.
 
-- Path: `/api/inputs`
-- Method: `PUT`
-- Body: JSON, containing one key `type` set to either `original` or `current`.
-If set to `original`, restarts Brave with the orginal config file from when the current process started. If `current`, restarts Brave with the current config, so that the exact setup can be recreated.
+- *Path:* `/api/inputs`
+- *Method:* `PUT`
+- *Body:* JSON, containing a dictionary with the required parameters.
 
 #### Command-line curl example
 ```
