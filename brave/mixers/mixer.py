@@ -77,6 +77,9 @@ class Mixer(InputOutputOverlay):
             if not isinstance(self.sources, list):
                 raise brave.exceptions.InvalidConfiguration('%s "sources" property not a list' % self.uid)
             for details in self.sources:
+                if not isinstance(details, dict):
+                    raise brave.exceptions.InvalidConfiguration('%s "sources" property contains an entry that '
+                                                                'is not a dictionary: %s' % (self.uid, details))
                 if not details['uid']:
                     raise brave.exceptions.InvalidConfiguration('%s "sources" property missing a uid' % self.uid)
                 source_block = self.session().uid_to_block(details['uid'])

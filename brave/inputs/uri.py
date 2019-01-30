@@ -22,6 +22,9 @@ class UriInput(Input):
                 'type': 'bool',
                 'default': False
             },
+            'position': {
+                'type': 'int'
+            },
             'volume': {
                 'type': 'float',
                 'default': 0.8
@@ -96,20 +99,31 @@ class UriInput(Input):
         self.playsink.set_property('audio-sink', bin)
         self.final_audio_tee = bin.get_by_name('final_audio_tee')
 
-    def update(self, updates):
-        # Special case: allow seeking
-        if self.has_video() and 'position' in updates:
+    def on_pipeline_start(self):
+        '''
+        Called when the stream starts
+        '''
+        for connection in self.dest_connections():
+            connection.unblock_intersrc_if_ready()
+
+        # If the user has asked ot start at a certain timespot, do it now
+        # (as the position cannot be set until the pipeline is PAUSED/PLAYING):
+        self._handle_position_seek()
+
+    def _handle_position_seek(self):
+        '''
+        If the user has provided a position to seek to, this method handles it.
+        '''
+        if hasattr(self, 'position') and self.state in [Gst.State.PLAYING, Gst.State.PAUSED]:
             try:
-                new_position = float(updates['position'])
+                new_position = float(self.position)
                 if self.pipeline.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, new_position):
                     self.logger.debug('Successfully updated position to %s' % new_position)
                 else:
                     self.logger.warning('Unable to set position to %s' % new_position)
             except ValueError:
-                self.logger.warning('Invalid position %s provided' % updates['position'])
-            del updates['position']
-
-        super().update(updates)
+                self.logger.warning('Invalid position %s provided' % self.position)
+            delattr(self, 'position')
 
     def get_input_cap_props(self):
         '''
@@ -191,6 +205,7 @@ class UriInput(Input):
 
     def handle_updated_props(self):
         super().handle_updated_props()
+        self._handle_position_seek()
         if hasattr(self, 'buffer_duration'):
             self.playbin.set_property('buffer-duration', self.buffer_duration)
 

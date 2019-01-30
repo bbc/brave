@@ -154,7 +154,7 @@ inputsHandler._populateForm = function(input) {
         label: 'Hostname',
         name: 'host',
         type: 'text',
-        value: input.host
+        value: input.host || '0.0.0.0'
     })
 
     const portBox = formGroup({

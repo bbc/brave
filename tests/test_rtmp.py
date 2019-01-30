@@ -1,6 +1,7 @@
 import time
 import os
 import utils
+import pytest
 from utils import run_brave, create_config_file
 
 BRAVE_1_PORT = 12345
@@ -99,7 +100,6 @@ def subtest_start_brave_with_rtmp_input(run_brave, create_config_file, rtmp_url)
     config_file = create_config_file(config)
     run_brave(config_file.name, BRAVE_2_PORT)
     utils.check_brave_is_running()
-    # time.sleep(0.5)
 
 
 def is_brave_in_playing_state(port):

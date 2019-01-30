@@ -172,12 +172,13 @@ class InputOutputOverlay():
         if not self.set_pipeline_state(Gst.State.NULL):
             self.logger.warning('Unable to set private pipe to NULL before attempting to delete')
 
-        def remove_element(element):
-            self.pipeline.remove(element)
+        if hasattr(self, 'pipeline'):
+            def remove_element(element):
+                self.pipeline.remove(element)
 
-        iterator = self.pipeline.iterate_elements()
-        iterator.foreach(remove_element)
-        del self.pipeline
+            iterator = self.pipeline.iterate_elements()
+            iterator.foreach(remove_element)
+            del self.pipeline
         self.collection.pop(self.id)
         self.session().report_deleted_item(self)
 
@@ -333,7 +334,8 @@ class InputOutputOverlay():
                         else:
                             self.logger.warning(f'Do not know of type "{prop_details["type"]}"')
                     except ValueError:
-                        self.logger.warning(f'Updated property "{str(value)}" is not a valid {type}, ignoring')
+                        self.logger.warning('Updated property "%s" is not of type "%s", ignoring'
+                                            % (value, prop_details['type']))
 
                 if 'permitted_values' in prop_details:
                     if value not in prop_details['permitted_values']:

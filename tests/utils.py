@@ -97,7 +97,9 @@ def assert_mixers_in_playing_state(json_response):
 
 def assert_everything_in_playing_state(json_response=None, port=DEFAULT_PORT):
     if json_response is None:
-        json_response = api_get('/api/all', port=port)
+        response = api_get('/api/all', port=port)
+        json_response = response.json()
+
     assert_inputs_in_playing_state(json_response)
     assert_outputs_in_playing_state(json_response)
     assert_mixers_in_playing_state(json_response)

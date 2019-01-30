@@ -1,6 +1,8 @@
 import logging
 import os
 import gi
+import sys
+import traceback
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst, GLib
 
@@ -124,7 +126,8 @@ def run_on_master_thread_when_idle(func, **func_args):
             func_args = args['func_args']
             f(**func_args)
         except Exception as e:
-            print('------------ UNCAUGHT EXCEPTION ON MASTER THREAD: %s ------------' % e)
+            print('------------ UNCAUGHT EXCEPTION ON MASTER THREAD: %s ------------' % e, file=sys.stderr)
+            print(traceback.format_exc(), file=sys.stderr)
 
         return False
 

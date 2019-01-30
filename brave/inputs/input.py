@@ -33,7 +33,9 @@ class Input(InputOutputOverlay):
 
         if not for_config_file:
             if hasattr(self, 'pipeline'):
-                s['position'] = int(str(self.pipeline.query_position(Gst.Format.TIME).cur))
+                position = int(str(self.pipeline.query_position(Gst.Format.TIME).cur))
+                if position is not None and position is not -1:
+                    s['position'] = position
                 s['duration'] = int(str(self.pipeline.query_duration(Gst.Format.TIME).duration))
 
                 has_connection_speed, _, _ = self.pipeline.lookup('connection-speed')
@@ -80,8 +82,6 @@ class Input(InputOutputOverlay):
         caps_string = 'video/x-raw,pixel-aspect-ratio=1/1,format=RGBA'
         if width and height:
             caps_string += ',width=%d,height=%d' % (width, height)
-
-        self.logger.debug('caps_string=%s' % caps_string)
         return caps_string
 
     def _update_video_filter_caps(self):

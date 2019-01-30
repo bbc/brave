@@ -70,9 +70,6 @@ class TcpClientInput(Input):
                                 'decodebin name=video_decodebin ')
             # This then can be connected to the common bit of the pipeline:
             pipeline_string += self.default_video_pipeline_string_end()
-        else:
-            # If we don't want the video, dump it:
-            pipeline_string += 'fakesink'
 
         if self.has_audio():
             # The audio part also needs a decodebin:
