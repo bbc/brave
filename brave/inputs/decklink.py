@@ -1,6 +1,4 @@
 from brave.inputs.input import Input
-from gi.repository import Gst
-import brave.config as config
 
 
 class DecklinkInput(Input):
@@ -46,15 +44,16 @@ class DecklinkInput(Input):
         }
 
     def create_elements(self):
-        #TODO: Audio is currently lcoked to HDI/HDMI mode may need to figure a btter way to auto select the best one
+        # TODO: Audio is currently lcoked to HDI/HDMI mode may need to figure a btter way to auto select the best one
         if not self.create_pipeline_from_string('decklinkvideosrc'
-                                        ' device-number=' + str(self.device) +
-                                        ' connection=' + str(self.connection) +
-                                        ' mode=' + str(self.mode) +
-                                        ' ! videoconvert'
-                                        + self.default_video_pipeline_string_end() +
-                                        ' decklinkaudiosrc device-number=' + str(self.device) + ' connection=1 ! audioconvert'
-                                        + self.default_audio_pipeline_string_end()):
+                                                ' device-number=' + str(self.device) + ''
+                                                ' connection=' + str(self.connection) + ''
+                                                ' mode=' + str(self.mode) + ''
+                                                ' ! videoconvert'
+                                                '' + self.default_video_pipeline_string_end() + ''
+                                                ' decklinkaudiosrc'
+                                                ' device-number=' + str(self.device) + ' connection=1 ! audioconvert'
+                                                '' + self.default_audio_pipeline_string_end()):
             return False
 
         self.intervideosink = self.pipeline.get_by_name('intervideosink')
