@@ -98,7 +98,7 @@ components.stateBox = (item, onClick) => {
 
 components._stateIcons = (item) => {
     let desc = ' ' + item.state
-    if (item.hasOwnProperty('buffering_percent') && item.buffering_percent !== 100) {
+    if (item.state == 'PAUSED' && item.hasOwnProperty('buffering_percent') && item.buffering_percent !== 100) {
         desc = ' BUFFERING (' + item.buffering_percent + '%)'
     }
     else if (item.desired_state && item.desired_state !== item.state) {

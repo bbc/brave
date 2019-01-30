@@ -6,7 +6,7 @@
 _This project is an open-source prototype. See 'Project status' and 'License' below for more._
 
 Brave is a *B*asic *r*eal-time (remote) *audio/video* *e*ditor.
-It allows *LIVE* video (or audio) to be received, manipulated, and sent elsewhere.
+It allows *LIVE* video (and/or audio) to be received, manipulated, and sent elsewhere.
 It is API driven and is designed to work remotely, such as on the cloud.
 
 Example usage includes:
@@ -19,7 +19,7 @@ Example usage includes:
 
 Brave is based on GStreamer. It is, in one sense, a RESTful API for GStreamer (for live audio/video handling).
 
-Read on to learn more, or see the [FAQ](docs/faq.md), [API guide](docs/api.md) and [Config file guide](docs/config_file.md).
+To learn more, read below, or see the [FAQ](docs/faq.md), [API guide](docs/api.md), [How-to guide](docs/howto.md) and [Config file guide](docs/config_file.md).
 
 ### Architecture diagram
 ![Architecture diagram](docs/assets/arch.png "Architecture diagram")
@@ -43,9 +43,10 @@ Brave allows you to configure *inputs*, *outputs*, *mixers* and *overlays*. You 
 ### Inputs
 An input is a source of audio or video. There can be any number of inputs, added or removed at any time, which can then be sent to mixers and outputs. Input types include:
 
-* An RTMP, RTSP, and HLS streams
+* Live and non-live streams, through protocols such as RTMP, RTSP, and HLS
 * Files (e.g. mp4 or mp3) - either local or downloaded remotely
 * Images (PNG/SVG/JPEG)
+* MPEG or OGG retrieved via a TCP connection
 * Test audio / video streams
 
 [Read more about input types.](docs/inputs.md)
@@ -187,7 +188,7 @@ GST_DEBUG=4 LOG_LEVEL=debug ./brave.py
 Brave creates multiple GStreamer pipelines, each containing multiple linked elements.
 Spotting which element has caused an error can help track down the problem.
 
-To see, select 'Debug view' from the web interface. Or, visit the `/elements` API endpoint.
+To see, select 'Debug view' from the web interface. Or, visit the `/api/elements` API endpoint.
 
 Look out for:
 

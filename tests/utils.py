@@ -16,7 +16,10 @@ def run_brave(config_file=None, port=None):
         brave_processes[config_file] = subprocess.Popen(cmd, shell=True)
         time.sleep(1)
     yield _run_brave
-    print('Stopping Brave...')
+    if port:
+        print('Stopping Brave on port %d...' % port)
+    else:
+        print('Stopping Brave...')
     global brave_processes
     for config_file, process in brave_processes.items():
         process.send_signal(signal.SIGINT)
@@ -28,18 +31,18 @@ def api_get(path, port=DEFAULT_PORT, stream=False):
     return requests.get(url, stream=stream)
 
 
-def api_post(path, data):
-    url = 'http://localhost:%d%s' % (DEFAULT_PORT, path)
+def api_post(path, data, port=DEFAULT_PORT):
+    url = 'http://localhost:%d%s' % (port, path)
     return requests.post(url, data=json.dumps(data))
 
 
-def api_put(path, data):
-    url = 'http://localhost:%d%s' % (DEFAULT_PORT, path)
+def api_put(path, data, port=DEFAULT_PORT):
+    url = 'http://localhost:%d%s' % (port, path)
     return requests.put(url, data=json.dumps(data))
 
 
-def api_delete(path):
-    url = 'http://localhost:%d%s' % (DEFAULT_PORT, path)
+def api_delete(path, port=DEFAULT_PORT):
+    url = 'http://localhost:%d%s' % (port, path)
     return requests.delete(url)
 
 brave_process = None
@@ -94,7 +97,9 @@ def assert_mixers_in_playing_state(json_response):
 
 def assert_everything_in_playing_state(json_response=None, port=DEFAULT_PORT):
     if json_response is None:
-        json_response = api_get('/api/all', port=port)
+        response = api_get('/api/all', port=port)
+        json_response = response.json()
+
     assert_inputs_in_playing_state(json_response)
     assert_outputs_in_playing_state(json_response)
     assert_mixers_in_playing_state(json_response)
@@ -253,8 +258,8 @@ def delete_input(id, expected_status_code=200):
     time.sleep(0.2)
 
 
-def update_input(id, updates, expected_status_code=200):
-    response = api_post('/api/inputs/' + str(id), updates)
+def update_input(id, updates, expected_status_code=200, port=DEFAULT_PORT):
+    response = api_post('/api/inputs/' + str(id), updates, port)
     assert response.status_code == expected_status_code
     time.sleep(0.2)
 
@@ -357,11 +362,5 @@ def __assert_image_color(im, expected):
         actual = im.getpixel(dimension)
         p = actual
         for i in range(len(expected)):
-            if not (expected[i]-PERMITTED_RANGE) < actual[i] < (expected[i]+PERMITTED_RANGE):
-                print('OH DEAR')
-                print('%s value was %d but expected %d (within range of %d)' % (NAMES[i], actual[i], expected[i], PERMITTED_RANGE))
-                print('SLEEPING')
-                # time.sleep(100)
-
-            # assert (expected[i]-PERMITTED_RANGE) < actual[i] < (expected[i]+PERMITTED_RANGE), \
-            #     '%s value was %d but expected %d (within range of %d)' % (NAMES[i], actual[i], expected[i], PERMITTED_RANGE)
+            assert (expected[i]-PERMITTED_RANGE) < actual[i] < (expected[i]+PERMITTED_RANGE), \
+                '%s value was %d but expected %d (within range of %d)' % (NAMES[i], actual[i], expected[i], PERMITTED_RANGE)

@@ -52,6 +52,61 @@ def test_loop(run_brave, create_config_file):
     assert response_json['inputs'][1]['state'] == 'PLAYING'
 
 
+def test_uri_position_seeking(run_brave, create_config_file):
+
+    # We create a new input that should start be at 2000000000 (2 seconds):
+    config = {
+        'inputs': [
+            {'type': 'uri', 'uri': FIVE_SECOND_VIDEO, 'position': 2000000000, 'state': 'READY'}
+        ]
+   }
+
+    response_json = run_brave_and_get_all_response(run_brave, create_config_file(config))
+    print('response_json=', response_json)
+    assert len(response_json['inputs']) == 1
+    assert response_json['inputs'][0]['uri'] == FIVE_SECOND_VIDEO
+    assert response_json['inputs'][0]['state'] == 'READY'
+    assert response_json['inputs'][0]['position'] == 2000000000
+
+    # Set to PAUSED and check the position remains
+    update_input(1, {'state': 'PAUSED'})
+    time.sleep(1)
+    response = api_get('/api/inputs')
+    assert response.status_code == 200
+    response_json = response.json()
+
+    print('response_json=', response_json)
+    assert len(response_json) == 1
+    assert response_json[0]['uri'] == FIVE_SECOND_VIDEO
+    assert response_json[0]['state'] == 'PAUSED'
+    assert response_json[0]['position'] == 2000000000
+    # assert response_json[0]['position'] > 3000000000
+
+    # Now change the position to 500000000 (0.5 seconds)
+    update_input(1, {'position': 500000000})
+    time.sleep(0.5)
+    response = api_get('/api/inputs')
+    assert response.status_code == 200
+    response_json = response.json()
+    assert len(response_json) == 1
+    assert response_json[0]['uri'] == FIVE_SECOND_VIDEO
+    assert response_json[0]['state'] == 'PAUSED'
+    assert response_json[0]['position'] == 500000000
+
+    # Now start playing... it should increase
+    update_input(1, {'state': 'PLAYING'})
+    time.sleep(1)
+    response = api_get('/api/inputs')
+    assert response.status_code == 200
+    response_json = response.json()
+    assert len(response_json) == 1
+    assert response_json[0]['uri'] == FIVE_SECOND_VIDEO
+    assert response_json[0]['state'] == 'PLAYING'
+
+    # Allow somethign bigger than 0.5 seconds and 2 seconds (as we slept for 1 second)
+    assert 500000000 < response_json[0]['position'] < 2000000000
+
+
 def test_missing_file_input_from_command_line(run_brave, create_config_file):
     uri = 'file:///does-not-exist'
     config = {

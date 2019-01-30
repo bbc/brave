@@ -19,6 +19,9 @@ Because Brave is based on GStreamer, it can only support what GStreamer supports
 
 Where GStreamer plugins do exist, adding them as a new form of input or output should be relatively easy. Start with an existing one (in the `brave/inputs` and `brave/outputs` directories) and clone it. Then please raise as a pull request. Or you could [request it by raising an issue](https://github.com/bbc/brave/issues).
 
+## How do I... ?
+See the [How-To](howto.md) page.
+
 ## I've found a bug
 Please [raise an issue in GitHub](https://github.com/bbc/brave/issues).
 

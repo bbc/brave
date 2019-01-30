@@ -51,7 +51,7 @@ class DecklinkInput(Input):
                                         ' device-number=' + str(self.device) +
                                         ' connection=' + str(self.connection) +
                                         ' mode=' + str(self.mode) +
-                                        ' ! videoconvert'
+                                        ' ! videoconvert ! '
                                         + self.default_video_pipeline_string_end() +
                                         ' decklinkaudiosrc device-number=' + str(self.device) + ' connection=1 ! audioconvert'
                                         + self.default_audio_pipeline_string_end()):
