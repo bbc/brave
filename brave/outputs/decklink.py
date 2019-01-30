@@ -1,6 +1,5 @@
 from brave.outputs.output import Output
 import brave.config as config
-import brave.exceptions
 
 
 class DecklinkOutput(Output):
@@ -28,7 +27,8 @@ class DecklinkOutput(Output):
     def create_elements(self):
         pipeline_string = ''
         if config.enable_video():
-            pipeline_string += self._video_pipeline_start() + 'queue ! decklinkvideosink device-number=0 mode=' + str(self.mode)
+            pipeline_string += self._video_pipeline_start() + 'queue'
+            ' ! decklinkvideosink device-number=0 mode=' + str(self.mode)
         if config.enable_audio():
             pipeline_string += ' interaudiosrc name=interaudiosrc ! queue ! decklinkaudiosink device-number=0'
 
