@@ -5,6 +5,7 @@ from brave.outputs.image import ImageOutput
 from brave.outputs.file import FileOutput
 from brave.outputs.webrtc import WebRTCOutput
 from brave.outputs.kvs import KvsOutput
+from brave.outputs.decklink import DecklinkOutput
 from brave.abstract_collection import AbstractCollection
 import brave.exceptions
 
@@ -30,6 +31,8 @@ class OutputCollection(AbstractCollection):
             output = WebRTCOutput(**args, collection=self)
         elif args['type'] == 'kvs':
             output = KvsOutput(**args, collection=self)
+        elif args['type'] == 'decklink':
+            output = DecklinkOutput(**args, collection=self)
         else:
             raise brave.exceptions.InvalidConfiguration("Invalid output type '%s'" % args['type'])
 

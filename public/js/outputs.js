@@ -194,6 +194,16 @@ outputsHandler._populateForm = function(output) {
             help: 'You can create one on the <a href="https://us-west-2.console.aws.amazon.com/kinesisvideo/streams">AWS KVS console</a>',
         }));
     }
+    else if (output.type === 'decklink') {
+        form.append(formGroup({
+            id: 'output-mode',
+            label: 'Mode',
+            name: 'mode',
+            type: 'number',
+            value: output.number || '17',
+            help: 'Example: 17',
+        }));
+    }
 
     form.find('select[name="type"]').change(outputsHandler._handleNewFormType);
 }
@@ -207,6 +217,7 @@ outputsHandler._getOutputsSelect = function(output) {
         'webrtc' : 'WebRTC for web preview',
         'kvs' : 'AWS Kinesis Video',
         'local': 'Local (pop-up audio/video on this server, for debugging)',
+        'decklink': 'Decklink output device'
     }
     return formGroup({
         id: 'output-type',
@@ -230,7 +241,7 @@ outputsHandler._handleFormSubmit = function() {
     var newProps = {}
 
     const fields = ['type', 'uri', 'host', 'port', 'container', 'location',
-                    'audio_bitrate', 'dimensions', 'source', 'stream_name']
+                    'audio_bitrate', 'dimensions', 'source', 'stream_name', 'mode']
     fields.forEach(f => {
         var input = form.find('[name="' + f + '"]')
         if (input && input.val() != null) newProps[f] = input.val()
@@ -247,7 +258,7 @@ outputsHandler._handleFormSubmit = function() {
         return
     }
 
-    const VALID_TYPES = ['local', 'tcp', 'image', 'file', 'webrtc', 'kvs', 'rtmp']
+    const VALID_TYPES = ['local', 'tcp', 'image', 'file', 'webrtc', 'kvs', 'rtmp', 'decklink']
     if (VALID_TYPES.indexOf(type) === -1) {
         showMessage('Invalid type ' + type)
         return
