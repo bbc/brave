@@ -57,7 +57,7 @@ A video wall (multiple videos side by side) can be created by resizing video and
 
 This can be done as at start-up as a config file, or via the API.
 
-An example config file, to make the image above, can be found in the `config` directory as [../config/video_wall.yaml](video_wall.yaml).
+An example config file, to make the image above, can be found in the `config` directory as [video_wall.yaml](../config/video_wall.yaml).
 
 ## How to connect a separate GStreamer pipeline to Brave
 The best method to output a video (either with or without audio) from GStreamer to Brave is using the TCP protocol. Use the [`tcpserversink`](https://developer.gnome.org/gst-plugins-libs/stable/gst-plugins-base-plugins-tcpserversink.html) element to act as  TCP server; which Brave can then connect to.
