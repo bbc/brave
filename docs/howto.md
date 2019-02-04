@@ -50,7 +50,7 @@ curl -X POST -d '{"position": 60000000000}' http://localhost:5000/inputs/1
 
 Adding and removing inputs can also be done via the web interface or API.
 
-## How to make a video wall
+## How to make a video wall
 ![Video wall](assets/video_wall.png "Video wall")
 
 A video wall (multiple videos side by side) can be created by resizing video and then declaring where it should appear on the mix.
