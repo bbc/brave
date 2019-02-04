@@ -98,9 +98,8 @@ body {
     background-color: #222;
 }
 
-#preview-bar #stream, #preview-bar #image-preview {
+#preview-bar #stream {
     background-color: #222;
-    height: 180px;
 }
 
 #preview-bar canvas {

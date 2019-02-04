@@ -127,7 +127,6 @@ class WebRTCOutput(Output):
             if message.get_structure().get_name() == 'level':
                 channels = len(message.get_structure().get_value('peak'))
                 data = []
-                self.logger.warning('TEMP YAY level message, %d channels' % channels)
 
                 for i in range(0, channels):
                     data.append(json.dumps({
