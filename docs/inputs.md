@@ -86,6 +86,8 @@ A video test source, which is useful for checking connections, or to provide a b
 
 Supply a `pattern` property to choose from 25 patterns:
 
+![The test video patterns](assets/video_wall.png "The test video patterns")
+
 - (0): smpte            - SMPTE 100% color bars
 - (1): snow             - Random (television snow)
 - (2): black            - 100% Black

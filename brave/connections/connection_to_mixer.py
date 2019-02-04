@@ -23,7 +23,6 @@ class ConnectionToMixer(Connection):
         super().delete(callback)
 
     def cut(self, details):
-        # if not self.in_mix():
         self.add_to_mix(details)
         for source in self.dest.source_connections():
             if source != self:

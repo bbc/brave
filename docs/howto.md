@@ -2,7 +2,7 @@
 This is a how-to guide for some common use-cases of [Brave](../README.md).
 See also the [FAQ](faq.md), as well as documentation on the [config file](config_file.md) and [API](api.md).
 
-## How to use Brave as an audio mixer
+## How to use Brave as an audio mixer
 Brave can be set to handle just audio, and no video. To do so, create a config file containing `enable_video: false`. Then start Brave providing it, for example:
 
 ```
