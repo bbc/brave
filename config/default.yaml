@@ -17,16 +17,12 @@ default_mixer_height: 360
 ##
 inputs:
     # - type: uri
-    #   zorder: 2
     #   uri: file:///path/to/file.mp4
-    #   width: 640
-    #   height: 360
     # - type: image
     #   uri: https://upload.wikimedia.org/wikipedia/commons/e/eb/BBC.svg
     # - type: test_audio
     #   freq: 200
     # - type: test_video
-    #   zorder: 3
     #   pattern: 18
 
 ##
@@ -66,3 +62,12 @@ overlays:
 mixers:
     # Default to one mixer, with no specific props:
     - {}
+    # Add inputs to the mixer on start-up like this:
+    # - sources:
+    #     - uid: input1
+    #       zorder: 2
+    #       width: 160
+    #       height: 90
+    #     - uid: input2
+    #       zorder: 1
+    #       volume: 0

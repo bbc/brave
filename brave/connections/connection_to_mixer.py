@@ -1,5 +1,6 @@
 from gi.repository import Gst
 from brave.connections.connection import Connection
+UPDATABLE_PROPERTIES = ['zorder', 'xpos', 'ypos', 'width', 'height', 'volume']
 
 
 class ConnectionToMixer(Connection):
@@ -21,9 +22,9 @@ class ConnectionToMixer(Connection):
         self.remove_from_mix()
         super().delete(callback)
 
-    def cut(self):
-        if not self.in_mix():
-            self.add_to_mix()
+    def cut(self, details):
+        # if not self.in_mix():
+        self.add_to_mix(details)
         for source in self.dest.source_connections():
             if source != self:
                 source.remove_from_mix()
@@ -39,12 +40,17 @@ class ConnectionToMixer(Connection):
             self._mix_request_pad['audio'].is_linked()
         return in_video_mix or in_audio_mix
 
-    def add_to_mix(self):
+    def add_to_mix(self, details):
         '''
         Places (adds) this input onto the mixer.
         If you want to replace what's on the mix. use source.cut()
         '''
         self._ensure_elements_are_created()
+
+        for prop in UPDATABLE_PROPERTIES:
+            if prop in details:
+                setattr(self, prop, details[prop])
+
         if self.has_video():
             self._add_to_mix('video')
         if self.has_audio():
@@ -74,18 +80,22 @@ class ConnectionToMixer(Connection):
         if self.has_video():
             self._handle_video_mix_props()
 
+    def summarise(self):
+        s = super().summarise()
+        for prop in UPDATABLE_PROPERTIES:
+            if hasattr(self, prop) and getattr(self, prop) is not None:
+                s[prop] = getattr(self, prop)
+        return s
+
     def _add_to_mix(self, audio_or_video):
-        if audio_or_video in self._mix_request_pad:
-            self.logger.info('Request to add to %s mix, but already added' % audio_or_video)
-            return
+        if audio_or_video not in self._mix_request_pad:
+            # We need to conect the tee to the destination. This is the pad of the tee:
+            tee_pad = self._get_or_create_tee_pad(audio_or_video)
+            self._mix_request_pad[audio_or_video] = self.dest.get_new_pad_for_source(audio_or_video)
 
-        # We need to conect the tee to the destination. This is the pad of the tee:
-        tee_pad = self._get_or_create_tee_pad(audio_or_video)
-        self._mix_request_pad[audio_or_video] = self.dest.get_new_pad_for_source(audio_or_video)
-
-        link_response = tee_pad.link(self._mix_request_pad[audio_or_video])
-        if link_response != Gst.PadLinkReturn.OK:
-            self.logger.error('Cannot link %s to mix, response was %s' % (audio_or_video, link_response))
+            link_response = tee_pad.link(self._mix_request_pad[audio_or_video])
+            if link_response != Gst.PadLinkReturn.OK:
+                self.logger.error('Cannot link %s to mix, response was %s' % (audio_or_video, link_response))
 
         if audio_or_video == 'audio':
             self._handle_audio_mix_props()
@@ -99,20 +109,20 @@ class ConnectionToMixer(Connection):
         if 'video' not in self._mix_request_pad:
             return
 
-        if hasattr(self.source, 'xpos'):
-            self._mix_request_pad['video'].set_property('xpos', self.source.xpos)
-        if hasattr(self.source, 'ypos'):
-            self._mix_request_pad['video'].set_property('ypos', self.source.ypos)
+        if hasattr(self, 'xpos'):
+            self._mix_request_pad['video'].set_property('xpos', self.xpos)
+        if hasattr(self, 'ypos'):
+            self._mix_request_pad['video'].set_property('ypos', self.ypos)
         self._set_mixer_width_and_height()
 
         # Setting zorder to what's already set can cause a segfault.
-        if hasattr(self.source, 'zorder'):
+        if hasattr(self, 'zorder'):
             current_zorder = self._mix_request_pad['video'].get_property('zorder')
-            if current_zorder != self.source.zorder:
+            if current_zorder != self.zorder:
                 self.logger.debug('Setting zorder to %d (current state: %s)' %
-                                  (self.source.zorder,
+                                  (self.zorder,
                                    self.dest.mixer_element['video'].get_state(0).state.value_nick.upper()))
-                self._mix_request_pad['video'].set_property('zorder', self.source.zorder)
+                self._mix_request_pad['video'].set_property('zorder', self.zorder)
 
     def _handle_audio_mix_props(self):
         '''
@@ -121,12 +131,11 @@ class ConnectionToMixer(Connection):
         if 'audio' not in self._mix_request_pad:
             return
 
-        if hasattr(self.source, 'volume'):
-            prev_volume = self._mix_request_pad['audio'].get_property('volume')
-            volume = self.source.volume
+        volume = self.volume if hasattr(self, 'volume') else 1.0
+        prev_volume = self._mix_request_pad['audio'].get_property('volume')
 
-            if volume != prev_volume:
-                self._mix_request_pad['audio'].set_property('volume', float(volume))
+        if volume != prev_volume:
+            self._mix_request_pad['audio'].set_property('volume', float(volume))
 
     def _set_mixer_width_and_height(self):
         # First stage: go with mixer's size
@@ -134,18 +143,18 @@ class ConnectionToMixer(Connection):
         height = self.dest.height
 
         # Second stage: if input is smaller, go with that
-        if hasattr(self.source, 'width') and self.source.width < width:
-            width = self.source.width
-        if hasattr(self.source, 'height') and self.source.height < height:
-            height = self.source.height
+        if hasattr(self, 'width') and self.width < width:
+            width = self.width
+        if hasattr(self, 'height') and self.height < height:
+            height = self.height
 
         # Third stage: if positioned to go off the side, reduce the size.
-        if hasattr(self.source, 'xpos'):
-            if width + self.source.xpos > self.dest.width:
-                width = self.dest.width - self.source.xpos
-        if hasattr(self.source, 'ypos'):
-            if height + self.source.ypos > self.dest.height:
-                height = self.dest.height - self.source.ypos
+        if hasattr(self, 'xpos'):
+            if width + self.xpos > self.dest.width:
+                width = self.dest.width - self.xpos
+        if hasattr(self, 'ypos'):
+            if height + self.ypos > self.dest.height:
+                height = self.dest.height - self.ypos
 
         self._mix_request_pad['video'].set_property('width', width)
         self._mix_request_pad['video'].set_property('height', height)

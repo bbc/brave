@@ -13,6 +13,10 @@ class TextOverlay(Overlay):
                 'type': 'str',
                 'default': 'Default text'
             },
+            'font_size': {
+                'type': 'int',
+                'default': 44
+            },
             'valignment': {
                 'type': 'str',
                 'default': 'bottom',
@@ -37,5 +41,5 @@ class TextOverlay(Overlay):
         self.element.set_property('text', self.text)
         self.element.set_property('valignment', self.valignment)
         self.element.set_property('halignment', 'left')
-        self.element.set_property('font-desc', 'Sans, 44')
+        self.element.set_property('font-desc', 'Sans, %d' % self.font_size)
         self.element.set_property('shaded-background', True)

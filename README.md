@@ -76,7 +76,7 @@ Supported overlay types:
 [Read more about overlay types.](docs/overlays.md)
 
 ### Mixers
-There can be anhy number of mixers. They can take any number of inputs (including the output from another mixer). It can send to any number of outputs. [Read more about mixers.](docs/mixers.md)
+There can be any number of mixers. They can take any number of inputs (including the output from another mixer). It can send to any number of outputs. [Read more about mixers.](docs/mixers.md)
 
 ## Project status
 This project is still work in progress, and has not been thoroughly tested or used any any production environments.

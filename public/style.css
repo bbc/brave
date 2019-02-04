@@ -94,31 +94,38 @@ body {
     text-align: center;
 }
 
+#preview-bar #image-preview {
+    background-color: #222;
+}
+
 #preview-bar #stream, #preview-bar #image-preview {
     background-color: #222;
-    width: 320px;
     height: 180px;
-}
-
-@media (min-width: 576px) {
-    #preview-bar #stream, #preview-bar #image-preview {
-        width: 480px;
-        height: 270px;
-    }
-}
-
-@media (min-width: 992px) {
-    #preview-bar #stream, #preview-bar #image-preview {
-        width: 640px;
-        height: 360px;
-    }
 }
 
 #preview-bar canvas {
     background-color: #222;
     width: 80px;
-    height: 360px;
+    height: 180px;
 }
+
+@media (min-width: 576px) {
+    #preview-bar #stream {
+        height: 270px;
+    }
+    #preview-bar canvas {
+        height: 270px;
+    }
+}
+
+/* @media (min-width: 992px) {
+    #preview-bar #stream {
+        height: 360px;
+    }
+    #preview-bar canvas {
+        height: 360px;
+    }
+} */
 
 .preview-select {
     border: 1px solid #ccc;
@@ -156,6 +163,10 @@ body {
 
 .block-card-outer {
     padding: 16px 16px 0 0;
+}
+
+.block-card-selected {
+    border: 2px solid blue;
 }
 
 .mix-option {

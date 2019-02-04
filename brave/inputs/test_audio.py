@@ -38,3 +38,5 @@ class TestAudioInput(Input):
             self.audiotestsrc.set_property('wave', int(self.wave))
         if hasattr(self, 'freq'):
             self.audiotestsrc.set_property('freq', self.freq)
+        if hasattr(self, 'volume'):
+            self.audiotestsrc.set_property('volume', self.volume)

@@ -50,6 +50,15 @@ curl -X POST -d '{"position": 60000000000}' http://localhost:5000/inputs/1
 
 Adding and removing inputs can also be done via the web interface or API.
 
+## How to make a video wall
+![Video wall](assets/video_wall.png "Video wall")
+
+A video wall (multiple videos side by side) can be created by resizing video and then declaring where it should appear on the mix.
+
+This can be done as at start-up as a config file, or via the API.
+
+An example config file, to make the image above, can be found in the `config` directory as [../config/video_wall.yaml](video_wall.yaml).
+
 ## How to connect a separate GStreamer pipeline to Brave
 The best method to output a video (either with or without audio) from GStreamer to Brave is using the TCP protocol. Use the [`tcpserversink`](https://developer.gnome.org/gst-plugins-libs/stable/gst-plugins-base-plugins-tcpserversink.html) element to act as  TCP server; which Brave can then connect to.
 

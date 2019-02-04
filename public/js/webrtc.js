@@ -137,6 +137,7 @@ function onRemoteStreamAdded(event) {
 
     if (videoTracks.length > 0) {
         console.log('Incoming stream: ' + videoTracks.length + ' video tracks and ' + audioTracks.length + ' audio tracks');
+        window.vs = videoTracks[0]  
         preview.setVideoSrc(event.stream)
     } else {
         console.error('Stream with unknown tracks added');

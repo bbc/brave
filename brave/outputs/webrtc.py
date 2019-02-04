@@ -73,7 +73,6 @@ class WebRTCOutput(Output):
 
         self.pipeline.get_bus().add_signal_watch()
         self.pipeline.get_bus().connect('message::element', self._on_element_message)
-        self.event_loop = asyncio.get_event_loop()
 
     def _update_current_num_peers(self):
         self.current_num_peers = len(self.peers)
@@ -90,6 +89,11 @@ class WebRTCOutput(Output):
         '''
         Called when a peer (client) would like to connect via webrtc
         '''
+
+        # We make an event loop here to ensure it's in the API thread, not the master thread:
+        if not hasattr(self, 'event_loop'):
+            self.event_loop = asyncio.get_event_loop()
+
         if ws in self.peers:
             self.logger.debug('Existing user requesting webrtc again, so removing old one')
             await self.remove_peer_request(ws)
@@ -123,12 +127,13 @@ class WebRTCOutput(Output):
             if message.get_structure().get_name() == 'level':
                 channels = len(message.get_structure().get_value('peak'))
                 data = []
+                self.logger.warning('TEMP YAY level message, %d channels' % channels)
 
                 for i in range(0, channels):
                     data.append(json.dumps({
-                        'peak': message.get_structure().get_value('peak')[i],
-                        'rms': message.get_structure().get_value('rms')[i],
-                        'decay': message.get_structure().get_value('decay')[i]
+                        'peak': int(message.get_structure().get_value('peak')[i]),
+                        'rms': int(message.get_structure().get_value('rms')[i]),
+                        'decay': int(message.get_structure().get_value('decay')[i])
                     }))
 
                 jsonData = json.dumps({'msg_type': 'volume', 'channels': channels, 'data': data})

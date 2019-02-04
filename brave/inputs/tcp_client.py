@@ -21,27 +21,11 @@ class TcpClientInput(Input):
                 'type': 'int',
                 'required': True
             },
-            'volume': {
-                'type': 'float',
-                'default': 0.8
-            },
             'width': {
                 'type': 'int'
             },
             'height': {
                 'type': 'int'
-            },
-            'xpos': {
-                'type': 'int',
-                'default': 0
-            },
-            'ypos': {
-                'type': 'int',
-                'default': 0
-            },
-            'zorder': {
-                'type': 'int',
-                'default': 1
             },
             'container': {
                 'type': 'str',

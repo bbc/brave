@@ -48,7 +48,6 @@ inputs:
        state: PAUSED
        uri: rtmp://184.72.239.149/vod/BigBuckBunny_115k.mov
      - type: image
-       zorder: 2
        uri: file:///home/user/images/image.jpg
 ```
 

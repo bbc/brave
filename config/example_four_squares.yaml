@@ -1,32 +1,43 @@
 enable_audio: false
-default_mixer_width: 640
-default_mixer_height: 360
 
 inputs:
-    - type: test_video
-      props:
-          pattern: 18
-          width: 320
-          height: 180
-    - type: test_video
-      props:
-          pattern: 18
-          width: 320
-          height: 180
-          xpos: 320
-    - type: test_video
-      props:
-          pattern: 18
-          width: 320
-          height: 180
-          ypos: 180
-    - type: test_video
-      props:
-          pattern: 18
-          width: 320
-          height: 180
-          xpos: 320
-          ypos: 180
+  - type: test_video
+    pattern: 18
+    width: 320
+    height: 180
+  - type: test_video
+    pattern: 18
+    width: 320
+    height: 180
+  - type: test_video
+    pattern: 18
+    width: 320
+    height: 180
+  - type: test_video
+    pattern: 18
+    width: 320
+    height: 180
 
 outputs:
-    - type: local
+  - type: local
+
+mixers:
+  - width: 640
+    height: 360
+    sources:
+    - uid: input1
+      width: 320
+      height: 180
+    - uid: input2
+      xpos: 320
+      width: 320
+      height: 180
+    - uid: input3
+      ypos: 180
+      width: 320
+      height: 180
+    - uid: input4
+      xpos: 320
+      ypos: 180
+      width: 320
+      height: 180

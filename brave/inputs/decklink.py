@@ -30,18 +30,6 @@ class DecklinkInput(Input):
             'height': {
                 'type': 'int',
                 'default': 720
-            },
-            'xpos': {
-                'type': 'int',
-                'default': 0
-            },
-            'ypos': {
-                'type': 'int',
-                'default': 0
-            },
-            'zorder': {
-                'type': 'int',
-                'default': 1
             }
         }
 

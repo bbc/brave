@@ -7,7 +7,7 @@ def test_image_input_from_command_line(run_brave, create_config_file):
     config = {
         'enable_audio': False, # useful for debugging TODO remove
         'inputs': [
-            # {'type': 'test_video', 'pattern': 4, 'zorder': 2}, # pattern 4 is red
+            # {'type': 'test_video', 'pattern': 4}, # pattern 4 is red
             {'type': 'image', 'uri': image_uri}, # pattern 4 is red
         ],
         'outputs': [

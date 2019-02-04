@@ -295,7 +295,7 @@ class InputOutputOverlay():
             # First, warn about any known props:
             if key not in permitted:
                 raise brave.exceptions.InvalidConfiguration(
-                    'Invalid prop provided to %s: "%s"' % (self.input_output_overlay_or_mixer(), key))
+                    'Invalid prop provided to %s: "%s"' % (self.uid, key))
 
             prop_details = permitted[key]
 

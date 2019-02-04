@@ -76,6 +76,12 @@ class Connection():
         '''
         return self.source.has_audio() and self.dest.has_audio()
 
+    def summarise(self):
+        return {
+            'uid': self.source.uid,
+            'in_mix': self.in_mix()
+        }
+
     def _get_intersrc_src_pad(self, audio_or_video):
         element = self._get_intersrc(audio_or_video)
         return element.get_static_pad('src') if element else None

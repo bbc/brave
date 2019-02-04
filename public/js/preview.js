@@ -12,7 +12,7 @@ preview.init = () => {
     $('#preview-bar-dropdown').click((change) => {
         preview._handlePreviewRequest($(change.target).data('type'), $(change.target).data('source'))
     })
-    setInterval(preview._refreshImage, 1000)
+    setInterval(preview._refreshImage, 500)
 }
 
 preview.handleOutputsUpdate = () => {
@@ -151,11 +151,9 @@ preview.updateAudioLevels = function() {
     var channel;
     var margin = 2;
     var width = 80;
-    var height = 360;
+    var height = audioLevels.clientHeight;
     var channelWidth = parseInt((width - (margin * (channels - 1))) / channels);
     var peak;
-
-    //console.log(`width: ${width} filled with ${channels} channels of each ${channelWidth} and ${channels - 1} margin of ${margin}`);
 
     var bgFill = preview._gradient(context, 64, 0, height);
     var rmsFill =  preview._gradient(context, 255, 0, height);
@@ -238,7 +236,7 @@ preview._createVideoPlayer = function() {
     var audio_canvas = document.createElement('canvas')
     audio_canvas.id = 'audio_levels';
     audio_canvas.width  = 80;
-    audio_canvas.height = 360;
+    audio_canvas.height = 270;
 
     $('#preview-bar').empty()
     $('#preview-bar').append(video)
@@ -281,7 +279,22 @@ preview._deleteVideoPlayer = () => {
 preview._refreshImage = () => {
     const image = preview._getImage()
     if (!image || !image.length) return
-    $(image).attr('src', '/api/outputs/' + preview.outputId + '/body?' + Math.floor(Date.now()/1000))
+    $(image).attr('src', '/api/outputs/' + preview.outputId + '/body?' + Math.floor(Date.now()/100))
+    const output = outputsHandler.findById(preview.outputId)
+    if (output) {
+        if (output.height && output.width) {
+            let height = output.height
+            let width = output.width
+            const MAX_IMAGE_HEIGHT = 400
+            if (output.height > MAX_IMAGE_HEIGHT) {
+                const ratio = MAX_IMAGE_HEIGHT/height
+                width *= ratio
+                height = MAX_IMAGE_HEIGHT
+            }
+            $(image).attr('height', height)
+            $(image).attr('width', width)
+        }
+    }
 }
 
 preview.init()
