@@ -61,46 +61,55 @@ class Mixer(InputOutputOverlay):
     def connection_for_source(self, input_or_mixer, create_if_not_made=False):
         '''
         Given an input or mixer, gets the Connection from it to this mixer.
-        If such a Connection has not been made before, makes it.
         '''
         if create_if_not_made:
             return self.session().connections.get_or_add_connection_between_source_and_dest(input_or_mixer, self)
         else:
             return self.session().connections.get_connection_between_source_and_dest(input_or_mixer, self)
 
-    def setup_initial_sources(self):
+    def setup_sources(self):
         '''
-        The user may have requested initial sources to include (via the 'sources' field.)
+        The user may have requested sources to include (via the 'sources' field.)
         This method sets them up.
         '''
-        if hasattr(self, 'sources'):
-            if not isinstance(self.sources, list):
-                raise brave.exceptions.InvalidConfiguration('%s "sources" property not a list' % self.uid)
-            for details in self.sources:
-                if not isinstance(details, dict):
-                    raise brave.exceptions.InvalidConfiguration('%s "sources" property contains an entry that '
-                                                                'is not a dictionary: %s' % (self.uid, details))
-                if not details['uid']:
-                    raise brave.exceptions.InvalidConfiguration('%s "sources" property missing a uid' % self.uid)
-                source_block = self.session().uid_to_block(details['uid'])
-                if source_block:
-                    connection = self.connection_for_source(source_block, create_if_not_made=True)
-                    connection.add_to_mix()
+        if not hasattr(self, 'sources'):
+            return
+        if not isinstance(self.sources, list):
+            raise brave.exceptions.InvalidConfiguration('%s "sources" property not a list' % self.uid)
+
+        source_uids = []
+        for details in self.sources:
+            if not isinstance(details, dict):
+                raise brave.exceptions.InvalidConfiguration('%s "sources" property contains an entry that '
+                                                            'is not a dictionary: %s' % (self.uid, details))
+            if not details['uid']:
+                raise brave.exceptions.InvalidConfiguration('%s "sources" property missing a uid' % self.uid)
+            source_uids.append(details['uid'])
+            source_block = self.session().uid_to_block(details['uid'])
+            if source_block:
+                connection = self.connection_for_source(source_block, create_if_not_made=True)
+                if 'in_mix' in details and not details['in_mix']:
+                    connection.remove_from_mix(details)
                 else:
-                    raise brave.exceptions.InvalidConfiguration(
-                        '%s "sources" property references unknown block "%s"' % (self.uid, details['uid']))
+                    connection.add_to_mix(details)
+            else:
+                raise brave.exceptions.InvalidConfiguration(
+                    '%s "sources" property references unknown block "%s"' % (self.uid, details['uid']))
+
+        # Finally, remove anything currently mixed that should no longer be:
+        for c in self.source_connections():
+            if c.source.uid not in source_uids:
+                self.logger.debug('Removing source %s from %s because "sources" property does not mention it'
+                                  % (c.source.uid, self.uid))
+                c.remove_from_mix()
+
+        delattr(self, 'sources')
 
     def summarise(self, for_config_file=False):
         s = super().summarise(for_config_file)
-
         s['sources'] = []
         for connection in self.source_connections():
-            pretty = {
-                'uid': connection.source.uid,
-                'in_mix': connection.in_mix()
-            }
-            s['sources'].append(pretty)
-
+            s['sources'].append(connection.summarise())
         return s
 
     def add_element(self, factory_name, who_its_for, audio_or_video=None, name=None):
@@ -176,6 +185,14 @@ class Mixer(InputOutputOverlay):
     def handle_updated_props(self):
         if hasattr(self, 'pattern'):
             self.videotestsrc.set_property('pattern', self.pattern)
+
+    def update(self, updates):
+        '''
+        Update the mixer.
+        Overrides parent so call setup_sources() so that updates to sources can be handled.
+        '''
+        super().update(updates)
+        self.setup_sources()
 
     def _set_dimensions(self):
         # An internal format of 'RGBA' ensures alpha support and no color variation.

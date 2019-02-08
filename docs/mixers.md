@@ -21,6 +21,25 @@ There is only one type of mixer, and it has the following properties:
 | `id` | No | No | ID of the mixer. Positive integer. Starts at 1 and increases by 1 for each new mixer. | n/a  |
 | `uid` | No | No | Unqiue ID - a string in the format 'mixerX' where X is the ID | n/a  |
 | `state` | Yes | Yes | Either `NULL`, `READY`, `PAUSED` or `PLAYING`. [_What are the four states?_](faq.md#what-are-the-four-states) | `PLAYING` |
-| `sources` | Yes | No (but can be done so via the API calls `cut_to_source` and `overlay_source`) | An array of inputs and mixers that are the source of this mixer. Each array entry is a dictionary, containing the `uid` of the source (e.g. `input1`) and also properties about how the source is being mixed. | None |
+| `sources` | Yes | Yes (both directly and also via helper API methods `cut_to_source` and `overlay_source`) | An array of inputs and mixers that are the source of this mixer. See below for more. | None |
 | `pattern` | Yes | Yes | The pattern used for the background, as an integer. See the [test video](inputs.md#test-video) input type for the list of available patterns. | 0 (SMPTE 100% color bars) |
 | `width` and `height` | Yes | Yes | Override of the width and height | The values of `default_mixer_width` and `default_mixer_height` in the [config file](config_file.md). |
+
+### `sources` property
+
+The `sources` properly is an array of dictionaries, for each source that the mixer is currently including. An empty array shows that the mixer has no source. The order of the array has no meaning.
+
+Properties of each source:
+
+| Name | Description | For audio or video sources? | Default |
+| ---- | ----------- | --------------------------- | ------- |
+| `uid` | the unique ID of the source (e.g. `input1` or `mixer2`) | Both | n/a (required) |
+| `in_mix` | `true` iff source is overlayed into mix | Both | `true` |
+| `zorder` | The z-order (aka z-index) of the video. Sources with a higher z-order will appear over the sources with a lower z-order. | Video | `1` |
+| `width` and `height` | The size of the video. It is useful to set these for 'picture in picture' or 'video wall' use-cases. | Video | If omitted, defaults to the full size of the mixer. |
+| `xpos` and `ypos` | The location of the video. | Video | Defaults to 0,0 (i.e. the top-left corner). |
+| `volume` | The volume that the input should be mixed at, between 0 (silent) and 1.0 (full volume). | Audio | `1.0` |
+
+
+
+

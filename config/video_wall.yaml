@@ -1,0 +1,348 @@
+# Creates a video wall of 24 different test sources.
+# It's an example of how to mix multiple inputs side by side.
+# Warning this is computationally heavy!
+enable_audio: false
+inputs: 
+  - type: 'test_video'
+    pattern: 0
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 1
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 2
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 3
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 4
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 5
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 6
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 7
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 8
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 9
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 10
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 11
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 12
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 13
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 14
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 15
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 16
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 17
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 18
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 19
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 20
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 21
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 22
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 23
+    width: 160
+    height: 90
+
+mixers:
+  - pattern: 2
+    width: 640
+    height: 540
+    sources:
+      - uid: input1
+        width: 160
+        height: 90
+      - uid: input2
+        xpos: 160
+        width: 160
+        height: 90
+      - uid: input3
+        xpos: 320
+        width: 160
+        height: 90
+      - uid: input4
+        xpos: 480
+        width: 160
+        height: 90
+      - uid: input5
+        xpos: 0
+        ypos: 90
+        width: 160
+        height: 90
+      - uid: input6
+        xpos: 160
+        ypos: 90
+        width: 160
+        height: 90
+      - uid: input7
+        xpos: 320
+        ypos: 90
+        width: 160
+        height: 90
+      - uid: input8
+        xpos: 480
+        ypos: 90
+        width: 160
+        height: 90
+      - uid: input9
+        xpos: 0
+        ypos: 180
+        width: 160
+        height: 90
+      - uid: input10
+        xpos: 160
+        ypos: 180
+        width: 160
+        height: 90
+      - uid: input11
+        xpos: 320
+        ypos: 180
+        width: 160
+        height: 90
+      - uid: input12
+        xpos: 480
+        ypos: 180
+        width: 160
+        height: 90
+      - uid: input13
+        xpos: 0
+        ypos: 270
+        width: 160
+        height: 90
+      - uid: input14
+        xpos: 160
+        ypos: 270
+        width: 160
+        height: 90
+      - uid: input15
+        xpos: 320
+        ypos: 270
+        width: 160
+        height: 90
+      - uid: input16
+        xpos: 480
+        ypos: 270
+        width: 160
+        height: 90
+      - uid: input17
+        xpos: 0
+        ypos: 360
+        width: 160
+        height: 90
+      - uid: input18
+        xpos: 160
+        ypos: 360
+        width: 160
+        height: 90
+      - uid: input19
+        xpos: 320
+        ypos: 360
+        width: 160
+        height: 90
+      - uid: input20
+        xpos: 480
+        ypos: 360
+        width: 160
+        height: 90
+      - uid: input21
+        xpos: 0
+        ypos: 450
+        width: 160
+        height: 90
+      - uid: input22
+        xpos: 160
+        ypos: 450
+        width: 160
+        height: 90
+      - uid: input23
+        xpos: 320
+        ypos: 450
+        width: 160
+        height: 90
+      - uid: input24
+        xpos: 480
+        ypos: 450
+        width: 160
+        height: 90
+
+overlays:
+  - type: text
+    visible: true
+    text: 1
+    source: input1
+    font_size: 150
+  - type: text
+    visible: true
+    text: 2
+    source: input2
+    font_size: 150
+  - type: text
+    visible: true
+    text: 3
+    source: input3
+    font_size: 150
+  - type: text
+    visible: true
+    text: 4
+    source: input4
+    font_size: 150
+  - type: text
+    visible: true
+    text: 5
+    source: input5
+    font_size: 150
+  - type: text
+    visible: true
+    text: 6
+    source: input6
+    font_size: 150
+  - type: text
+    visible: true
+    text: 7
+    source: input7
+    font_size: 150
+  - type: text
+    visible: true
+    text: 8
+    source: input8
+    font_size: 150
+  - type: text
+    visible: true
+    text: 9
+    source: input9
+    font_size: 150
+  - type: text
+    visible: true
+    text: 10
+    source: input10
+    font_size: 150
+  - type: text
+    visible: true
+    text: 11
+    source: input11
+    font_size: 150
+  - type: text
+    visible: true
+    text: 12
+    source: input12
+    font_size: 150
+  - type: text
+    visible: true
+    text: 13
+    source: input13
+    font_size: 150
+  - type: text
+    visible: true
+    text: 14
+    source: input14
+    font_size: 150
+  - type: text
+    visible: true
+    text: 15
+    source: input15
+    font_size: 150
+  - type: text
+    visible: true
+    text: 16
+    source: input16
+    font_size: 150
+  - type: text
+    visible: true
+    text: 17
+    source: input17
+    font_size: 150
+  - type: text
+    visible: true
+    text: 18
+    source: input18
+    font_size: 150
+  - type: text
+    visible: true
+    text: 19
+    source: input19
+    font_size: 150
+  - type: text
+    visible: true
+    text: 20
+    source: input20
+    font_size: 150
+  - type: text
+    visible: true
+    text: 21
+    source: input21
+    font_size: 150
+  - type: text
+    visible: true
+    text: 22
+    source: input22
+    font_size: 150
+  - type: text
+    visible: true
+    text: 23
+    source: input23
+    font_size: 150
+  - type: text
+    visible: true
+    text: 24
+    source: input24
+    font_size: 150
+outputs:
+  - type: 'image'
+    width: 640
+    height: 540

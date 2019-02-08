@@ -22,18 +22,6 @@ class ImageInput(Input):
             },
             'height': {
                 'type': 'int'
-            },
-            'xpos': {
-                'type': 'int',
-                'default': 0
-            },
-            'ypos': {
-                'type': 'int',
-                'default': 0
-            },
-            'zorder': {
-                'type': 'int',
-                'default': 1
             }
         }
 

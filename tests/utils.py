@@ -307,21 +307,21 @@ def delete_mixer(id, expected_status_code=200):
     time.sleep(0.2)
 
 
-def cut_to_source(source, mixer_id, status_code=200):
-    response = api_post('/api/mixers/%d/cut_to_source' % mixer_id, {'source': source})
-    assert response.status_code == status_code, 'Expected status code %s but got %s, body was:%s' % (status_code, response.status_code, response.json())
+def cut_to_source(uid, mixer_id, status_code=200, details={}):
+    response = api_post('/api/mixers/%d/cut_to_source' % mixer_id, {**details, 'uid': uid})
+    assert response.status_code == status_code, 'Whilst cutting to source %s, expected status code %s but got %s, body was:%s' % (uid, status_code, response.status_code, response.text)
     time.sleep(0.5)
 
 
-def overlay_source(source, mixer_id, status_code=200):
-    response = api_post('/api/mixers/%d/overlay_source' % mixer_id, {'source': source})
-    assert response.status_code == status_code, 'Expected status code %s but got %s, body was:%s' % (status_code, response.status_code, response.json())
+def overlay_source(uid, mixer_id, status_code=200, details={}):
+    response = api_post('/api/mixers/%d/overlay_source' % mixer_id, {**details, 'uid': uid})
+    assert response.status_code == status_code, 'Whilst overlaying source %s, expected status code %s but got %s, body was:%s' % (uid, status_code, response.status_code, response.json())
     time.sleep(0.5)
 
 
 def remove_source(uid, mixer_id, status_code=200):
-    response = api_post('/api/mixers/1/remove_source', {'source': uid})
-    assert response.status_code == status_code, 'Expected status code %s but got %s, body was:%s' % (status_code, response.status_code, response.json())
+    response = api_post('/api/mixers/1/remove_source', {'uid': uid})
+    assert response.status_code == status_code, 'Whilst removing source %s, expected status code %s but got %s, body was:%s' % (uid, status_code, response.status_code, response.json())
     time.sleep(0.5)
 
 
@@ -330,11 +330,15 @@ def assert_image_file_color(output_image_location, expected_color):
     assert_image_color(im, expected_color)
 
 
-def assert_image_output_color(output_id, expected_color, port=DEFAULT_PORT):
+def get_raw_image_for_output(output_id, port=DEFAULT_PORT):
     response = api_get('/api/outputs/%d/body' % output_id, stream=True, port=port)
     assert response.status_code == 200
     im = Image.open(response.raw)
-    assert_image_color(im, expected_color)
+    return im
+
+
+def assert_image_output_color(output_id, expected_color, port=DEFAULT_PORT):
+    assert_image_color(get_raw_image_for_output(output_id, port), expected_color)
 
 
 def restart_brave(params):
@@ -344,23 +348,24 @@ def restart_brave(params):
 
 
 def assert_image_color(im, expected_color):
-    assert im.format == 'JPEG'
-    assert im.size == (640, 360)
-    assert im.mode == 'RGB'
-    __assert_image_color(im, expected_color)
-
-def __assert_image_color(im, expected):
     '''
     Given an image and a color tuple, asserts the image is made up solely of that color.
     '''
-    NAMES = ['red', 'green', 'blue']
-    PERMITTED_RANGE=10
+    assert im.format == 'JPEG'
+    assert im.size == (640, 360)
+    assert im.mode == 'RGB'
 
     # Select a few pixels to check:
     dimensions = [(0,0), (100,0), (0,100), (100,100), (im.size[0]-1, im.size[1]-1)]
     for dimension in dimensions:
-        actual = im.getpixel(dimension)
-        p = actual
-        for i in range(len(expected)):
-            assert (expected[i]-PERMITTED_RANGE) < actual[i] < (expected[i]+PERMITTED_RANGE), \
-                '%s value was %d but expected %d (within range of %d)' % (NAMES[i], actual[i], expected[i], PERMITTED_RANGE)
+        assert_image_color_at_dimension(im, dimension, expected_color)
+
+
+def assert_image_color_at_dimension(im, dimension, expected):
+    # NAMES = ['red', 'green', 'blue']
+    PERMITTED_RANGE=10
+    actual = im.getpixel(dimension)
+    p = actual
+    for i in range(len(expected)):
+        assert (expected[i]-PERMITTED_RANGE) < actual[i] < (expected[i]+PERMITTED_RANGE), \
+            'Color was %s but expected %s (within range of %d)' % (actual, expected, PERMITTED_RANGE)

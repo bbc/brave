@@ -68,19 +68,19 @@ async def delete_mixer(request, id):
 
 
 async def cut_to_source(request, id):
-    connection = _get_connection(request, id, create_if_not_made=True)
-    run_on_master_thread_when_idle(connection.cut)
+    connection, details = _get_connection(request, id, create_if_not_made=True)
+    run_on_master_thread_when_idle(connection.cut, details=details)
     return _status_ok_response()
 
 
 async def overlay_source(request, id):
-    connection = _get_connection(request, id, create_if_not_made=True)
-    run_on_master_thread_when_idle(connection.add_to_mix)
+    connection, details = _get_connection(request, id, create_if_not_made=True)
+    run_on_master_thread_when_idle(connection.add_to_mix, details=details)
     return _status_ok_response()
 
 
 async def remove_source(request, id):
-    connection = _get_connection(request, id, create_if_not_made=False)
+    connection, details = _get_connection(request, id, create_if_not_made=False)
     run_on_master_thread_when_idle(connection.remove_from_mix)
     return _status_ok_response()
 
@@ -126,7 +126,7 @@ async def create_overlay(request):
 
 async def create_mixer(request):
     mixer = request['session'].mixers.add(**request.json)
-    mixer.setup_initial_sources()
+    mixer.setup_sources()
     logger.info('Created mixer #%d with details %s' % (mixer.id, request.json))
     return sanic.response.json({'id': mixer.id, 'uid': mixer.uid})
 
@@ -188,17 +188,17 @@ def _get_mixer(request, id):
 
 
 def _get_connection(request, id, create_if_not_made):
-    if 'source' not in request.json:
-        raise InvalidUsage('Requires "source" field in JSON body')
+    if 'uid' not in request.json:
+        raise InvalidUsage('Requires "uid" field in JSON body')
 
-    source = request['session'].uid_to_block(request.json['source'])
+    source = request['session'].uid_to_block(request.json['uid'])
     if source is None:
-        raise InvalidUsage('No such item "%s"' % request.json['source'])
+        raise InvalidUsage('No such item "%s"' % request.json['uid'])
 
     connection = _get_mixer(request, id).connection_for_source(source, create_if_not_made=create_if_not_made)
     if not connection and create_if_not_made is True:
-        raise InvalidUsage('Unable to connect "%s" to mixer %d' % (request.json['source'], id))
-    return connection
+        raise InvalidUsage('Unable to connect "%s" to mixer %d' % (request.json['uid'], id))
+    return connection, request.json
 
 
 def _status_ok_response():

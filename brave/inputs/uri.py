@@ -34,18 +34,6 @@ class UriInput(Input):
             },
             'height': {
                 'type': 'int'
-            },
-            'xpos': {
-                'type': 'int',
-                'default': 0
-            },
-            'ypos': {
-                'type': 'int',
-                'default': 0
-            },
-            'zorder': {
-                'type': 'int',
-                'default': 1
             }
         }
 
@@ -208,6 +196,8 @@ class UriInput(Input):
         self._handle_position_seek()
         if hasattr(self, 'buffer_duration'):
             self.playbin.set_property('buffer-duration', self.buffer_duration)
+        if hasattr(self, 'volume'):
+            self.playbin.set_property('volume', self.volume)
 
     def __on_about_to_finish(self, playbin):
         if self.loop:
