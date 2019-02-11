@@ -24,9 +24,11 @@ class RestApi(object):
         route_handler = brave.api.route_handler
 
         app.static('/', './public/index.html', name='index.html')
+        app.static('/new', './public/new.html', name='new.html')
         app.static('/elements_table', './public/elements_table.html', name='elements_table.html')
         app.static('/style.css', './public/style.css', name='style.css')
         app.static('/js/', './public/js/')
+        app.static('/css/', './public/css/')
         app.static('/output_images/', '/usr/local/share/brave/output_images/')
 
         @app.exception(NotFound)

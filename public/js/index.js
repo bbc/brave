@@ -33,10 +33,22 @@ setInterval(updatePage, 5000)
 function drawAllItems() {
     $('#cards').empty()
     if (noItems()) return showNoItemsMessage()
-    inputsHandler.draw()
-    overlaysHandler.draw()
-    mixersHandler.draw()
-    outputsHandler.draw()
+    // inputsHandler.draw()
+    // overlaysHandler.draw()
+    // mixersHandler.draw()
+    // outputsHandler.draw()
+    // components.redrawRhs()
+
+    $('#cards').append(components.blocksTable())
+
+    preview.handleOutputsUpdate()
+}
+
+function allBlocks() {
+    return inputsHandler.items
+        .concat(overlaysHandler.items)
+        .concat(mixersHandler.items)
+        .concat(outputsHandler.items)
 }
 
 var topMessageInterval
@@ -56,7 +68,7 @@ function hideMessage() {
     $("#top-message").fadeOut(200);
 }
 
-function getSelect(name, currentlySelectedKey, msg, options, alwaysShowUnselectedOption) {
+function getSelect(name, currentlySelectedKey, msg, options, alwaysShowUnselectedOption, onChange) {
     var h = $('<select name="' + name + '"></select>')
     h.addClass('form-control form-control-sm')
     if (!currentlySelectedKey || alwaysShowUnselectedOption) $(h).append('<option value="">' + msg + '</option>')
@@ -67,6 +79,9 @@ function getSelect(name, currentlySelectedKey, msg, options, alwaysShowUnselecte
         $(h).append(option)
     })
 
+    if (onChange) {
+        h.on('change', event => onChange(h.val()))
+    }
     return h
 }
 
@@ -90,14 +105,16 @@ function getDimensionsSelect(name, width, height) {
     })
 }
 
-function getSourceSelect(block, isNew) {
+function getSourceSelect(block, isNew, showLabel, onChange) {
     const options = {
         id: 'source',
-        label: 'Source',
         name: 'source',
         options: {'none': 'None'},
+        onChange
     }
-
+    
+    if (showLabel) options.label = 'Source'
+    
     options.value = block.source
 
     mixersHandler.items.concat(inputsHandler.items).forEach(m => {
@@ -213,7 +230,7 @@ function formGroup(details) {
     }
     else if (details.options) {
         e.append(label)
-        var s = getSelect(details.name, details.value, details.initialOption, details.options, details.alwaysShowUnselectedOption)
+        var s = getSelect(details.name, details.value, details.initialOption, details.options, details.alwaysShowUnselectedOption, details.onChange)
         e.append(s)
     }
     else {
@@ -293,12 +310,22 @@ function ucFirst(string) {
 
 function prettyUid(uid) {
     if (!uid) return uid
-    const matches = uid.match(/^(input|mixer|output|overlay)(\d+)$/)
-    if (matches) {
-        return ucFirst(matches[1] + ' ' + matches[2])
+    const details = uidToTypeAndId(uid)
+    if (details) {
+        return ucFirst(details.type + ' ' + details.id)
     }
     else {
         return uid
+    }
+}
+
+function uidToTypeAndId(uid) {
+    const matches = uid.match(/^(input|mixer|output|overlay)(\d+)$/)
+    if (matches) {
+        return {type: matches[1], id: matches[2]}
+    }
+    else {
+        return null
     }
 }
 
@@ -320,10 +347,9 @@ function submitCreateOrEdit(blockType, id, values) {
         dataType: 'json',
         data: JSON.stringify(values),
         success: response => {
-            const msg = isUpdate ?
-                `Successfully updated ${blockType} ${id}` :
-                `Successfully created ${blockType} ${response.id}`
-            showMessage(msg, 'success')
+            if (!isUpdate) {
+                showMessage(`Successfully created ${blockType} ${response.id}`, 'success')
+            }
             updatePage()
         },
         error: response => {
@@ -334,6 +360,16 @@ function submitCreateOrEdit(blockType, id, values) {
             showMessage(msg, 'warning')
         }
     });
+}
+
+function typeToHandler(type) {
+    const handlers = {
+        'input': inputsHandler,
+        'output': outputsHandler,
+        'mixer': mixersHandler,
+        'overlay': overlaysHandler
+    }
+    return handlers[type]
 }
 
 onPageLoad()

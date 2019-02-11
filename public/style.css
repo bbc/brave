@@ -161,11 +161,39 @@ body {
 }
 
 .block-card-outer {
-    padding: 16px 16px 0 0;
+    padding: 0 8px 8px 0;
 }
 
 .block-card-selected {
-    border: 2px solid blue;
+    border: 2px solid #779;
+}
+
+.rhs-box {
+    padding: 12px 12px 24px 8px;
+    margin: 0;
+    border: 2px solid #779;
+    border-radius: 4px;
+    height: 100%;
+    background-color: #446;
+    color: #ddd;   
+}
+
+.rhs-box h2 {
+    font-weight: normal;
+    font-size: 1.4em;
+    border-bottom: 1px solid #779;
+    padding: 4px 0 4px 0;
+}
+
+.rhs-box h2 .fas {
+    padding-left: 10px;
+}
+
+.rhs-box h3 {
+    font-weight: normal;
+    font-size: 1.2em;
+    border-bottom: 1px solid #779;
+    padding: 20px 0 4px 0;
 }
 
 .mix-option {
@@ -179,7 +207,7 @@ body {
 }
 
 .mix-option-hidden {
-    background: linear-gradient(#2596b8, #28a1c5 40%, #29a8cd);
+    background: linear-gradient(#EF8726, #EF8726 40%, #EF8726);
 }
 
 .mix-option-not-connected {
@@ -223,4 +251,45 @@ nav h1 {
     color: #ddd;
     vertical-align: middle;
     padding: 4px 8px 4px 4px;
+}
+
+.close-button {
+    float:right;
+    padding: 4px;
+}
+
+.close-button:hover {
+    float:right;
+    padding: 4px;
+    color: yellow;
+    text-decoration: none;
+}
+
+.details-table {
+    width: 100%;
+}
+
+.details-table th, .details-table td {
+    border-bottom: 1px solid #668;
+    padding: 4px 20px 4px 4px;
+    vertical-align: middle;
+}
+
+.details-table th {
+    width: 30%;
+}
+
+.blocks-table {
+    border: 1px solid #668;
+    width: 100%;
+}
+
+.blocks-table td, .blocks-table th {
+    border-bottom: 1px solid #668;
+    padding: 8px;
+    vertical-align: middle;
+}
+
+.blocks-table tr.block-selected {
+    background-color: #446;
 }

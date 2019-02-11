@@ -33,59 +33,77 @@ inputsHandler._drawCards = () => {
 
 inputsHandler._asCard = (input) => {
     return components.card({
+        uid: input.uid,
         title: prettyUid(input.uid) + ' (' + prettyType(input.type) + ')',
-        options: inputsHandler._optionButtonsForInput(input),
-        body: inputsHandler._inputCardBody(input),
+        // options: inputsHandler._optionButtonsForInput(input),
+        // body: inputsHandler.detailsDiv(input),
         state: components.stateBox(input, inputsHandler.setState),
         mixOptions: components.getMixOptions(input)
     })
 }
 
-inputsHandler._optionButtonsForInput = (input) => {
-    const buttons = []
-    buttons.push(components.editButton().click(() => { inputsHandler.showFormToEdit(input); return false }))
-    buttons.push(components.deleteButton().click(() => { inputsHandler.delete(input); return false }))
-    if (input.type === 'uri') {
-        buttons.push(components.seekButton().click(() => { inputsHandler.seek(input); return false }))
-    }
-    return buttons
-}
+// inputsHandler._optionButtonsForInput = (input) => {
+//     const buttons = []
+//     buttons.push(components.editButton().click(() => { inputsHandler.showFormToEdit(input); return false }))
+//     buttons.push(components.deleteButton().click(() => { inputsHandler.delete(input); return false }))
+//     if (input.type === 'uri') {
+//         buttons.push(components.seekButton().click(() => { inputsHandler.seek(input); return false }))
+//     }
+//     return buttons
+// }
 
-inputsHandler._inputCardBody = (input) => {
-    var details = []
-    if (input.uri) details.push('<div><code>' + input.uri + '</code></div>')
+inputsHandler.detailsForTable = (input) => {
+    const fields = []
+    if (input.hasOwnProperty('audio_channels')) fields.push(['Audio channels', input.audio_channels])
+    if (input.hasOwnProperty('audio_rate')) fields.push(['Audio rate', input.audio_rate])
+    if (input.hasOwnProperty('host')) fields.push(['Host', input.host])
+    if (input.hasOwnProperty('port')) fields.push(['Port', input.port])
+    if (input.hasOwnProperty('containers')) fields.push(['Container', container])
     if (input.hasOwnProperty('width') &&
-        input.hasOwnProperty('height')) details.push('<strong>Input size:</strong> ' + prettyDimensions(input))
-    if (input.hasOwnProperty('width') &&
-        input.hasOwnProperty('height')) details.push('<div><strong>Resized to:</strong> ' + prettyDimensions(input) + '</div>')
-    if (input.hasOwnProperty('framerate')) details.push('<div><strong>Framerate:</strong> ' + Math.round(input.framerate) + '</div>')
-    if (input.hasOwnProperty('audio_channels')) details.push('<div><strong>Audio channels:</strong> ' + input.audio_channels + '</div>')
-    if (input.hasOwnProperty('audio_rate')) details.push('<div><strong>Audio rate:</strong> ' + input.audio_rate + '</div>')
-    if (input.hasOwnProperty('volume')) details.push('<div><strong>Volume:</strong> ' + (100 * input.volume) + '&#37;</div>')
-    if (input.hasOwnProperty('loop')) details.push('<div><strong>Loop:</strong> ' + (input.loop ? 'Yes' : 'No') + '</div>')
-    if (input.hasOwnProperty('input_volume')) details.push('<div><strong>Input volume:</strong> ' + input.input_volume + '</div>')
-    if (input.hasOwnProperty('freq')) details.push('<div><strong>Frequency:</strong> ' + input.freq + 'Hz</div>')
-    if (input.hasOwnProperty('pattern')) details.push('<div><strong>Pattern:</strong> ' + inputsHandler.patternTypes[input.pattern] + '</div>')
-    if (input.hasOwnProperty('wave')) details.push('<div><strong>Wave:</strong> ' + inputsHandler.waveTypes[input.wave] + '</div>')
-    if (input.hasOwnProperty('device')) details.push('<div><strong>Device Num:</strong> ' + input.device + '</div>')
-    if (input.hasOwnProperty('connection')) details.push('<div><strong>Connection Type:</strong> ' + inputsHandler.decklinkConnection[input.connection] + '</div>')
-    if (input.hasOwnProperty('mode')) details.push('<div><strong>Input Mode:</strong> ' + inputsHandler.decklinkModes[input.mode] + '</div>')
-    if (input.hasOwnProperty('host')) details.push('<div><strong>Host:</strong> ' + input.host + '</div>')
-    if (input.hasOwnProperty('port')) details.push('<div><strong>Port:</strong> ' + input.port + '</div>')
-    if (input.hasOwnProperty('container')) details.push('<div><strong>Container:</strong> ' + input.container + '</div>')
-
-    if (input.hasOwnProperty('duration')) {
-        var duration = prettyDuration(input.duration)
-        if (duration !== null) details.push('<strong>Duration:</strong> ' + duration)
+        input.hasOwnProperty('height')) fields.push(['Input size', prettyDimensions(input)])
+    if (input.hasOwnProperty('framerate')) fields.push(['Framerate', Math.round(input.framerate)])
+    if (input.hasOwnProperty('uri')) fields.push(['uri', $('<code />').append(input.uri)])
+    if (input.hasOwnProperty('pattern')) {
+        const onChange = val => submitCreateOrEdit('input', input.id, {pattern: val})
+        fields.push(['Pattern', getSelect('pattern', input.pattern, 'Select pattern...', inputsHandler.patternTypes, false, onChange)])
+    }
+    if (input.hasOwnProperty('volume')) {
+        const onChange = val => submitCreateOrEdit('input', input.id, {volume: val/100})
+        fields.push(['Volume', components.slider(input.volume*100, onChange, {id: 'volume-slider', text_end: '%', min: 0, max: 100, step: 5})])
+    }
+    if (input.hasOwnProperty('freq')) {
+        const onChange = val => submitCreateOrEdit('input', input.id, {freq: val})
+        fields.push(['Frequency', components.slider(input.freq, onChange, {id: 'freq-slider', text_end: ' KHz', min: 0, max: 4000, step: 20})])
+    }
+    if (input.hasOwnProperty('wave')) {
+        const onChange = val => submitCreateOrEdit('input', input.id, {wave: val})
+        fields.push(['Wave', getSelect('wave', input.wave, 'Select wave...', inputsHandler.waveTypes, false, onChange)])
+    }
+    if (input.hasOwnProperty('position') && input.position !== null) {
+        let position = prettyDuration(input.position)
+        if (input.type === 'uri') {
+            position = $('<span />').text(position + ' ' ).append(components.seekButton().click(() => {
+                inputsHandler.seek(input); return false
+            }))
+        }
+        fields.push(['Position', position])
+    }
+    if (input.hasOwnProperty('duration') && input.duration !== null) {
+        fields.push(['Duration', prettyDuration(input.duration)])
+    }
+    if (input.hasOwnProperty('buffer_duration') && input.duration !== null) {
+        fields.push(['Buffer duration', prettyDuration(input.buffer_duration)])
+    }
+    if (input.hasOwnProperty('loop')) {
+        fields.push(['Loop?', input.loop ? 'Yes' : 'No'])
     }
 
-    if (input.hasOwnProperty('buffer_duration')) {
-        var duration = prettyDuration(input.buffer_duration)
-        if (duration !== null) details.push('<strong>Buffer duration:</strong> ' + duration)
-    }
+    if (input.hasOwnProperty('device')) fields.push(['Device num', input.device])
+    if (input.hasOwnProperty('connection')) fields.push(['Connection type', inputsHandler.decklinkConnection[input.connection]])
+    if (input.hasOwnProperty('mode')) fields.push(['Input mode', inputsHandler.decklinkModes[input.mode]])
+    if (input.error_message) fields.push(['ERROR', $('<span style="color:red">' + input.error_message + '</span>')])
 
-    if (input.hasOwnProperty('error_message')) details.push('<strong>ERROR:</strong> <span style="color:red">' + input.error_message + '</span>')
-    return details.map(d => $('<div></div>').append(d))
+    return fields
 }
 
 inputsHandler._handleNewFormType = function(event) {
@@ -369,6 +387,10 @@ inputsHandler.delete = function(input) {
 
 inputsHandler.setState = function(id, state) {
     return submitCreateOrEdit('input', id, {state})
+}
+
+inputsHandler.getMixOptions = (input) => {
+    return components.getMixOptions(input)
 }
 
 inputsHandler.patternTypes = [

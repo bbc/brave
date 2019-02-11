@@ -27,25 +27,42 @@ overlaysHandler._drawCards = () => {
 
 overlaysHandler._asCard = (overlay) => {
     return components.card({
+        uid: overlay.uid,
         title: 'Overlay ' + overlay.id + ' (' + prettyType(overlay.type) + ')',
-        options: overlaysHandler._optionButtonsForOverlay(overlay),
-        body: overlaysHandler._overlayCardBody(overlay),
-        mixOptions: overlaysHandler._getMixOptions(overlay)
+        // options: overlaysHandler._optionButtonsForOverlay(overlay),
+        // body: overlaysHandler.detailsDiv(overlay),
+        // mixOptions: overlaysHandler.getMixOptions(overlay)
     })
 }
 
-overlaysHandler._optionButtonsForOverlay  = (overlay) => {
-    var editButton   = components.editButton().click(() => { overlaysHandler.showFormToEdit(overlay); return false })
-    var deleteButton = components.deleteButton().click(() => { overlaysHandler.delete(overlay); return false })
-    return [editButton, deleteButton]
-}
+// overlaysHandler._optionButtonsForOverlay  = (overlay) => {
+//     var editButton   = components.editButton().click(() => { overlaysHandler.showFormToEdit(overlay); return false })
+//     var deleteButton = components.deleteButton().click(() => { overlaysHandler.delete(overlay); return false })
+//     return [editButton, deleteButton]
+// }
 
-overlaysHandler._overlayCardBody = (overlay) => {
-    const details = []
-    if (overlay.effect_name) details.push('<strong>Effect:</strong> ' + overlay.effect_name)
-    if (overlay.text) details.push('<strong>Text:</strong> ' + overlay.text)
-    if (overlay.valignment) details.push('<strong>Vertical alignment:</strong> ' + overlay.valignment)
-    return details.map(d => $('<div></div>').append(d))
+overlaysHandler.detailsForTable = (overlay) => {
+    const fields = []
+    const onSourceChange = val =>
+        submitCreateOrEdit('overlay', overlay.id, {source: val === 'none' ? null : val})
+    fields.push(['Source', getSourceSelect(overlay, false, false, onSourceChange)])
+    const onVisibleChange = val => submitCreateOrEdit('overlay', overlay.id, {visible: val})
+    fields.push(['Visible?', components.switch(overlay.visible, onVisibleChange)])
+    // getSourceSelect(overlay, false, false, onVisibleChange)])
+    if (overlay.effect_name) fields.push(['Effect', overlay.effect_name])
+    if (overlay.hasOwnProperty('text')) {
+        const onChange = val => submitCreateOrEdit('overlay', overlay.id, {text: val})
+        fields.push(['Text', components.editableTextBox(overlay.text, onChange)])
+    }
+    if (overlay.valignment) {
+        const onChange = val => submitCreateOrEdit('overlay', overlay.id, {valignment: val})
+        fields.push(['Vertical alignment', getSelect('valignment', overlay.valignment, 'Select alignment...', overlaysHandler.valignmentTypes, false, onChange)])
+    }
+    if (overlay.font_size) {
+        const onChange = val => submitCreateOrEdit('overlay', overlay.id, {font_size: val})
+        fields.push(['Font size', components.slider(overlay.font_size, onChange, {id: 'font-size-slider', text_end: 'pt', min: 6, max: 100, step: 2})])
+    }
+    return fields
 }
 
 overlaysHandler.overlay = (overlay) => {
@@ -54,33 +71,6 @@ overlaysHandler.overlay = (overlay) => {
 
 overlaysHandler.remove = (overlay) => {
     submitCreateOrEdit('overlay', overlay.id, {visible: false})
-}
-
-overlaysHandler._getMixOptions = (overlay) => {
-    var div = $('<div class="mix-option"></div>')
-    if (!overlay.source) {
-        div.addClass('mix-option-not-connected')
-        return div.append('Not connected')
-    }
-    var showingOrHidden
-    if (overlay.visible) {
-        showingOrHidden = 'In mix'
-        div.addClass('mix-option-showing')
-        var removeButton = components.removeButton()
-        removeButton.click(() => { overlaysHandler.remove(overlay); return false })
-        var buttons = $('<div class="option-icons"></div>').append(removeButton)
-        div.append(buttons)
-    }
-    else {
-        showingOrHidden = 'Not in mix'
-        div.addClass('mix-option-hidden')
-        var overlayButton = components.overlayButton()
-        overlayButton.click(() => { overlaysHandler.overlay(overlay); return false })
-        var buttons = $('<div class="option-icons"></div>').append(overlayButton)
-        div.append(buttons)
-    }
-    div.append('<strong>' + prettyUid(overlay.source) + ':</strong> ' + showingOrHidden)
-    return div
 }
 
 overlaysHandler.delete = function(overlay) {
@@ -218,8 +208,7 @@ overlaysHandler._handleFormSubmit = function() {
 overlaysHandler.valignmentTypes = {
     top: 'Top',
     center: 'Center',
-    bottom: 'Bottom',
-    baseline: 'Baseline'
+    bottom: 'Bottom'
 }
 
 overlaysHandler.effectNames = {

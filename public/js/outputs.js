@@ -35,59 +35,41 @@ outputsHandler._drawCards = () => {
 
 outputsHandler._asCard = (output) => {
     return components.card({
+        uid: output.uid,
         title: 'Output ' + output.id + ' (' + prettyType(output.type) + ')',
-        options: outputsHandler._optionButtonsForOutput(output),
-        body: outputsHandler._outputCardBody(output),
+        // options: outputsHandler._optionButtonsForOutput(output),
+        // body: outputsHandler.detailsDiv(output),
         state: components.stateBox(output, outputsHandler.setState),
     })
 }
 
-outputsHandler._optionButtonsForOutput = (output) => {
-    const editButton = components.editButton().click(() => { outputsHandler.showFormToEdit(output); return false })
-    const deleteButton = components.deleteButton().click(() => { outputsHandler.delete(output); return false })
-    return [editButton, deleteButton]
-}
+// outputsHandler._optionButtonsForOutput = (output) => {
+//     const editButton = components.editButton().click(() => { outputsHandler.showFormToEdit(output); return false })
+//     const deleteButton = components.deleteButton().click(() => { outputsHandler.delete(output); return false })
+//     return [editButton, deleteButton]
+// }
 
-outputsHandler._outputCardBody = (output) => {
-    var details = []
-    if (output.current_num_peers) {
-        details.push('<strong>Number of connections:</strong> ' + output.current_num_peers)
-    }
-    if (output.location) {
-        details.push('<strong>Location:</strong> ' + output.location)
-    }
-    else if (output.uri) {
-        details.push('<strong>URI:</strong> <code>' + output.uri + '</code></div>')
-    }
-    else if (output.host && output.port && output.type === 'tcp') {
+outputsHandler.detailsForTable = (output) => {
+    const fields = []
+    const onSourceChange = val => submitCreateOrEdit('output', output.id, {source: val})
+    fields.push(['Source', getSourceSelect(output, false, false, onSourceChange)])
+    if (output.hasOwnProperty('width') &&
+        output.hasOwnProperty('height')) fields.push(['Size', prettyDimensions(output)])
+    if (output.current_num_peers) fields.push(['Number of connections', output.current_num_peers])
+    if (output.location) fields.push(['Location', output.location])
+    if (output.stream_name) fields.push(['Stream name', output.stream_name])
+    if (output.uri) fields.push(['URI', $('<code />').append(output.uri)])
+    if (output.error_message) fields.push(['ERROR', $('<span style="color:red">' + output.error_message + '</span>')])
+
+    if (output.host && output.port && output.type === 'tcp') {
         current_domain = $('<a>').attr('href', document.location.href).prop('hostname');
         host = current_domain === '127.0.0.1' ? output.host : current_domain
         // Instead of domain we can use output.host but it may be an internal (private) IP
-        details.push('<strong>URI:</strong> <code>tcp://' + host + ':' + output.port + '</code> (Use VLC to watch this)')
-        details.push('<strong>Container:</strong> <code>' + output.container + '</code>')
+        fields.push(['URI', '<code>tcp://' + host + ':' + output.port + '</code> (Use VLC to watch this)'])
+        fields.push(['Container', output.container])
     }
 
-    if (output.hasOwnProperty('width') &&
-        output.hasOwnProperty('height')) details.push('<strong>Output size:</strong> ' + prettyDimensions(output))
-
-    if (output.audio_bitrate) {
-        details.push('<strong>Audio bitrate:</strong> ' + output.audio_bitrate)
-    }
-
-    if (output.hasOwnProperty('stream_name')) {
-        details.push('<strong>Stream name:</strong> ' + output.stream_name)
-    }
-
-    if (output.hasOwnProperty('source')) {
-        details.push('<strong>Source:</strong> ' + output.source)
-    }
-    else {
-        details.push('<strong>Source:</strong> None')
-    }
-
-    if (output.hasOwnProperty('error_message')) details.push('<strong>ERROR:</strong> <span style="color:red">' + output.error_message + '</span>')
-
-    return details.map(d => $('<div></div>').append(d))
+    return fields
 }
 
 outputsHandler.requestNewOutput = function(args) {
@@ -135,7 +117,7 @@ outputsHandler._populateForm = function(output) {
     else {
         form.append('<input type="hidden" name="id" value="' + output.id + '">')
     }
-    form.append(getSourceSelect(output, isNew))
+    form.append(getSourceSelect(output, isNew, true))
     if (!output.type) {
     }
     else if (output.type === 'local') {

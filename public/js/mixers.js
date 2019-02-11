@@ -39,26 +39,67 @@ mixersHandler._drawCards = () => {
 
 mixersHandler._asCard = (mixer) => {
     return components.card({
+        uid: mixer.uid,
         title: 'Mixer ' + mixer.id,
-        options: mixersHandler._optionButtonsForMixer(mixer),
-        body: mixersHandler._mixerCardBody(mixer),
+        // options: mixersHandler._optionButtonsForMixer(mixer),
+        // body: mixersHandler.detailsDiv(mixer),
         state: components.stateBox(mixer, mixersHandler.setState),
         mixOptions: components.getMixOptions(mixer)
     })
 }
 
-mixersHandler._optionButtonsForMixer = (mixer) => {
-    const editButton = components.editButton().click(() => { mixersHandler.showFormToEdit(mixer); return false })
-    const deleteButton = components.deleteButton().click(() => { mixersHandler.delete(mixer); return false })
-    return [editButton, deleteButton]
+// mixersHandler._optionButtonsForMixer = (mixer) => {
+//     const editButton = components.editButton().click(() => { mixersHandler.showFormToEdit(mixer); return false })
+//     const deleteButton = components.deleteButton().click(() => { mixersHandler.delete(mixer); return false })
+//     return [editButton, deleteButton]
+// }
+
+mixersHandler.detailsForTable = (mixer) => {
+    const fields = []
+    if (mixer.hasOwnProperty('width') &&
+        mixer.hasOwnProperty('height')) fields.push(['Size', prettyDimensions(mixer)])
+    if (mixer.hasOwnProperty('pattern')) {
+        const onChange = val => submitCreateOrEdit('mixer', mixer.id, {pattern: val})
+        fields.push(['Pattern', getSelect('pattern', mixer.pattern, 'Select pattern...', inputsHandler.patternTypes, false, onChange)])
+    }
+    return fields
 }
 
-mixersHandler._mixerCardBody = (mixer) => {
-    var details = []
-    if (mixer.hasOwnProperty('pattern')) details.push('<div><strong>Background:</strong> ' + inputsHandler.patternTypes[mixer.pattern] + '</div>')
-    if (mixer.hasOwnProperty('width') &&
-        mixer.hasOwnProperty('height')) details.push('<div><strong>Dimension:</strong> ' + prettyDimensions(mixer) + '</div>')
-    return details
+mixersHandler.getSourceOptions = (mixer) => {
+    const inputSources = inputsHandler.items
+    const mixerSources = mixersHandler.items.filter(m => m !== mixer) 
+    const allSources = inputSources.concat(mixerSources)
+    if (!allSources.length) return null
+
+    const table = $('<table class="details-table" />')
+    allSources.forEach(source => {
+        const tr = $('<tr />').append($('<th />').append(prettyUid(source.uid)))
+
+        var foundThis = mixer.sources.find(x => x.uid === source.uid)
+        var inMix = foundThis && foundThis.in_mix
+
+        if (inMix) {
+            tr.append($('<td />').append($('<span>In mix</span>').addClass('mix-option-showing')))
+            // #hidden
+            const onCutOut = () => { mixersHandler.remove(mixer, source) }
+            const buttons = $('<td />')
+            buttons.append(components.fullCutOutButton(onCutOut))
+            tr.append(buttons)
+        }
+        else {
+            tr.append($('<td />').append($('<span>Not in mix</span>').addClass('mix-option-hidden')))
+            // tr.append($('<td />').append('Not in mix'))
+            const onCutIn = () => { mixersHandler.cut(mixer, source) }
+            const onOverlay = () => { mixersHandler.overlay(mixer, source) }
+            const buttons = $('<td />')
+            buttons.append(components.fullCutInButton(onCutIn))
+            buttons.append(components.fullOverlayButton(onOverlay))
+            tr.append(buttons)
+        }
+        
+        table.append(tr)
+    })
+    return table
 }
 
 mixersHandler._sendMixerCommand = function(mixer, source, command) {
@@ -67,10 +108,9 @@ mixersHandler._sendMixerCommand = function(mixer, source, command) {
         url: 'api/mixers/' + mixer.id + '/' + command,
         dataType: 'json',
         data: JSON.stringify({uid:source.uid}),
-        success: function() {
-            showMessage('Success in ' + command + ' for ' + source.uid + ' to ' + mixer.uid)
-            updatePage()
-        },
+        // success: function() {
+        //     updatePage()
+        // },
         error: function() {
             showMessage('Sorry, an error occurred')
         }
@@ -135,7 +175,7 @@ mixersHandler.delete = function(mixer) {
         dataType: 'json',
         success: function() {
             showMessage('Successfully deleted mixer ' + mixer.id, 'success')
-            updatePage()
+            // updatePage()
         },
         error: function() {
             showMessage('Sorry, an error occurred whlst deleting mixer ' + mixer.id, 'danger')
@@ -143,3 +183,8 @@ mixersHandler.delete = function(mixer) {
     });
     return false
 }
+
+mixersHandler.getMixOptions = (mixer) => {
+    return components.getMixOptions(mixer)
+}
+
