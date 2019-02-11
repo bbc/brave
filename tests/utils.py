@@ -171,7 +171,7 @@ def delete_overlay(overlay_id):
 
 def update_overlay(overlay_id, details, status_code=200):
     response = api_post('/api/overlays/' + str(overlay_id), details)
-    assert response.status_code == status_code, 'Expected status code %s but got %s, body was:%s' % (status_code, response.status_code, response.json())
+    assert response.status_code == status_code, 'Expected status code %s but got %s, body was:%s' % (status_code, response.status_code, response.text)
 
 
 def set_mixer_state(mixer_id, state, status_code=200):
