@@ -54,8 +54,9 @@ brew install gst-libav gst-python
 ```
 
 ## Changes to brew gstreamer packages
-Depending on you brew version some of the options listed above may not be present.
+Depending on you brew version some of the options listed above may not be present. In order to add some of these missing dependencies back we will need to edit the different formula used to build the gstreamer libs. When brave trys to run it will look for the missing the dependencies, and print them out.
 
+### Plugins Ugly
 ```
 brew edit gst-plugins-bad
 ```
