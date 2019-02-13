@@ -59,14 +59,14 @@ Depending on you brew version some of the options listed above may not be presen
 ```
 brew edit gst-plugins-bad
 ```
-
 Add the following under `depends_on "orc"`
-
 ```
 depends_on "libnice" => :recommended
 depends_on "rtmpdump" => :recommended
 depends_on "srtp" => :recommended
 ```
+
+The rebuild/install the packages from source. `brew reinstall --build-from-source gst-plugins-bad`
 
 ## All done!
 
