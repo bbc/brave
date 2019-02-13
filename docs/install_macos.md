@@ -53,6 +53,21 @@ brew install gst-plugins-ugly  --with-lame --with-x264 --with-libmpeg2 --with-ma
 brew install gst-libav gst-python
 ```
 
+## Changes to brew gstreamer packages
+Depending on you brew version some of the options listed above may not be present.
+
+```
+brew edit gst-plugins-bad
+```
+
+Add the following under `depends_on "orc"`
+
+```
+depends_on "libnice" => :recommended
+depends_on "rtmpdump" => :recommended
+depends_on "srtp" => :recommended
+```
+
 ## All done!
 
 Try it out
