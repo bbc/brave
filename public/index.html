@@ -1,111 +1,70 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0/slate/bootstrap.min.css" crossorigin="anonymous">
-        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/10.2.1/css/bootstrap-slider.min.css" crossorigin="anonymous">
-        <link rel="stylesheet" href="style.css">
-        <link rel="stylesheet" href="css/switch.css">
-        <link rel="icon" href="data:,">
-        <title>Brave</title>
-    </head>
-    <body>
-    <header>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>BRAVE</title>
 
-<nav class="container-fluid">
-  <div class="row justify-content-between">
-    <div class="col-sm-4">
-        <h1>BRAVE</h1>
-        <span class="btn-group">
-          <button type="button" class="btn btn-sm btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <i class="fas fa-plus"></i> Add
-          </button>
-          <div class="dropdown-menu">
-            <a class="dropdown-item" href="#" id="new-input-button">Input</a>
-            <a class="dropdown-item" href="#" id="new-mixer-button">Mixer</a>
-            <a class="dropdown-item" href="#" id="new-output-button">Output</a>
-            <a class="dropdown-item" href="#" id="new-overlay-button">Overlay</a>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootswatch/4.0.0/slate/bootstrap.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.css"/>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/switch.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
+    <link rel="icon" href="data:,">
+
+    <script src="https://unpkg.com/vue"></script>
+    <!--<script src="https://unpkg.com/vue@2.5.0/dist/vue.js"></script>-->
+    <script src="https://unpkg.com/babel-polyfill@latest/dist/polyfill.min.js"></script>
+    <script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  </head>
+
+  <body>
+    <div id="app">
+    <header>
+      <nav class="container-fluid">
+        <div class="row justify-content-between">
+          <div class="col-sm-4">
+              <h1>BRAVE</h1>
+              <top-bar-buttons></top-bar-buttons>
           </div>
-        </span>
-        <span class="btn-group">
-          <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <i class="fas fa-cog"></i> Options
-          </button>
-          <div class="dropdown-menu">
-            <a class="dropdown-item" href="#" id="restart-brave-button">Restart Brave</a>
-            <a class="dropdown-item" href="api/config/current.yaml">Download current config</a>
-            <a class="dropdown-item" href="#" id="refresh-page-button">Refresh page</a>
-            <a class="dropdown-item" target="_blank" href="elements_table">Debug view (GStreamer elements)</a>
+          <div class="col-sm-4" style="text-align: center">
+              <preview-button></preview-button>
+              <span id="mute-span"></span>
           </div>
-        </span>
-    </div>
-    <div class="col-sm-4" style="text-align: center">
-        <span class="btn-group">
-            <button type="button" class="btn btn-sm btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <i class="fas fa-tv"></i>&nbsp;&nbsp; <span id="preview-button-msg">No preview</span>
-            </button>
-            <div class="dropdown-menu" id="preview-bar-dropdown"></div>
-        </span>
-        <span id="mute-span"></span>
-    </div>
-    <div class="col-sm-4 align-self-right" id="cpu-stats">
-    </div>
-  </div>
-</nav>
+          <div class="col-sm-4 align-self-right" id="cpu-stats">{{cpu}}</div>
+        </div>
+      </nav>
     </header>
     <main class="container-fluid">
         <div id="preview-bar"></div>
-
-        <div class="container-fluid">
-          <div class="row justify-content-between">
-            <!-- <div class="row" id="cards"></div> -->
-            <div class="col-sm-6" id="cards">
-            </div>
-            <div class="col-sm-6" id="rhs">
-            </div>
+        <div class="row">
+          <div class="col-sm-6" id="lhs">
+              <table class="blocks-table">
+                  <tbody>
+                      <tr is="block-row" v-for="block in sortedBlocks" v-bind:block="block" v-bind:key="block.uid"></tr>
+                  </tbody>
+              </table>
+          </div>
+          <div class="col-sm-6" id="rhs">
+          <rhs></rhs>
           </div>
         </div>
 
-        <div style="clear:both"></div>
+        <div><restart-modal></restart-modal></div>
+        <div><create-input-modal></create-input-modal></div>
+        <div><create-output-modal></create-output-modal></div>
+        <div><create-overlay-modal></create-overlay-modal></div>
+        <div class="bottom-message"><alert></alert></div>
 
-        <!-- Primary Modal (for adding and editing things) -->
-        <div class="modal" id="primary-modal" tabindex="-1" role="dialog" aria-hidden="true">
-          <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title"></h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                  <span aria-hidden="true">&times;</span>
-                </button>
-              </div>
-              <div class="modal-body"></div>
-              <div class="modal-footer"></div>
-            </div>
-          </div>
-        </div>
-
-        <div id="top-message" class="alert alert-warning alert-dismissible fade show" role="alert" style="z-index: 1000">
-          <div></div>
-          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/10.2.1/bootstrap-slider.min.js"></script>
-        <script src="js/components.js"></script>
-        <script src="js/index.js"></script>
-        <script src="js/inputs.js"></script>
-        <script src="js/outputs.js"></script>
-        <script src="js/overlays.js"></script>
-        <script src="js/mixers.js"></script>
-        <script src="js/websocket.js"></script>
-        <script src="js/webrtc.js"></script>
-        <script src="js/preview.js"></script>
     </main>
-    </body>
+    </div>
+    <script src="js/constants.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/block-fields.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/websocket.js"></script>
+    <script>start()</script>
+  </body>
 </html>
