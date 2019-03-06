@@ -1,375 +1,233 @@
-//
-// This web interface has been quickly thrown together. It's not production code.
-//
-
-function onPageLoad() {
-    $(document).ready(function() {
-        $('#new-input-button').click(inputsHandler.showFormToAdd)
-        $('#new-mixer-button').click(mixersHandler.create)
-        $('#new-overlay-button').click(overlaysHandler.showFormToAdd)
-        $('#new-output-button').click(outputsHandler.showFormToAdd)
-        $('#refresh-page-button').click(updatePage)
-        $('#restart-brave-button').click(restartBraveConfirmation)
-        $("#top-message").hide();
-        updatePage();
-        websocket.setup()
-    })
-}
-
-function updatePage() {
-    $.ajax({
-        url: 'api/all'
-    }).then(function(data) {
-        inputsHandler.items = data.inputs
-        overlaysHandler.items = data.overlays
-        outputsHandler.items = data.outputs
-        mixersHandler.items = data.mixers
-        drawAllItems()
-    });
-}
-
-setInterval(updatePage, 5000)
-
-function drawAllItems() {
-    $('#cards').empty()
-    if (noItems()) return showNoItemsMessage()
-    // inputsHandler.draw()
-    // overlaysHandler.draw()
-    // mixersHandler.draw()
-    // outputsHandler.draw()
-    // components.redrawRhs()
-
-    $('#cards').append(components.blocksTable())
-
-    preview.handleOutputsUpdate()
-}
-
-function allBlocks() {
-    return inputsHandler.items
-        .concat(overlaysHandler.items)
-        .concat(mixersHandler.items)
-        .concat(outputsHandler.items)
-}
-
-var topMessageInterval
-function showMessage(m, level) {
-    var VALID_LEVELS = ['warning', 'success', 'danger', 'info']
-    if (!level || VALID_LEVELS.indexOf(level) === -1) level = 'warning'
-    console.debug('Showing this top', level, ' message:', m)
-    $("#top-message").show();
-    $("#top-message div").text(m);
-    $("#top-message").removeClass('alert-warning alert-success alert-danger alert-info')
-    $("#top-message").addClass('alert-' + level)
-    if (topMessageInterval) clearInterval(topMessageInterval)
-    topMessageInterval = setInterval(hideMessage, 8000);
-}
-
-function hideMessage() {
-    $("#top-message").fadeOut(200);
-}
-
-function getSelect(name, currentlySelectedKey, msg, options, alwaysShowUnselectedOption, onChange) {
-    var h = $('<select name="' + name + '"></select>')
-    h.addClass('form-control form-control-sm')
-    if (!currentlySelectedKey || alwaysShowUnselectedOption) $(h).append('<option value="">' + msg + '</option>')
-    Object.keys(options).forEach(function(key) {
-        var option = $('<option></option>');
-        option.attr({ 'value': key }).text(options[key]);
-        if (key == currentlySelectedKey) option.attr({ selected: 'selected' });
-        $(h).append(option)
-    })
-
-    if (onChange) {
-        h.on('change', event => onChange(h.val()))
-    }
-    return h
-}
-
-function getDimensionsSelect(name, width, height) {
-    var currentDimensions = width && height ? width + 'x' + height : null
-    var dimensionsOptions = {}
-    dimensionsOptions[currentDimensions] = prettyDimensions({width: width, height: height})
-    standardDimensions.forEach(d => {
-        dimensions = d[0] + 'x' + d[1]
-        dimensionsOptions[dimensions] = prettyDimensions({width: d[0], height: d[1]})
-    })
-
-    return formGroup({
-        id: 'input-dimensions',
-        label: 'Dimensions',
-        name,
-        value: currentDimensions,
-        initialOption: 'None (automatically resize to full screen)',
-        options: dimensionsOptions,
-        alwaysShowUnselectedOption: true
-    })
-}
-
-function getSourceSelect(block, isNew, showLabel, onChange) {
-    const options = {
-        id: 'source',
-        name: 'source',
-        options: {'none': 'None'},
-        onChange
-    }
-    
-    if (showLabel) options.label = 'Source'
-    
-    options.value = block.source
-
-    mixersHandler.items.concat(inputsHandler.items).forEach(m => {
-        options.options[m.uid] = prettyUid(m.uid)
-
-        // If creating new, make the first mixer the default one:
-        if (isNew && !options.value) options.value = m.uid
-    })
-
-    if (!options.value) options.value = 'none'
-    return formGroup(options)
-}
-
-function splitXyString(s) {
-    matches = s.match(/^(\d+)x(\d+)$/)
-    if (matches) return [matches[1], matches[2]]
-}
-
-function splitPositionIntoXposAndYpos(obj) {
-    if (obj.position) {
-        split = splitXyString(obj.position)
-        if (split) [obj.xpos, obj.ypos] = split
-        else {
-            showMessage('Cannot understand position', 'warning')
-            return false
+Vue.component('block-row', {
+    props: ['block'],
+    template: `<tr v-on:click="$root.selectBlock(block.uid)" :class="{ 'block-selected': selected }"">
+        <th>{{ this.prettyUid(block.uid) }}</th>
+        <block-summary :block="block" />
+        <state-box :block="block" />
+    </tr>`,
+    computed: {
+        selected: function() {
+            return this.$root.selectedBlockUid === this.block.uid
+        }
+    },
+    methods: {
+        stateBox: function() {
+            return ``
         }
     }
-    delete obj.position // also deletes if empty string
-    return true
-}
+})
 
-function splitDimensionsIntoWidthAndHeight(obj) {
-    if (obj.dimensions) {
-        split = splitXyString(obj.dimensions)
-        if (split) [obj.width, obj.height] = split
-        else {
-            showMessage('Cannot understand dimensions', 'warning')
-            return false
+Vue.component('block-summary', {
+    props: ['block'],
+    template: '<td>{{msg}}</td>',
+    computed: {
+        msg: function() {
+            if (this.block.uri) return this.block.uri
+            const prettyType = this.ucFirst(this.prettyType(this.block.type))
+            if (this.block.text) return prettyType + ' (' + this.block.text + ')'
+            return prettyType
         }
     }
-    delete obj.dimensions // also deletes if empty string
-    return true
-}
+})
 
-// Widescreen, selectively taken from https://en.wikipedia.org/wiki/16:9#Common_resolutions
-var standardDimensions = [
-    [254, 144],
-    [480, 270],
-    [640, 360],
-    [768, 432],
-    [1024, 576],
-    [1280, 720],
-    [1366, 768],
-
-    // // Portrait
-    // [360, 640],
-    // [720, 1280],
-    //
-    // // Square
-    // [360, 360],
-    // [640, 640],
-    // [1080, 1080],
-    //
-    // // 4:3
-    // [640, 480],
-    // [704, 576],
-]
-
-function prettyDimensions(obj) {
-    var str = obj.width + 'x' + obj.height
-    if (obj.width*(9/16) === obj.height) {
-        str += ' (16x9 landscape)'
-    }
-    else if (obj.width*(16/9) === obj.height) {
-        str += ' (16x9 portrait)'
-    }
-    else if (obj.width*(3/4) === obj.height) {
-        str += ' (4x3 landscape)'
-    }
-    else if (obj.width === obj.height) {
-        str += ' (square)'
-    }
-
-    if (obj.width === 720 && obj.height === 576) str += ' (PAL DVD)'
-    if (obj.width === 1280 && obj.height === 720) str += ' (720p HD)'
-    if (obj.width === 1920 && obj.height === 1080) str += ' (1080p Full HD)'
-    if (obj.width === 576 && obj.height === 520) str += ' (PAL SD)'
-    if (obj.width === 1024 && obj.height === 576) str += ' (Widescreen SD)'
-    if (obj.width === 1366 && obj.height === 768) str += ' (qHD)'
-    return str
-}
-
-function prettyType(i) {
-    i = i.replace(/_/g, ' ')
-    // i = i.replace(/./, i.toUpperCase()[0])
-    return i
-}
-
-// Creates part of a form, which Bootstrap calls a 'form-group'
-function formGroup(details) {
-    var e = $(document.createElement('div'))
-    e.addClass('form-group')
-    var label = $(document.createElement('label'))
-    label.html(details.label)
-    label.attr('for', details.id)
-    if (details.type === 'checkbox') {
-        const input = $('<input type="checkbox" />')
-        input.attr('id', details.id)
-        input.attr('name', details.name)
-        if (details.value) input.attr('checked', 'checked')
-        if (e.value) input.checked = true
-        e.append(input, ' ', label)
-    }
-    else if (details.options) {
-        e.append(label)
-        var s = getSelect(details.name, details.value, details.initialOption, details.options, details.alwaysShowUnselectedOption, details.onChange)
-        e.append(s)
-    }
-    else {
-        e.append(label)
-        var input = $(document.createElement('input'))
-        input.addClass('form-control form-control-sm')
-        var fields = ['min', 'max', 'step', 'name', 'type', 'id', 'value',
-                      'data-slider-min', 'data-slider-max', 'data-slider-step', 'data-slider-value']
-        fields.forEach(f => input.attr(f, details[f]))
-        e.append(input)
-        if (details['data-slider-value']) {
-            input.slider();
-            let msg = $('<span></span>')
-            let showPerc = (event) => msg.text(event.value + '%')
-            showPerc({value: details['data-slider-value']})
-            input.on("slide", showPerc)
-            e.append(msg)
-        }
-    }
-    if (details.help) {
-        var small = $(document.createElement('small'))
-        small.addClass('form-text text-muted')
-        small.html(details.help)
-        e.append(small)
-    }
-
-    return e
-}
-
-function showModal(label, content, onSave) {
-    $('#primary-modal').modal()
-    $('#primary-modal h5').html(label)
-    $('#primary-modal .modal-body').html(content)
-
-    if (onSave) {
-        var saveButton = $('<button type="button" class="btn btn-success save-button">Save</button>')
-        saveButton.click(onSave)
-        $('#primary-modal .modal-footer').empty().append(saveButton)
-    }
-}
-
-function hideModal() {
-    $('#primary-modal').modal('hide')
-    $('#primary-modal .modal-body').empty()
-    $('#primary-modal .modal-footer').empty()
-}
-
-function restartBraveConfirmation() {
-    const label = 'Should the current configuration (inputs, etc.) be retained?'
-    var currentConfigButton = $('<button type="button" class="btn btn-primary">Yes, restart Brave and keep the current configuration</button>')
-    currentConfigButton.click(() => { restartBrave('current') })
-    var originalConfigButton = $('<button type="button" class="btn btn-primary">No, restart Brave with the original configuration</button>')
-    originalConfigButton.click(() => { restartBrave('original') })
-    showModal(label, [currentConfigButton, '<br /><br />', originalConfigButton])
-}
-
-function restartBrave(config) {
-    hideModal()
-    $.ajax({
-        type: 'POST',
-        url: 'api/restart',
-        data: JSON.stringify({config}),
-        dataType: "json",
-        contentType: "application/json",
-        success: function() {
-            showMessage('Restart underway', 'success')
-        },
-        error: function() {
-            showMessage('Sorry, an error occurred', 'danger')
-        }
-    });
-}
-
-function ucFirst(string) {
-    return string.charAt(0).toUpperCase() + string.slice(1)
-}
-
-function prettyUid(uid) {
-    if (!uid) return uid
-    const details = uidToTypeAndId(uid)
-    if (details) {
-        return ucFirst(details.type + ' ' + details.id)
-    }
-    else {
-        return uid
-    }
-}
-
-function uidToTypeAndId(uid) {
-    const matches = uid.match(/^(input|mixer|output|overlay)(\d+)$/)
-    if (matches) {
-        return {type: matches[1], id: matches[2]}
-    }
-    else {
-        return null
-    }
-}
-
-function noItems() {
-    return inputsHandler.items.length + outputsHandler.items.length + mixersHandler.items.length + overlaysHandler.items.length === 0
-}
-
-function showNoItemsMessage() {
-    $('#cards').append('Use the \'Add\' button above to create inputs, mixers, outputs and overlays.')
-}
-
-function submitCreateOrEdit(blockType, id, values) {
-    const isUpdate = (id !== null && id !== undefined)
-    const type = isUpdate ? 'POST' : 'PUT'
-    const url = `api/${blockType}s` + (isUpdate ? `/${id}` : '')
-    $.ajax({
-        contentType: 'application/json',
-        type, url,
-        dataType: 'json',
-        data: JSON.stringify(values),
-        success: response => {
-            if (!isUpdate) {
-                showMessage(`Successfully created ${blockType} ${response.id}`, 'success')
+Vue.component('state-box', {
+    props: ['block'],
+    template: `<td v-if="block.state" :class="block.state">
+        <state-icons :block="block" /> <span v-html="msg"></span>
+    </td>
+    <td v-else></td>`,
+    computed: {
+        msg: function() {
+            let m = this.block.state 
+            if (this.block.desired_state && this.block.desired_state !== this.block.state) {
+                m += ' &rarr; ' + this.block.desired_state
             }
-            updatePage()
-        },
-        error: response => {
-            let msg = `Error creating ${blockType}` + (isUpdate ? ` ${id}` : '')
-            if (response.responseJSON && response.responseJSON.error) {
-                msg += ': ' + response.responseJSON.error
-            }
-            showMessage(msg, 'warning')
+            return m
         }
-    });
-}
-
-function typeToHandler(type) {
-    const handlers = {
-        'input': inputsHandler,
-        'output': outputsHandler,
-        'mixer': mixersHandler,
-        'overlay': overlaysHandler
     }
-    return handlers[type]
+})
+
+Vue.component('state-icons', {
+    props: ['block'],
+    template: `
+    <span class="state-icons">
+        <icon name="NULL" :extraClass="block.state==='NULL' ? '' : 'icon-unselected'"  v-on:click="$root.postUpdate(block, {state:'NULL'})" />
+        <icon name="READY" :extraClass="block.state==='READY' ? '' : 'icon-unselected'" v-on:click="$root.postUpdate(block, {state:'READY'})" />
+        <icon name="PAUSED" :extraClass="block.state==='PAUSED' ? '' : 'icon-unselected'" v-on:click="$root.postUpdate(block, {state:'PAUSED'})" />
+        <icon name="PLAYING" :extraClass="block.state==='PLAYING' ? '' : 'icon-unselected'" v-on:click="$root.postUpdate(block, {state:'PLAYING'})" />
+    </span>`,
+    computed: {
+        selectedState: function() { return block.state }
+    }
+})
+
+Vue.component('icon', {
+    props: ['name', 'extraClass', 'onClick'],
+    computed: {
+        nameToClass: function() {
+            const icons = {
+                'PLAYING': 'fa-play',
+                'PAUSED': 'fa-pause',
+                'READY': 'fa-stop',
+                'NULL': 'fa-exclamation-triangle',
+                'close': 'fa-times',
+            }
+            return icons[this.name]
+        }
+    },
+    template: `<a href="#" :class="['fas', nameToClass, extraClass]" v-on:click.stop="$emit('click')" ></a>`
+})
+
+Vue.component('rhs', {
+    template: `<div class="rhs-box" v-if="this.block">
+        <icon name="close" extraClass="close-button" v-on:click="$root.selectBlock(null)" />
+        <h2>{{title}}</h2>
+        <block-details-table :block="this.block" />
+        <div style="margin-top: 20px">
+            <delete-block-button :block="this.block" />
+        </div>
+    </div>`,
+    computed: {
+        block: function() { return this.$root.blocks.find(b => b.uid === this.$root.selectedBlockUid) },
+        title: function() {
+            let title = this.prettyUid(this.block.uid)
+            if (this.block.type && this.block.type !== this.uidToTypeAndId(this.block.uid).type) title += ' (' + this.prettyType(this.block.type) + ')'
+            return title
+        }
+    }
+})
+
+Vue.component('block-details-table', {
+    props: ['block'],
+    template: `
+    <table class="details-table">
+    <tr v-if="this.block.hasOwnProperty('volume')"><th>Volume</th><td><block-volume :volume="this.block.volume" /></td></tr>
+    <tr v-if="this.block.hasOwnProperty('width')"><th>Dimensions</th><td><block-size :block="this.block" /></td></tr>
+    <tr v-if="this.block.hasOwnProperty('pattern')"><th>Pattern</th><td><block-pattern :value="this.block.pattern" /></td></tr>
+    <tr v-if="this.block.hasOwnProperty('wave')"><th>Wave</th><td><block-wave :value="this.block.wave" /></td></tr>
+    <tr v-if="this.block.hasOwnProperty('freq')"><th>Frequency</th><td>{{this.block.freq}}</td></tr>
+    <tr v-if="this.block.hasOwnProperty('uri')"><th>URI</th><td>{{this.block.uri}}</td></tr>
+    <tr v-if="this.block.hasOwnProperty('text')"><th>Text</th><td>{{this.block.text}}</td></tr>
+    <tr v-if="this.block.hasOwnProperty('host')"><th>Host</th><td>{{this.block.host}}</td></tr>
+    <tr v-if="this.block.hasOwnProperty('port')"><th>Port</th><td>{{this.block.port}}</td></tr>
+    <tr v-if="this.block.hasOwnProperty('location')"><th>Location</th><td>{{this.block.location}}</td></tr>
+    <tr v-if="this.block.hasOwnProperty('stream_name')"><th>Stream name</th><td>{{this.block.stream_name}}</td></tr>
+    </table>
+    `
+})
+
+Vue.mixin({
+    methods: {
+        ucFirst: str => str.charAt(0).toUpperCase() + str.slice(1),
+        uidToTypeAndId: uid => {
+            const matches = uid.match(/^(input|mixer|output|overlay)(\d+)$/)
+            return matches ? {type: matches[1], id: matches[2]} : null
+        },
+        prettyUid: function(uid) {
+            if (!uid) return uid
+            const details = this.uidToTypeAndId(uid)
+            return details ? this.ucFirst(details.type + ' ' + details.id) : uid
+        },
+        allBlocks: function() {
+            return this.blocks.mixers
+        },
+        prettyType: function(t) {
+            if (t === 'tcp_client') return 'TCP Client'
+            if (t === 'uri') return 'URI'
+            return t.replace(/_/g, ' ')
+        },
+    }
+  })
+  
+const app = new Vue({
+    el: '#app',
+    data: {
+      selectedBlockUid: null,      
+      foo: 'bar',
+      blocks: [],
+      cpu: '',
+      alertMsg: null,
+    },
+    computed: {
+        sortedBlocks: function() {
+            function compare(a, b) {
+                if (a.block_type_plural === b.block_type_plural) return a.id - b.id
+                if (a.block_type_plural === 'inputs') return -1
+                if (b.block_type_plural === 'inputs') return 1
+                if (a.block_type_plural === 'overlays') return -1
+                if (b.block_type_plural === 'overlays') return 1
+                if (a.block_type_plural === 'mixers') return -1
+                if (b.block_type_plural === 'mixers') return 1
+                return a.id - b.id
+            }
+            return this.blocks.sort(compare)
+        }
+    },
+    methods: {
+        selectBlock: function(uid) {
+            if (uid && uid !== this.selectedBlockUid) {
+                this.selectedBlockUid = uid
+            }
+            else {
+                this.selectedBlockUid = null
+            }
+        },
+        postUpdate: function(block, update) {
+            const uri = `/api/${this.uidToTypeAndId(block.uid).type}s/${block.id}`
+            axios.post(uri, update).then(response => {
+                if (response.status !== 200) {
+                    console.error('Failed to update')
+                }
+            })
+        },
+        putToApi: function(blockType, details) {
+            const uri = `/api/${blockType}s`
+            return axios.put(uri, details)
+            .then(response => {
+                if (response.data && response.data.uid) this.selectBlock(response.data.uid)                    
+            })
+            .catch(err => {
+                if (err.response && err.response.data && err.response.data.error) {
+                    this.alertMsg = err.response.data.error
+                }
+                else {
+                    this.alertMsg = 'Failed to create ' + blockType
+                }
+            })
+        },
+        deleteToApi: function(block) {
+            const uri = `/api/${block.block_type_plural}/${block.id}`
+            return axios.delete(uri).then(response => {
+                if (response.status !== 200) {
+                    console.error('Failed to delete', blockType, id)
+                }
+            })
+        },
+        fetchData: function() {
+            const url = 'api/all'
+            axios.get(url).then(response => {
+                let blocks = []
+                for (let block_type in response.data) {
+                    response.data[block_type].forEach(b => { b.block_type_plural = block_type })
+                    blocks = blocks.concat(response.data[block_type])
+                }
+
+                // Only do if the object has changed to stop needless DOM updates
+                if (JSON.stringify(this.blocks) !== JSON.stringify(blocks)) {
+                    this.blocks = blocks
+                }
+            })
+            setTimeout(this.fetchData, POLL_FREQUENCY)
+        }
+    },
+    mounted() {
+        this.fetchData()
+    }
+})
+
+
+
+function start() {
+    websocket.setup()
 }
 
-onPageLoad()

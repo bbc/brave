@@ -1,352 +1,253 @@
-//
-// This web interface has been quickly thrown together. It's not production code.
-//
-
-components = {}
-
-components.closeButton = () => {
-    return $("<a href=\"#\" class=\"fas fa-times close-button\" title=\"Close\"></a>")
-}
-
-components.editButton = () => {
-    return $("<a href=\"#\" class=\"fas fa-edit\" title=\"Edit\"></a>")
-}
-
-components.deleteButton = () => {
-    return $("<a href=\"#\" class=\"fas fa-trash-alt\" title=\"Delete\"></a>")
-}
-
-components.seekButton = () => {
-    return $("<a href=\"#\" class=\"fas fa-arrows-alt-h\" title=\"Seek\"></a>")
-}
-
-components.seekButton = () => {
-    return $("<a href=\"#\" class=\"fas fa-arrows-alt-h\" title=\"Seek\"></a>")
-}
-
-components.cutButton = () => {
-    return $("<a href=\"#\" class=\"fas fa-cut\" title=\"Cut\"></a>")
-}
-
-components.overlayButton = () => {
-    return $("<a href=\"#\" class=\"fas fa-layer-group\" title=\"Overlay\"></a>")
-}
-
-components.removeButton = () => {
-    return $("<a href=\"#\" class=\"fas fa-eye-slash\" title=\"Remove from mix\"></a>")
-}
-
-components.mutedButton = () => {
-    return $("<a href=\"#\" class=\"fas fa-volume-off\" title=\"Unmute\"></a>")
-}
-
-components.unmutedButton = () => {
-    return $("<a href=\"#\" class=\"fas fa-volume-up\" title=\"Mute\"></a>")
-}
-
-components.checkCircle = () => {
-    return $("<a href=\"#\" class=\"fas fa-check-circle\" title=\"Yes\"></a>")
-}
-
-components.stateIcon = (state, currentState, onClick) => {
-    const selected = state == currentState
-    const icons = {
-        'PLAYING': 'fa-play',
-        'PAUSED': 'fa-pause',
-        'READY': 'fa-stop',
-        'NULL': 'fa-exclamation-triangle'
-    }
-    const iconName = icons[state]
-    const e = $('<a href=\"#\" class="fas ' + iconName + (selected ? '' : ' icon-unselected') + '" data-state="' + state + '" ></a>')
-    e.click(onClick)
-    return e
-}
-
-components.openCards = {}
-components.selectedCard = null
-components.card = (block) => {
-    const card = $('<div class="block-card"></div>')
-    if (components.selectedCard === block.uid) card.addClass('block-card-selected')
-    card.click((change) => { onCardClick(block) })
-    const header = $('<div class="block-card-head"></div>')
-    if (block.title) header.append(block.title)
-    if (block.options) {
-        var options = $('<div class="option-icons"></div>')
-        options.append(block.options)
-        header.append(options)
-    }
-    card.append(header)
-    if (block.state) card.append(P)
-    // if (block.mixOptions) card.append(block.mixOptions)
-
-    const cardBody = $('<div class="block-card-body"></div>')
-    cardBody.append(block.body)
-    if (!components.openCards[block.title]) cardBody.css('display', 'none')
-
-    // const setToggleMsg = (target) => { target.html(components.openCards[block.title] ? components.hideDetails() : components.showDetails()) }
-    // const toggleSwitch = $('<a href="#">Toggle</a>').click((change) => {
-    //     cardBody.toggle(components.openCards[block.title] = !components.openCards[block.title])
-    //     setToggleMsg($(change.target))
-    //     return false
-    // })
-    // setToggleMsg(toggleSwitch)
-    // card.append($('<div />').addClass('block-card-toggle').append(toggleSwitch))
-    card.append(cardBody)
-    return $('<div class="block-card-outer"></div>').append(card)
-    //  col-xl-3 col-lg-4 col-md-6 col-12
-}
-
-function onCardClick(block) {
-    const currentlySelected = components.selectedCard === block.uid
-    if (components.selectedCard) {
-        components.selectedCard = null
-        components.rhs(null)
-    }
-
-    if (!currentlySelected) {
-        components.selectedCard = block.uid
-        components.rhs(block.uid)
-    }
-
-    drawAllItems()
-}
-
-components.rhs = (uid) => {
-    components.current_rhs_uid = uid
-    const rhs = $('#rhs')
-    rhs.empty()
-    if (!uid) return
-    rhs.append(components._rhsBox(uid))
-}
-
-components.redrawRhs = () => {
-    components.rhs(components.current_rhs_uid)
-}
-
-components.detailsTable = (fields) => {
-    const table = $('<table class="details-table"></table>')
-    fields.forEach(f => {
-        const col1 = $('<th></th>').append(f[0])
-        const col2 = $('<td></td>').append(f[1])
-        const row = $(`<tr></tr>`).append(col1, col2) 
-        table.append(row)
-    })
-    return table
-}
-
-components._rhsBox = (uid) => {
-    const e = $('<div class="rhs-box"></div>')
-    const uidDetails = uidToTypeAndId(uid)
-    if (!uidDetails) return
-    const handler = typeToHandler(uidDetails.type)
-    if (!handler) return
-    const block = handler.findById(uidDetails.id)
-    let body = []
-    body.push(components.closeButton().click(() => components.rhs(null)))
-    let title = prettyUid(uid)
-    if (block.type && block.type !== uidDetails.type) title += ' (' + block.type + ')'
-    const boxHead = $('<h2/>').append(title)
-    body.push(boxHead)
-
-    if (handler.detailsForTable) {
-        body = body.concat(components.detailsTable(handler.detailsForTable(block)))
-    }
-
-    if (handler.getMixOptions) {
-        const mixOptions = handler.getMixOptions(block)
-        if (mixOptions.length) {
-            body = body.concat( $('<h3>Appears in...</h3>'), mixOptions)
+Vue.component('preview-button', {
+    template: `<b-dropdown variant="info" size="sm">
+        <template slot="button-content">
+            <i class="fas fa-tv"></i>&nbsp;&nbsp; {{msg}}
+        </template>
+        <b-dropdown-item v-on:click="this.select('')">Input 1</b-dropdown-item>
+        <b-dropdown-item v-on:click="this.select('')">Input 2</b-dropdown-item>
+        <b-dropdown-item v-on:click="this.select('')">Input 3</b-dropdown-item>
+    </b-dropdown>`,
+    computed: {
+        msg: function() {
+            return 'No preview'
+        }
+    },
+    methods: {
+        select: function(uid) {
+            console.log(uid, 'was selected! temp')
         }
     }
+})
 
-    if (handler.getSourceOptions) {
-        let sourceOptions = handler.getSourceOptions(block)
-        if (!sourceOptions) sourceOptions = $('<div>There are no sources. Create some inputs or mixers!</div>')
-        body = body.concat($('<h3>Sources</h3>'), sourceOptions)
-    }
-
-    const deleteButton = components.fullDeleteButton(uidDetails.type, title, () => handler.delete(block))
-    body = body.concat( $('<h3>Actions</h3>'), deleteButton)
-
-    e.append(body)
-    return e
-}
-
-components.fullDeleteButton = (type, title, onClick) => {
-    const b = $('<button type="button" class="btn btn-sm btn-danger">' +
-                '<i class="fas fa-trash-alt"></i> Delete ' + type + '</button>')
-    b.on('click', () => {
-        if (window.confirm('Delete ' + title + '?')) onClick()
-    })
-    return b
-}
-
-components.fullCutInButton = (onClick) => {
-    const b = $('<button type="button" class="btn btn-sm btn-success">' +
-                '<i class="fas fa-cut"></i> Cut in</button>')
-    b.on('click', onClick)
-    return b
-}
-
-components.fullOverlayButton = (onClick) => {
-    const b = $('<button type="button" class="btn btn-sm btn-success">' +
-                '<i class="fas fa-layer-group"></i> Overlay</button>')
-    b.on('click', onClick)
-    return b
-}
-
-components.fullCutOutButton = (onClick) => {
-    const b = $('<button type="button" class="btn btn-sm btn-warning">' +
-                '<i class="fas fa-eye-slash"></i> Cut out</button>')
-    b.on('click', onClick)
-    return b
-}
-
-components.stateBox = (item, onClick) => {
-    const stateBoxDetails = components._stateIcons(item, change => {
-        onClick(item.id, change.target.dataset.state)
-        return false
-    })
-    let msg = stateBoxDetails.value
-    if (item.position) msg.append(' ', prettyDuration(item.position))
-    return $('<div></div>')
-        .append(msg)
-        .addClass(stateBoxDetails.className)
-}
-
-components._stateIcons = (item, onClick) => {
-    let desc = ' ' + item.state
-    if (item.state == 'PAUSED' && item.hasOwnProperty('buffering_percent') && item.buffering_percent !== 100) {
-        desc = ' BUFFERING (' + item.buffering_percent + '%)'
-    }
-    else if (item.desired_state && item.desired_state !== item.state) {
-        desc = ' ' + item.state + ' &rarr; ' + item.desired_state
-    }
-    const allIcons = $('<div class="state-icons"></div>').append([
-        components.stateIcon('NULL', item.state, onClick),
-        components.stateIcon('READY', item.state, onClick),
-        components.stateIcon('PAUSED', item.state, onClick),
-        components.stateIcon('PLAYING', item.state, onClick), desc])
-    return {value: allIcons, className: item.state}
-}
-
-components.slider = (currentValue, onChange, props) => {
-    const wrapper = $(document.createElement('span'))
-    const input = $(document.createElement('input'))
-    wrapper.append(input)
-    input.addClass('form-control form-control-sm')
-    input.attr('type', 'text')
-    input.attr('data-slider-min', props.min)
-    input.attr('data-slider-max', props.max)
-    input.attr('data-slider-step', props.step)
-    input.attr('data-slider-value', currentValue)
-    input.attr('id', props.id)
-
-    input.slider();
-    let msg = $('<span></span>')
-    let showPerc = (val) => msg.text(val + props.text_end)
-    showPerc(currentValue)
-    const onSlide = (event) => {
-        if (!event.value) return;
-        if (event.value.oldValue === event.value.newValue) return
-        showPerc(event.value.newValue)
-        setTimeout(() => onChange(event.value.newValue), 1)
-    }
-
-    input.on('change', onSlide)
-    wrapper.append(msg)
-    return wrapper
-}
-
-// TODO remove this:
-components.volumeInput = (volume) => {
-    const DEFAULT_VOLUME = 0.8
-    if (volume === undefined || volume === null) volume = DEFAULT_VOLUME
-    volume *= 100 // as it's a percentage
-    return formGroup({
-        id: 'input-volume',
-        label: 'Volume',
-        name: 'volume',
-        type: 'text',
-        'data-slider-min': 0,
-        'data-slider-max': 100,
-        'data-slider-step': 10,
-        'data-slider-value': volume
-    })
-}
-
-components.hideDetails = () => '<i class="fas fa-caret-down"></i> Hide details'
-components.showDetails = () => '<i class="fas fa-caret-right"></i> Show details'
-
-components.getMixOptions = (src) => {
-    return mixersHandler.items.map(mixer => {
-        if (!mixer.sources) return
-        if (src === mixer) return
-        var foundThis = mixer.sources.find(x => x.uid === src.uid)
-        var inMix = foundThis && foundThis.in_mix ? 'In mix' : 'Not in mix'
-        var div = $('<div class="mix-option"></div>')
-        if (foundThis && foundThis.in_mix) {
-            div.addClass('mix-option-showing')
-            var removeButton = components.removeButton()
-            removeButton.click(() => { mixersHandler.remove(mixer, src); return false })
-            var buttons = $('<div class="option-icons"></div>')
-            buttons.append([removeButton])
-            div.append(buttons)
+Vue.component('alert', {
+    template: `<b-alert variant="danger" dismissible v-model="showAlertMsg">
+        {{$root.alertMsg}}
+    </b-alert>`,
+    computed: {
+        showAlertMsg: {
+            get: function() {
+                return !!this.$root.alertMsg
+            },
+            set: function() {
+                return this.$root.alertMsg = null
+            }
         }
-        else {
-            div.addClass('mix-option-hidden')
-            var cutButton = components.cutButton()
-            cutButton.click(() => { mixersHandler.cut(mixer, src); return false })
-            var overlayButton = components.overlayButton()
-            overlayButton.click(() => { mixersHandler.overlay(mixer, src); return false })
-            var buttons = $('<div class="option-icons"></div>')
-            buttons.append([cutButton, overlayButton])
-            div.append(buttons)
+    }
+})
+
+Vue.component('restart-modal', {
+    template: `<div><b-modal ref="restartModal" id="restart-modal" title="Restart Brave" hide-footer>
+        <p>When restarting Brave, should the current configuration (inputs, etc.) be retained?</p>
+        <b-button variant="primary" block @click="restartWithCurrentConfig">Yes, restart Brave and keep the current configuration</b-button>
+        <b-button variant="primary" block @click="restartWithOriginalConfig">No, restart Brave with the original configuration</b-button>    
+    </b-modal></div>`,
+    methods: {
+        restartWithCurrentConfig: function() {
+            return this.handleRestart('current')
+        },
+        restartWithOriginalConfig: function() {
+            return this.handleRestart('original')
+        },
+        handleRestart: function(config) {
+            const uri = `/api/restart`
+            axios.post(uri, {config}).then(response => {
+                if (response.status !== 200) {
+                    app.alertMsg = 'Request to restart Brave failed'
+                }
+            })
+            this.$refs.restartModal.hide()
         }
-        div.append('<strong>Mixer ' + mixer.id + ':</strong> ' + inMix)
-        return div
-    }).filter(x => !!x)
-}
+    }
+})
 
-components.switch = (val, onChange) => {
-    const checkbox = $('<input type="checkbox"></input>')
-    if (val) checkbox.prop('checked', true)
-    checkbox.on('click', () => onChange(checkbox.is(":checked")))
-    return $('<label class="switch" />').append(checkbox).append('<span class="switch-slider"></span>')
-}
-
-components.editableTextBox = (text, onChange) => {
-    const wrapper = $('<span/>')
-    const input = $('<input type="text" style="width:80%"/>')
-    input.val(text)
-    const yesButton = components.checkCircle().css({padding: '4px'})
-    wrapper.append(input)
-    wrapper.append(yesButton)
-    yesButton.click(() => onChange(input.val()))
-    // yesButton.on('click', onChange(input.val()))
-    return wrapper
-}
-
-components.blocksTable = () => {
-    const table = $('<table class="blocks-table"></table>')
-    allBlocks().forEach(block => {
-        const uidDetails = uidToTypeAndId(block.uid)
-        if (!uidDetails) return
-        const handler = typeToHandler(uidDetails.type)
-        if (!handler) return
-        const tr = $('<tr/>')
-        let title = prettyUid(block.uid)
-        if (block.type && block.type !== uidDetails.type) title += ' (' + block.type + ')'
-
-        const th = $('<th />').append(title)
-        tr.click(() => { onCardClick(block) })
-        const td1 = $('<td />')
-        if (uidDetails.type !== 'overlay') {
-            td1.append(components.stateBox(block, handler.setState))
+Vue.component('create-overlay-modal', {
+    template: `<b-modal size="lg"  ref="createOverlayModal" id="create-overlay-modal" title="Create new overlay" hide-footer>
+        <p>What type of overlay?</p>
+        <b-button variant="primary" block v-on:click="createOverlay('text')">Text</b-button>
+        <b-button variant="primary" block v-on:click="createOverlay('clock')">Clock</b-button>    
+        <b-button variant="primary" block v-on:click="createOverlay('effect')">Effect</b-button>    
+    </b-modal>`,
+    methods: {
+        createOverlay: function(type) {
+            this.$root.putToApi('overlay', {type})
+            this.$refs.createOverlayModal.hide()
         }
-        tr.append(th, td1)
-        table.append(tr)
-        if (components.selectedCard === block.uid) tr.addClass('block-selected')
-    })
-    return table
-}
+    }
+})
+
+Vue.component('create-input-modal', {
+    template: `<b-modal size="lg" ref="createinputModel" id="create-input-modal" title="Create new input" hide-footer @shown="modalShown">
+    <div v-if="this.type === 'uri' || this.type === 'image'">
+        <p>What's the URI?</p>
+        <b-form-input v-model="uri" type="text" placeholder="Enter URI" />
+        <b-button variant="primary" block v-on:click="submitUri()">Create</b-button>
+        <div>RTMP example: <code>rtmp://184.72.239.149/vod/BigBuckBunny_115k.mov</code></div>
+        <div>RTSP example: <code>rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov</code></div>
+        <div>Local file example: <code>file:///tmp/my_movie.mp4</code></div>
+    </div>
+    <div v-else-if="this.type === 'tcp_client'">
+        <p>What is the TCP server host name?</p>
+        <b-form-input v-model="host" type="text" placeholder="Enter host" />
+        <div>(e.g. <code>localhost</code>)</div>
+        <p>What is the TCP server port?</p>
+        <b-form-input v-model="port" type="number" placeholder="Enter port" />
+        <b-button variant="primary" block v-on:click="submitHost()">Create</b-button>
+        <div>(e.g. <code>8000</code>)</div>
+    </div>
+    <div v-else>
+            <p>What type of input?</p>
+            <b-button variant="primary" block v-on:click="createOverlay('uri')">URI (for files, RTMP, RTSP and HLS)</b-button>
+            <b-button variant="primary" block v-on:click="createOverlay('image')">Image</b-button>
+            <b-button variant="primary" block v-on:click="createOverlay('tcp_client')">TCP Client (receive from a TCP server)</b-button>
+            <b-button variant="primary" block v-on:click="createOverlay('html')">HTML (for showing a web page)</b-button>
+            <b-button variant="primary" block v-on:click="createOverlay('decklink')">Decklink Device</b-button>
+            <b-button variant="primary" block v-on:click="createOverlay('test_video')">Test video stream</b-button>
+            <b-button variant="primary" block v-on:click="createOverlay('test_audio')">Test audio stream</b-button>
+        </div>
+    </b-modal>`,
+    data: function () {
+        return {
+            type: null,
+            uri: null,
+            host: null,
+            port: null
+        }
+    },
+    methods: {
+        modalShown: function() {
+            this.type = null
+        },
+        submitUri: function() {
+            this.$root.putToApi('input', {type: this.type, uri: this.uri})
+            this.$refs.createinputModel.hide()
+        },
+        submitHost: function() {
+            this.$root.putToApi('input', {type: this.type, host: this.host, port: this.port})
+            this.$refs.createinputModel.hide()
+        },
+        createOverlay: function(type) {
+            this.type = type
+            if (type === 'uri' || type === 'image' || type === 'tcp_client') {
+                // Nowt
+            }
+            else {
+                this.$root.putToApi('input', {type})
+                this.$refs.createinputModel.hide()
+            }
+        }
+    }
+})
+
+Vue.component('create-output-modal', {
+    template: `<b-modal size="lg" ref="createOutputModel" id="create-output-modal" title="Create new output" hide-footer @shown="modalShown">
+    <div v-if="this.type === 'rtmp'">
+        <p>What's the URI of the RTMP server to send to?</p>
+        <b-form-input v-model="uri" type="text" placeholder="Enter URI" />
+        <b-button variant="primary" block v-on:click="submitUri()">Create RTMP output</b-button>
+        <div>e.g.: <code>rtmp://myserver.com/live/stream</code></div>
+    </div>
+    <div v-else-if="this.type === 'tcp'">
+        <p>What is the hostname of the TCP server to send to?</p>
+        <b-form-input v-model="host" type="text" placeholder="Enter host" />
+        <div>(e.g. <code>localhost</code>)</div>
+        <p>And what port should be used?</p>
+        <b-form-input v-model="port" type="number" placeholder="Enter port" />
+        <b-button variant="success" block v-on:click="submitHost()">Create TCP output</b-button>
+        <div>(e.g. <code>8000</code>)</div>
+    </div>
+    <div v-else-if="this.type === 'file'">
+        <p>What's the path (directory and filename) of the local file?</p>
+        <b-form-input v-model="location" type="text" placeholder="Enter path" />
+        <div>(e.g. <code>e.g. /tmp/foo.mp4</code>)</div>
+        <b-button variant="primary" block v-on:click="submitFileLocation()">Create KVS stream output</b-button>
+    </div>
+    <div v-else-if="this.type === 'kvs'">
+        <p>What is the KVS stream name?</p>
+        <b-form-input v-model="stream_name" type="text" placeholder="Enter stream name" />
+        <div>(e.g. <code>localhost</code>)</div>
+        <b-button variant="primary" block v-on:click="submitKvsStreamName()">Create KVS stream output</b-button>
+    </div>
+    
+    <div v-else>
+        <p>What type of output?</p>
+        <b-button variant="primary" block v-on:click="createOverlay('tcp')">TCP (server)</b-button>
+        <b-button variant="primary" block v-on:click="createOverlay('rtmp')">RTMP (send to remote server)</b-button>
+        <b-button variant="primary" block v-on:click="createOverlay('image')">JPEG image file every 1 second</b-button>
+        <b-button variant="primary" block v-on:click="createOverlay('file')">File (Write audio/video to a local file)</b-button>
+        <b-button variant="primary" block v-on:click="createOverlay('webrtc')">WebRTC for web preview</b-button>
+        <b-button variant="primary" block v-on:click="createOverlay('kvs')">AWS Kinesis Video</b-button>
+        <b-button variant="primary" block v-on:click="createOverlay('local')">Local (pop-up audio/video on this server, for debugging)</b-button>
+    </div></b-modal>`,
+    data: function () {
+        return {
+            type: null,
+            host: null,
+            port: null,
+            location: null,
+            stream_name: null
+        }
+    },
+    methods: {
+        modalShown: function() {
+            this.type = null
+        },
+        submitUri: function() {
+            this.$root.putToApi('output', {type: this.type, uri: this.uri})
+            this.$refs.createOutputModel.hide()
+        },
+        submitHost: function() {
+            this.$root.putToApi('output', {type: this.type, host: this.host, port: this.port})
+            this.$refs.createOutputModel.hide()
+        },
+        submitKvsStreamName: function() {
+            this.$root.putToApi('output', {type: this.type, stream_name: this.stream_name})
+            this.$refs.createOutputModel.hide()
+        },
+        submitFileLocation: function() {
+            this.$root.putToApi('output', {type: this.type, location: this.location})
+            this.$refs.createOutputModel.hide()
+        },
+        createOverlay: function(type) {
+            this.type = type
+            if (type !== 'rtmp' && type !== 'tcp' && type !== 'kvs' && type !== 'file') {
+                this.$root.putToApi('output', {type})
+                this.$refs.createOutputModel.hide()
+            }
+        }
+    }
+})
+
+Vue.component('delete-block-button', {
+    props: ['block'],
+    template: '<b-button variant="danger" block v-on:click="this.delete"><a href=\"#\" class=\"fas fa-trash-alt\" title=\"Delete\"></a> Delete</b-button>',
+    methods: {
+        delete: function() {
+            if (confirm("Are you sure you want to delete " + this.block.uid + "?")) {
+                this.$root.deleteToApi(this.block)
+            }
+        }
+    }
+})
+
+Vue.component('top-bar-buttons', {
+    template: `<span>
+    <b-dropdown id="ddown1" variant="info" size="sm">
+      <template slot="button-content">
+        <i class="fas fa-plus"></i> Add
+      </template>
+      <b-dropdown-item v-b-modal.create-input-modal>Input</b-dropdown-item>
+      <b-dropdown-item v-on:click="$root.putToApi('mixer', {})">Mixer</b-dropdown-item>
+      <b-dropdown-item v-b-modal.create-output-modal>Output</b-dropdown-item>
+      <b-dropdown-item v-b-modal.create-overlay-modal>Overlay</b-dropdown-item>
+    </b-dropdown>
+    <b-dropdown id="ddown1" variant="primary" size="sm">
+      <template slot="button-content">
+        <i class="fas fa-cog"></i> Options
+      </template>
+      <b-dropdown-item v-b-modal.restart-modal>Restart Brave</b-dropdown-item>
+      <b-dropdown-item href="api/config/current.yaml">Download current config</b-dropdown-item>
+      <b-dropdown-item v-on:click="$root.fetchData()">Refresh page</b-dropdown-item>
+      <b-dropdown-item target="_blank" href="elements_table">Debug view (GStreamer elements)</b-dropdown-item>
+    </b-dropdown>
+  </span>`
+})

@@ -31,12 +31,12 @@ websocket._onSocketClose = event => {
     var NUM_RETRY_ATTEMPTS = 10
     if (websocket.setupErrorCount < NUM_RETRY_ATTEMPTS) {
         console.error("Websocket error, now happened " + websocket.setupErrorCount + ' times')
-        showMessage('Server connection lost, retrying...')
+        app.alertMsg = 'Server connection lost, retrying...'
         window.setTimeout(websocket.setup, 1000 + (1000 * websocket.setupErrorCount));
     }
     else {
         console.error("Websocket error, now happened " + websocket.setupErrorCount + ' times, not attempting again.')
-        showMessage('Unable to connect to server, please refresh the page')
+        app.alertMsg = 'Unable to connect to server, please refresh the page'
     }
 }
 
@@ -85,24 +85,18 @@ websocket._getHandlerForBlockType = function(t) {
     console.error('Unknown block type', t)
 }
 
-websocket._handleUpdate = function(item) {
-    var handler = websocket._getHandlerForBlockType(item.block_type)
-    if (handler) {
-        handler.items = handler.items.filter(x => x.id != item.data.id)
-        handler.items.push(item.data)
-        handler.items.sort((a,b) => a.id - b.id)
-        drawAllItems()
-    }
+websocket._handleUpdate = function(block) {
+    const blockTypePlural = block.block_type + 's'
+    app.blocks = app.blocks.filter(b => b.uid !== block.data.uid)
+    block.data.block_type_plural = blockTypePlural
+    app.blocks.push(block.data)
+    Vue.set(app.blocks, blockTypePlural, app.blocks)
 }
 
-websocket._handleDelete = function(item) {
-    var handler = websocket._getHandlerForBlockType(item.block_type)
-    if (handler) {
-        handler.items = handler.items.filter(x => x.id != item.id)
-        drawAllItems()
-    }
+websocket._handleDelete = function(block) {
+    app.blocks = app.blocks.filter(x => x.uid !== block.uid)
 }
 
 websocket._setCpuPercent = (num) => {
-    $('#cpu-stats').empty().html('CPU usage: ' + num + '%')
+    app.cpu = 'CPU usage: ' + num + '%'
 }
