@@ -109,7 +109,8 @@ class WebsocketsHandler():
             messages_to_send.append({
                 'msg_type': 'delete',
                 'block_type': item['block_type'],
-                'id': item['id']
+                'id': item['id'],
+                'uid': item['uid']
             })
         self.session.items_recently_deleted = []
         return messages_to_send

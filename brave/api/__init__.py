@@ -24,7 +24,6 @@ class RestApi(object):
         route_handler = brave.api.route_handler
 
         app.static('/', './public/index.html', name='index.html')
-        app.static('/new', './public/new.html', name='new.html')
         app.static('/elements_table', './public/elements_table.html', name='elements_table.html')
         app.static('/style.css', './public/style.css', name='style.css')
         app.static('/js/', './public/js/')
@@ -32,11 +31,11 @@ class RestApi(object):
         app.static('/output_images/', '/usr/local/share/brave/output_images/')
 
         @app.exception(NotFound)
-        async def not_found(request, exception):
+        def not_found(request, exception):
             return sanic.response.json({'error': 'Not found'}, 404)
 
         @app.exception(InvalidUsage)
-        async def invalid_usage(request, exception):
+        def invalid_usage(request, exception):
             return sanic.response.json({'error': 'Invalid request: %s' % exception}, 400)
 
         @app.middleware('request')
@@ -49,13 +48,13 @@ class RestApi(object):
                 return sanic.response.json({'error': 'Invalid JSON'}, 400)
 
         @app.exception(brave.exceptions.InvalidConfiguration)
-        async def invalid_cf(request, exception):
+        def invalid_cf(request, exception):
             msg = 'Invalid configuration: ' + str(exception)
             logger.debug(msg)
             return sanic.response.json({'error': msg}, 400)
 
         @app.exception(brave.exceptions.PipelineFailure)
-        async def pipeline_creation_failure(request, exception):
+        def pipeline_creation_failure(request, exception):
             return sanic.response.json({'error': str(exception)}, 500)
 
         app.add_route(route_handler.all, "/api/all")

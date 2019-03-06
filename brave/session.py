@@ -139,7 +139,7 @@ class Session(object):
         return collection[id] if id in collection else None
 
     def report_deleted_item(self, item):
-        self.items_recently_deleted.append({'id': item.id, 'block_type': item.input_output_overlay_or_mixer()})
+        self.items_recently_deleted.append({'id': item.id, 'block_type': item.input_output_overlay_or_mixer(), 'uid': item.uid})
 
 
 def init():

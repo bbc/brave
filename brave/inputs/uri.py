@@ -14,6 +14,7 @@ class UriInput(Input):
             **super().permitted_props(),
             'uri': {
                 'type': 'str',
+                'required': True
             },
             'buffer_duration': {
                 'type': 'int',

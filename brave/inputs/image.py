@@ -16,6 +16,7 @@ class ImageInput(Input):
             **super().permitted_props(),
             'uri': {
                 'type': 'str',
+                'required': True
             },
             'width': {
                 'type': 'int'

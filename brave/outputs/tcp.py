@@ -12,10 +12,12 @@ class TCPOutput(Output):
         return {
             **super().permitted_props(),
             'host': {
-                'type': 'str'
+                'type': 'str',
+                'required': True
             },
             'port': {
-                'type': 'int'
+                'type': 'int',
+                'required': True
             },
             'width': {
                 'type': 'int',

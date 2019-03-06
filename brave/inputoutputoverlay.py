@@ -75,6 +75,7 @@ class InputOutputOverlay():
         '''
         self._set_props(updates, updating=True)
         self.handle_updated_props()
+        self.report_update_to_user()
 
     def handle_updated_props(self):
         '''

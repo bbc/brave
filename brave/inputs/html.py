@@ -16,7 +16,8 @@ class HTMLInput(Input):
             **super().permitted_props(),
             'uri': {
                 'type': 'str',
-                'defatult': 'https://www.bbc.co.uk'
+                'default': 'https://www.bbc.co.uk',
+                'required': True
             },
             'width': {
                 'type': 'int',

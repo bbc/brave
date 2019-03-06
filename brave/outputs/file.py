@@ -20,7 +20,8 @@ class FileOutput(Output):
                 'default': config.default_mixer_height()
             },
             'location': {
-                'type': 'str'
+                'type': 'str',
+                'required': True
             }
         }
 

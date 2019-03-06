@@ -11,7 +11,8 @@ class RTMPOutput(Output):
         return {
             **super().permitted_props(),
             'uri': {
-                'type': 'str'
+                'type': 'str',
+                'required': True
             },
             'width': {
                 'type': 'int',

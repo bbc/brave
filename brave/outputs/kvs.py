@@ -21,7 +21,8 @@ class KvsOutput(Output):
                 'default': 360
             },
             'stream_name': {
-                'type': 'str'
+                'type': 'str',
+                'required': True
             }
         }
 

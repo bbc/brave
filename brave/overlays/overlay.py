@@ -32,9 +32,9 @@ class Overlay(InputOutputOverlay):
         '''
         Handle updates to this overlay. Overridden to handle update to the input/mixer source.
         '''
+        changed = False
         if 'source' in updates and self.source != updates['source']:
             self._set_source(updates['source'])
-            self.report_update_to_user()
             del updates['source']
 
         if 'visible' in updates:
