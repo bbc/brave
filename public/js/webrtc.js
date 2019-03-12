@@ -1,7 +1,3 @@
-//
-// This web interface has been quickly thrown together. It's not production code.
-//
-
 webrtc = {}
 const rtcConfig = {}
 let sendChannel
@@ -12,10 +8,14 @@ webrtc.setIceServers = (s) => {
 }
 
 webrtc.requestConnection = (outputId) => {
-    websocket.socket.send(JSON.stringify({msg_type:'webrtc-init', 'output_id': outputId}))
+    if (outputId !== this.currentOutputId) {
+        this.currentOutputId = outputId
+        websocket.socket.send(JSON.stringify({msg_type:'webrtc-init', 'output_id': outputId}))
+    }
 }
 
 webrtc.close = () => {
+    this.currentOutputId = null
     if (webrtc.peerConnection) {
         console.log('Closing webrtc connection')
         webrtc.peerConnection.close();
@@ -138,7 +138,7 @@ function onRemoteStreamAdded(event) {
     if (videoTracks.length > 0) {
         console.log('Incoming stream: ' + videoTracks.length + ' video tracks and ' + audioTracks.length + ' audio tracks');
         window.vs = videoTracks[0]  
-        preview.setVideoSrc(event.stream)
+        app.webrtcSrc = event.stream
     } else {
         console.error('Stream with unknown tracks added');
     }
@@ -150,4 +150,8 @@ function getLocalStream() {
     } else {
         errorUserMediaHandler();
     }
+}
+
+function showMessage(m) {
+    app.alertMsg(m)
 }

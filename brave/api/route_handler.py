@@ -8,6 +8,13 @@ from sanic.exceptions import InvalidUsage
 import brave.config_file
 
 
+async def blocks(request):
+    return sanic.response.json(
+        request['session'].inputs.summarise() +
+        request['session'].overlays.summarise() +
+        request['session'].outputs.summarise() +
+        request['session'].mixers.summarise())
+
 async def all(request):
     return sanic.response.json({
         'inputs': request['session'].inputs.summarise(),

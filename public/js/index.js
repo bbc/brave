@@ -51,10 +51,10 @@ Vue.component('state-icons', {
     props: ['block'],
     template: `
     <span class="state-icons">
-        <icon name="NULL" :extraClass="block.state==='NULL' ? '' : 'icon-unselected'"  v-on:click="$root.postUpdate(block, {state:'NULL'})" />
-        <icon name="READY" :extraClass="block.state==='READY' ? '' : 'icon-unselected'" v-on:click="$root.postUpdate(block, {state:'READY'})" />
-        <icon name="PAUSED" :extraClass="block.state==='PAUSED' ? '' : 'icon-unselected'" v-on:click="$root.postUpdate(block, {state:'PAUSED'})" />
-        <icon name="PLAYING" :extraClass="block.state==='PLAYING' ? '' : 'icon-unselected'" v-on:click="$root.postUpdate(block, {state:'PLAYING'})" />
+        <icon name="NULL" :extraClass="block.state==='NULL' ? '' : 'icon-unselected'"  v-on:click="$root.postToApi(block, {state:'NULL'})" />
+        <icon name="READY" :extraClass="block.state==='READY' ? '' : 'icon-unselected'" v-on:click="$root.postToApi(block, {state:'READY'})" />
+        <icon name="PAUSED" :extraClass="block.state==='PAUSED' ? '' : 'icon-unselected'" v-on:click="$root.postToApi(block, {state:'PAUSED'})" />
+        <icon name="PLAYING" :extraClass="block.state==='PLAYING' ? '' : 'icon-unselected'" v-on:click="$root.postToApi(block, {state:'PLAYING'})" />
     </span>`,
     computed: {
         selectedState: function() { return block.state }
@@ -101,6 +101,7 @@ Vue.component('block-details-table', {
     props: ['block'],
     template: `
     <table class="details-table">
+    <tr v-if="this.block.hasOwnProperty('source')"><th>Source</th><td>{{this.block.source}}</td></tr>
     <tr v-if="this.block.hasOwnProperty('volume')"><th>Volume</th><td><block-volume :volume="this.block.volume" /></td></tr>
     <tr v-if="this.block.hasOwnProperty('width')"><th>Dimensions</th><td><block-size :block="this.block" /></td></tr>
     <tr v-if="this.block.hasOwnProperty('pattern')"><th>Pattern</th><td><block-pattern :value="this.block.pattern" /></td></tr>
@@ -112,6 +113,7 @@ Vue.component('block-details-table', {
     <tr v-if="this.block.hasOwnProperty('port')"><th>Port</th><td>{{this.block.port}}</td></tr>
     <tr v-if="this.block.hasOwnProperty('location')"><th>Location</th><td>{{this.block.location}}</td></tr>
     <tr v-if="this.block.hasOwnProperty('stream_name')"><th>Stream name</th><td>{{this.block.stream_name}}</td></tr>
+    <tr v-if="this.block.hasOwnProperty('update_frequency')"><th>Update frequency</th><td>Every {{this.block.update_frequency}} second{{this.block.update_frequency !== 1 ? 's' : ''}}</td></tr>
     </table>
     `
 })
@@ -133,6 +135,7 @@ Vue.mixin({
         },
         prettyType: function(t) {
             if (t === 'tcp_client') return 'TCP Client'
+            if (t === 'webrtc') return 'WebRTC'
             if (t === 'uri') return 'URI'
             return t.replace(/_/g, ' ')
         },
@@ -142,22 +145,25 @@ Vue.mixin({
 const app = new Vue({
     el: '#app',
     data: {
-      selectedBlockUid: null,      
-      foo: 'bar',
-      blocks: [],
-      cpu: '',
-      alertMsg: null,
+        selectedBlockUid: null,
+        previewBlockUid: null,
+        previewBlockFormat: null,
+        foo: 'bar',
+        blocks: [],
+        cpu: '',
+        alertMsg: null,
+        webrtcSrc: null,
     },
     computed: {
         sortedBlocks: function() {
             function compare(a, b) {
-                if (a.block_type_plural === b.block_type_plural) return a.id - b.id
-                if (a.block_type_plural === 'inputs') return -1
-                if (b.block_type_plural === 'inputs') return 1
-                if (a.block_type_plural === 'overlays') return -1
-                if (b.block_type_plural === 'overlays') return 1
-                if (a.block_type_plural === 'mixers') return -1
-                if (b.block_type_plural === 'mixers') return 1
+                if (a.block_type === b.block_type) return a.id - b.id
+                if (a.block_type === 'input') return -1
+                if (b.block_type === 'input') return 1
+                if (a.block_type === 'overlay') return -1
+                if (b.block_type === 'overlay') return 1
+                if (a.block_type === 'mixer') return -1
+                if (b.block_type === 'mixer') return 1
                 return a.id - b.id
             }
             return this.blocks.sort(compare)
@@ -172,7 +178,19 @@ const app = new Vue({
                 this.selectedBlockUid = null
             }
         },
-        postUpdate: function(block, update) {
+        blockByUid: function(uid) {
+            return this.blocks.find(b => b.uid === uid)
+        },
+        outputForSource: function(source, type, createIfNotThere) {
+            const output = this.blocks.find(b => b.block_type === 'output' && b.source === source && b.type === type)
+            if (output) return output.id
+            if (createIfNotThere) {
+                const response = this.putToApi('output', {source, type})
+                console.log('TEMP output for source respon=', response)
+                if (response.data && response.data.uid) return response.data.id
+            }
+        },
+        postToApi: function(block, update) {
             const uri = `/api/${this.uidToTypeAndId(block.uid).type}s/${block.id}`
             axios.post(uri, update).then(response => {
                 if (response.status !== 200) {
@@ -196,7 +214,7 @@ const app = new Vue({
             })
         },
         deleteToApi: function(block) {
-            const uri = `/api/${block.block_type_plural}/${block.id}`
+            const uri = `/api/${block.block_type}s/${block.id}`
             return axios.delete(uri).then(response => {
                 if (response.status !== 200) {
                     console.error('Failed to delete', blockType, id)
@@ -204,14 +222,9 @@ const app = new Vue({
             })
         },
         fetchData: function() {
-            const url = 'api/all'
+            const url = 'api/blocks'
             axios.get(url).then(response => {
-                let blocks = []
-                for (let block_type in response.data) {
-                    response.data[block_type].forEach(b => { b.block_type_plural = block_type })
-                    blocks = blocks.concat(response.data[block_type])
-                }
-
+                let blocks = response.data
                 // Only do if the object has changed to stop needless DOM updates
                 if (JSON.stringify(this.blocks) !== JSON.stringify(blocks)) {
                     this.blocks = blocks

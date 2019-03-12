@@ -116,7 +116,9 @@ class InputOutputOverlay():
         'for_config_file' property limits to what is put in a Brave config file.
         '''
         attributes_to_copy = ['type'] + list(self.permitted_props().keys())
-        s = {}
+        s = {
+            'block_type': self.input_output_overlay_or_mixer()
+        }
 
         if for_config_file:
             if self.desired_state:

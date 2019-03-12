@@ -49,10 +49,10 @@ websocket._onMessageReceived = event => {
         return
     }
     else if (dataParsed.msg_type === 'update') {
-        websocket._handleUpdate(dataParsed)
+        websocket._handleUpdate(dataParsed.data)
     }
     else if (dataParsed.msg_type === 'delete') {
-        websocket._handleDelete(dataParsed)
+        websocket._handleDelete(dataParsed.data)
     }
     else if (dataParsed.msg_type === 'webrtc-initialising') {
         if (dataParsed.ice_servers) webrtc.setIceServers(dataParsed.ice_servers)
@@ -86,15 +86,15 @@ websocket._getHandlerForBlockType = function(t) {
 }
 
 websocket._handleUpdate = function(block) {
-    const blockTypePlural = block.block_type + 's'
-    app.blocks = app.blocks.filter(b => b.uid !== block.data.uid)
-    block.data.block_type_plural = blockTypePlural
-    app.blocks.push(block.data)
-    Vue.set(app.blocks, blockTypePlural, app.blocks)
+    websocket._handleDelete(block)
+    app.blocks.push(block)
 }
 
 websocket._handleDelete = function(block) {
-    app.blocks = app.blocks.filter(x => x.uid !== block.uid)
+    // Done in a way that Vue can handle:
+    for (let i=app.blocks.length-1; i>=0; i--) {
+        if (block.uid === app.blocks[i].uid) Vue.delete(app.blocks, i)   
+    }
 }
 
 websocket._setCpuPercent = (num) => {

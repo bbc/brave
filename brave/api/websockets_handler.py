@@ -98,7 +98,7 @@ class WebsocketsHandler():
         for o in items_recently_updated:
             messages_to_send.append({
                 'msg_type': 'update',
-                'block_type': o.input_output_overlay_or_mixer(),
+                # 'block_type': o.input_output_overlay_or_mixer(),
                 'data': o.summarise()
             })
         return messages_to_send
@@ -108,9 +108,11 @@ class WebsocketsHandler():
         for item in self.session.items_recently_deleted:
             messages_to_send.append({
                 'msg_type': 'delete',
-                'block_type': item['block_type'],
-                'id': item['id'],
-                'uid': item['uid']
+                'data': {
+                    'block_type': item['block_type'],
+                    'id': item['id'],
+                    'uid': item['uid']
+                }
             })
         self.session.items_recently_deleted = []
         return messages_to_send

@@ -1,24 +1,3 @@
-Vue.component('preview-button', {
-    template: `<b-dropdown variant="info" size="sm">
-        <template slot="button-content">
-            <i class="fas fa-tv"></i>&nbsp;&nbsp; {{msg}}
-        </template>
-        <b-dropdown-item v-on:click="this.select('')">Input 1</b-dropdown-item>
-        <b-dropdown-item v-on:click="this.select('')">Input 2</b-dropdown-item>
-        <b-dropdown-item v-on:click="this.select('')">Input 3</b-dropdown-item>
-    </b-dropdown>`,
-    computed: {
-        msg: function() {
-            return 'No preview'
-        }
-    },
-    methods: {
-        select: function(uid) {
-            console.log(uid, 'was selected! temp')
-        }
-    }
-})
-
 Vue.component('alert', {
     template: `<b-alert variant="danger" dismissible v-model="showAlertMsg">
         {{$root.alertMsg}}

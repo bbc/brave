@@ -58,6 +58,7 @@ class RestApi(object):
             return sanic.response.json({'error': str(exception)}, 500)
 
         app.add_route(route_handler.all, "/api/all")
+        app.add_route(route_handler.blocks, "/api/blocks")
         app.add_route(route_handler.inputs, "/api/inputs")
         app.add_route(route_handler.outputs, "/api/outputs")
         app.add_route(route_handler.overlays, "/api/overlays")
