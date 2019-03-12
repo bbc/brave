@@ -39,8 +39,13 @@ Vue.component('preview-button', {
 
 Vue.component('preview-bar', {
     template: `<div v-if="canShow" id="preview-bar">
-        <preview-image v-if="$root.previewBlockFormat === 'image'" :block="previewBlock" />
-        <preview-webrtc v-if="$root.previewBlockFormat === 'webrtc'" :block="previewBlock" />
+        <template v-if="$root.previewBlockFormat === 'image'">
+            <preview-image :block="previewBlock" />
+        </template>
+        <template v-else-if="$root.previewBlockFormat === 'webrtc'">
+        <preview-webrtc :block="previewBlock" />
+        <preview-audio-bar :block="previewBlock" />
+        </template>
     </div>`,
     computed: {
         previewBlock: function() {
@@ -80,14 +85,23 @@ Vue.component('preview-webrtc', {
         webrtc.close()
     },
     created: function () {
-        webrtc.requestConnection(this.outputId)
-        console.log('webrtc created with output', this.outputId)
+        this.requestConnection()
+    },
+    watch: {
+        outputId: function(newValue, oldValue) {
+            this.requestConnection()
+        }
     },
     computed: {
         outputId: function() {
             return this.$root.outputForSource(this.block.uid, 'webrtc', false)
         }
     },
+    methods: {
+        requestConnection: function() {
+            console.log('Requesting new connection for output', this.outputId)
+            webrtc.requestConnection(this.outputId)
+        }
+    }
 })
-
 
