@@ -46,10 +46,10 @@ Note, versions earlier than 1.14.2 won't work (The .2 point-release fixed WebRTC
 
 ```
 brew install gstreamer
-brew install gst-plugins-base --with-theora --with-opus
-brew install gst-plugins-good --with-speex --with-cairo --with-gdk-pixbuf --with-libpng --with-libvpx
-brew install gst-plugins-bad --with-rtmpdump --with-libvo-aacenc --with-srt --with-libnice --with-gnutls
-brew install gst-plugins-ugly  --with-lame --with-x264 --with-libmpeg2 --with-mad --with-theora
+brew install gst-plugins-base
+brew install gst-plugins-good
+brew install gst-plugins-bad
+brew install gst-plugins-ugly
 brew install gst-libav gst-python
 ```
 
