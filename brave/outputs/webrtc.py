@@ -108,16 +108,7 @@ class WebRTCOutput(Output):
         self.peers[ws]['webrtcbin'].connect('on-ice-candidate', self._send_ice_candidate_message, ws)
         # In the future, use connect('pad-added' here if the client's return video is wanted
 
-        # Going to READY first, before PLAYING, appears to prevent a race-condition that can
-        # intermittently cause _on_negotiation_needed to not be called.
-        if not self.pipeline.set_state(Gst.State.READY):
-            self.logger.warning('Unable to enter READY state now that we have a peer')
-            return
-
-        if not self.pipeline.set_state(Gst.State.PLAYING):
-            self.logger.warning('Unable to enter PLAYING state now that we have a peer')
-        else:
-            self.logger.debug('Successfully added a new peer request')
+        self.logger.debug('Successfully added a peer request')
 
     def _on_element_message(self, bus, message):
         if len(self.peers) == 0:
@@ -167,6 +158,8 @@ class WebRTCOutput(Output):
         self.peers[ws]['webrtcbin'] = Gst.ElementFactory.make('webrtcbin')
         self.pipeline.add(self.peers[ws]['webrtcbin'])
         self.peers[ws]['webrtcbin'].add_property_notify_watch(None, True)
+        self.peers[ws]['webrtcbin'].set_state(Gst.State.READY)
+
         if config.stun_server():
             self.peers[ws]['webrtcbin'].set_property('stun-server', 'stun://' + config.stun_server())
         if config.turn_server():
@@ -177,12 +170,22 @@ class WebRTCOutput(Output):
             self.pipeline.add(self.peers[ws]['video_queue'])
             self.webrtc_video_tee.link(self.peers[ws]['video_queue'])
             self.peers[ws]['video_queue'].link(self.peers[ws]['webrtcbin'])
+            self.peers[ws]['video_queue'].set_state(Gst.State.READY)
 
         if config.enable_audio():
             self.peers[ws]['audio_queue'] = Gst.ElementFactory.make('queue')
             self.pipeline.add(self.peers[ws]['audio_queue'])
             self.webrtc_audio_tee.link(self.peers[ws]['audio_queue'])
             self.peers[ws]['audio_queue'].link(self.peers[ws]['webrtcbin'])
+            self.peers[ws]['audio_queue'].set_state(Gst.State.READY)
+
+        # We set the three elements above to READY first.
+        # We now move them to PLAYING
+        # This appears to prevent a race-condition that can
+        # intermittently cause _on_negotiation_needed to not be called.
+        self.peers[ws]['webrtcbin'].set_state(Gst.State.PLAYING)
+        self.peers[ws]['video_queue'].set_state(Gst.State.PLAYING)
+        self.peers[ws]['audio_queue'].set_state(Gst.State.PLAYING)
 
     def _remove_webrtc_element(self, ws):
         '''
