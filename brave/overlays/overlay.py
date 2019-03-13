@@ -1,5 +1,6 @@
 from gi.repository import Gst
 from brave.inputoutputoverlay import InputOutputOverlay
+import brave.exceptions
 
 
 class Overlay(InputOutputOverlay):
@@ -39,6 +40,9 @@ class Overlay(InputOutputOverlay):
 
         if 'visible' in updates:
             if not self.visible and updates['visible']:
+                if not self.source:
+                    raise brave.exceptions.InvalidConfiguration(
+                        'Cannot make overlay %d visible - source not set' % self.id)
                 self.logger.debug('Becoming visible')
                 self._make_visible()
             if self.visible and not updates['visible']:
