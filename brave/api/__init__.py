@@ -94,7 +94,7 @@ class RestApi(object):
         def start_server():
             asyncio.set_event_loop(uvloop.new_event_loop())
             loop = asyncio.get_event_loop()
-            server = app.create_server(host=config.api_host(), port=config.api_port(), access_log=False)
+            server = app.create_server(host=config.api_host(), port=config.api_port(), access_log=False, return_asyncio_server=True)
             asyncio.ensure_future(server)
             loop.create_task(self.webockets_handler.periodic_check())
             loop.run_forever()
