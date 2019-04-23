@@ -20,8 +20,8 @@ class Output(InputOutputOverlay):
         self.create_elements()
 
         if self.has_video():
-            self.pipeline.get_by_name('capsfilter')\
-                .set_property('caps', Gst.Caps.from_string(self.create_caps_string()))
+            #self.pipeline.get_by_name('capsfilter')\
+            #    .set_property('caps', Gst.Caps.from_string(self.create_caps_string()))
             self.intervideosrc = self.pipeline.get_by_name('intervideosrc')
             self.intervideosrc_src_pad = self.intervideosrc.get_static_pad('src')
 

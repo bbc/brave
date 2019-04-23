@@ -7,8 +7,8 @@ enable_audio: true
 ##
 ## Default width and height (If ommitted, it will be 640,360)
 ##
-default_mixer_width: 640
-default_mixer_height: 360
+default_mixer_width: 1280
+default_mixer_height: 720
 
 ##
 ## DEFAULT INPUTS

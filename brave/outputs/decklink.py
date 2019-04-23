@@ -27,13 +27,12 @@ class DecklinkOutput(Output):
     def create_elements(self):
         pipeline_string = ''
         if config.enable_video():
-            pipeline_string += self._video_pipeline_start() + 'queue'
-            ' ! decklinkvideosink device-number=0 mode=' + str(self.mode)
+            pipeline_string += 'intervideosrc name=intervideosrc ! queue ! videoconvert ! videoscale ! decklinkvideosink device-number=0 mode=' + str(self.mode)
         if config.enable_audio():
-            pipeline_string += ' interaudiosrc name=interaudiosrc ! queue ! decklinkaudiosink device-number=0'
+            pipeline_string += ' interaudiosrc name=interaudiosrc ! queue ! audioconvert ! audioresample ! decklinkaudiosink device-number=0'
 
         self.create_pipeline_from_string(pipeline_string)
 
     def create_caps_string(self):
         # format=RGB removes the alpha channel which can crash glimagesink
-        return super().create_caps_string(format='RGB') + ',framerate=50,pixel-aspect-ratio=1/1'
+        return #super().create_caps_string(format='UVYV')
