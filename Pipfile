@@ -7,7 +7,7 @@ name = "pypi"
 pyyaml = "*"
 gbulb = "*"
 sanic = "*"
-websockets = "~=5.0.0"
+websockets = "*"
 pytest = "*"
 pillow = "*"
 pygobject = "*"
@@ -18,4 +18,4 @@ gobject = "*"
 [dev-packages]
 
 [requires]
-python_version = "3.6"
+python_version = "3"
