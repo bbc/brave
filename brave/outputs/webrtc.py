@@ -186,8 +186,12 @@ class WebRTCOutput(Output):
         # This appears to prevent a race-condition that can
         # intermittently cause _on_negotiation_needed to not be called.
         self.peers[ws]['webrtcbin'].set_state(Gst.State.PLAYING)
-        self.peers[ws]['video_queue'].set_state(Gst.State.PLAYING)
-        self.peers[ws]['audio_queue'].set_state(Gst.State.PLAYING)
+
+        if config.enable_video():
+            self.peers[ws]['video_queue'].set_state(Gst.State.PLAYING)
+
+        if config.enable_audio():
+            self.peers[ws]['audio_queue'].set_state(Gst.State.PLAYING)
 
     def _remove_webrtc_element(self, ws):
         '''
