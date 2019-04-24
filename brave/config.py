@@ -9,7 +9,7 @@ def init(filename=DEFAULT_CONFIG_FILENAME):
     try:
         with open(filename, 'r') as stream:
             global c
-            c = yaml.load(stream)
+            c = yaml.load(stream, Loader=yaml.FullLoader)
             if c is None:
                 c = {}
     except FileNotFoundError as e:
