@@ -46,12 +46,28 @@ Note, versions earlier than 1.14.2 won't work (The .2 point-release fixed WebRTC
 
 ```
 brew install gstreamer
-brew install gst-plugins-base --with-theora --with-opus
-brew install gst-plugins-good --with-speex --with-cairo --with-gdk-pixbuf --with-libpng --with-libvpx
-brew install gst-plugins-bad --with-rtmpdump --with-libvo-aacenc --with-srt --with-libnice --with-gnutls
-brew install gst-plugins-ugly  --with-lame --with-x264 --with-libmpeg2 --with-mad --with-theora
+brew install gst-plugins-base
+brew install gst-plugins-good
+brew install gst-plugins-bad
+brew install gst-plugins-ugly
 brew install gst-libav gst-python
 ```
+
+## Changes to brew gstreamer packages
+Depending on you brew version some of the options listed above may not be present. In order to add some of these missing dependencies back we will need to edit the different formula used to build the gstreamer libs. When brave trys to run it will look for the missing the dependencies, and print them out.
+
+### Plugins Ugly
+```
+brew edit gst-plugins-bad
+```
+Add the following under `depends_on "orc"`
+```
+depends_on "libnice" => :recommended
+depends_on "rtmpdump" => :recommended
+depends_on "srtp" => :recommended
+```
+
+The rebuild/install the packages from source. `brew reinstall --build-from-source gst-plugins-bad`
 
 ## All done!
 
