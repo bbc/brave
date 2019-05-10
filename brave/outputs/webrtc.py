@@ -157,6 +157,7 @@ class WebRTCOutput(Output):
 
         self.peers[ws]['webrtcbin'] = Gst.ElementFactory.make('webrtcbin')
         self.pipeline.add(self.peers[ws]['webrtcbin'])
+        self.peers[ws]['webrtcbin'].set_property('bundle-policy', 'max-bundle')
         self.peers[ws]['webrtcbin'].add_property_notify_watch(None, True)
         self.peers[ws]['webrtcbin'].set_state(Gst.State.READY)
 
