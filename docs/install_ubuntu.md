@@ -50,6 +50,7 @@ Simply clone Brave from GitHub, and try running it:
 ```
 git clone https://github.com/bbc/brave.git
 cd brave
+pipenv install
 pipenv run ./brave.py
 ```
 
