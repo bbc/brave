@@ -3,6 +3,8 @@
 Runs Brave as a daemon with RestAPI interface
 '''
 
+# "r_frame_rate":"47/1" trying to track down the issue with the stuttering
+
 import sys
 import threading
 import signal
@@ -15,6 +17,9 @@ import brave.config
 from brave.helpers import run_on_master_thread_when_idle
 import brave.exceptions
 
+
+import setproctitle
+setproctitle.setproctitle('brave')
 
 def setup_args():
     parser = argparse.ArgumentParser(description='Basic Remote AV Editor')

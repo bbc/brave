@@ -29,6 +29,17 @@
           </div>
         </span>
         <span class="btn-group">
+          <button type="button" class="btn btn-sm btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fas fa-plus"></i> Special
+          </button>
+          <div class="dropdown-menu">
+            <a class="dropdown-item" href="#" id="rebuild-mixer-and-output">RebuildMixerAndOutput</a>
+            
+            <a class="dropdown-item" href="#" id="add-time-overlay">Add LocalTime</a>
+            <a class="dropdown-item" href="#" id="all-stop">Stop</a>
+          </div>
+        </span>
+        <span class="btn-group">
           <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <i class="fas fa-cog"></i> Options
           </button>
@@ -37,6 +48,18 @@
             <a class="dropdown-item" href="api/config/current.yaml">Download current config</a>
             <a class="dropdown-item" href="#" id="refresh-page-button">Refresh page</a>
             <a class="dropdown-item" target="_blank" href="elements_table">Debug view (GStreamer elements)</a>
+          </div>
+        </span>
+        <span class="btn-group">
+          <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fas fa-plus"></i> Quick add
+          </button>
+          <input type="text" id="quickaddrebox">
+          <div class="dropdown-menu">
+            <a class="dropdown-item" href="#" id="qa-youtubedl">QA youtubedl</a>
+            <a class="dropdown-item" href="#" id="qa-streamlink">QA Streamlink</a>
+            <a class="dropdown-item" href="#" id="qa-text">QA text</a>
+            
           </div>
         </span>
     </div>

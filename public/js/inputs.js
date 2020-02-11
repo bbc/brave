@@ -33,7 +33,7 @@ inputsHandler._drawCards = () => {
 
 inputsHandler._asCard = (input) => {
     return components.card({
-        title: prettyUid(input.uid) + ' (' + prettyType(input.type) + ')',
+        title: prettyUid(input.uid) + ' (' + prettyType(input.type) + ') - ' + input.channel,
         options: inputsHandler._optionButtonsForInput(input),
         body: inputsHandler._inputCardBody(input),
         state: components.stateBox(input, inputsHandler.setState),
@@ -73,6 +73,7 @@ inputsHandler._inputCardBody = (input) => {
     if (input.hasOwnProperty('host')) details.push('<div><strong>Host:</strong> ' + input.host + '</div>')
     if (input.hasOwnProperty('port')) details.push('<div><strong>Port:</strong> ' + input.port + '</div>')
     if (input.hasOwnProperty('container')) details.push('<div><strong>Container:</strong> ' + input.container + '</div>')
+    if (input.hasOwnProperty('channel')) details.push('<div><strong>Channel:</strong> ' + input.channel + '</div>')
 
     if (input.hasOwnProperty('duration')) {
         var duration = prettyDuration(input.duration)
@@ -162,6 +163,15 @@ inputsHandler._populateForm = function(input) {
         value: input.uri || '',
         help: uriExamples,
     })
+    
+    var suriRow = formGroup({
+        id: 'input-suri',
+        label: 'Location (URI)',
+        name: 'suri',
+        type: 'text',
+        value: input.suri || '',
+        help: uriExamples,
+    })
 
     const sizeBox = getDimensionsSelect('dimensions', input.width, input.height)
 
@@ -226,6 +236,8 @@ inputsHandler._populateForm = function(input) {
     if (isNew) {
         var options = {
             'uri': 'URI (for files, RTMP, RTSP and HLS)',
+            'youtubedl': 'Youtubedl for adding urls',
+            'streamlink': 'Streamlink for adding urls',
             'image': 'Image',
             'tcp_client': 'TCP Client (receive from a TCP server)',
             'html': 'HTML (for showing a web page)',
@@ -269,6 +281,22 @@ inputsHandler._populateForm = function(input) {
         form.append(components.volumeInput(input.volume));
         form.append(bufferDuationBox)
     }
+    else if (input.type === 'streamlink') {
+        if (isNew) form.append(uriRow);
+        form.append(loopBox);
+        form.append(sizeBox);
+        form.append(components.volumeInput(input.volume));
+        form.append(bufferDuationBox);
+        //form.append(suriRow);
+    }
+    else if (input.type === 'youtubedl') {
+        if (isNew) form.append(uriRow);
+        form.append(loopBox);
+        form.append(sizeBox);
+        form.append(components.volumeInput(input.volume));
+        form.append(bufferDuationBox);
+        //form.append(suriRow);
+    }
     else if (input.type === 'html') {
         if (isNew) form.append(uriRow);
         form.append(sizeBox);
@@ -295,7 +323,7 @@ inputsHandler._handleFormSubmit = function() {
     const input = isNew ? {} : inputsHandler.findById(id)
     const newProps = {}
 
-    fields = ['type', 'uri', 'position', 'dimensions', 'freq', 'volume', 'input_volume', 'pattern', 'wave', 'buffer_duration', 'host', 'port', 'container']
+    fields = ['type', 'uri', 'position', 'dimensions', 'freq', 'volume', 'input_volume', 'pattern', 'wave', 'buffer_duration', 'host', 'port', 'container','channel']
     fields.forEach(function(f) {
         var input = form.find('[name="' + f + '"]')
         if (input && input.val() !== null && input.val() !== '') {

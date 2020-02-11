@@ -2,6 +2,59 @@
 // This web interface has been quickly thrown together. It's not production code.
 //
 
+function global_all_stop(){
+    
+    console.log("should stop streaming")
+}
+
+function rebuild_mixer_and_output_with_delayed_start(){
+    console.log("rebuilding mixer and output")
+    //submitCreateOrEdit(blockType, id, values)
+    
+}
+
+function add_bitwave_text(){
+    console.log("adds [bitwave.tv] text")
+    
+    var addbwtext = {'type': 'text', 'text': '[bitwave.tv]', 'valignment': 'bottom', 'source': 'mixer1'}
+    submitCreateOrEdit('overlay', null, addbwtext)
+    
+}
+
+function add_time_overlay(){
+    console.log("adds time overlay for local time")
+    
+    var createTime = {'type': 'clock', 'text': '', 'valignment': 'bottom', 'source': 'mixer1'}
+    submitCreateOrEdit('overlay', null, createTime)
+    
+}
+
+function qa_streamlink(){
+    var url_link = $('#quickaddrebox').val()
+    //console.log("add url:", url_link)
+     var createsl ={'type': 'streamlink', 'uri': url_link, 'volume': 1, 'loop': false}
+     submitCreateOrEdit('input', null, createsl)
+    $('#quickaddrebox').val("")
+}
+
+function qa_ytdl(){
+    var url_link = $('#quickaddrebox').val()
+    //console.log("add url:", url_link)
+    var createytdl ={'type': 'youtubedl', 'uri': url_link, 'volume': 1, 'loop': false}
+    submitCreateOrEdit('input', null, createytdl)
+    $('#quickaddrebox').val("")
+    
+}
+
+function qa_text(){
+    var url_link = $('#quickaddrebox').val()
+    //console.log("add url:", url_link)
+    var createtext ={'type': 'text', 'text': url_link, 'valignment': 'bottom', 'source': 'mixer1'}
+    submitCreateOrEdit('input', null, createtext)
+    $('#quickaddrebox').val("")
+    
+}
+
 function onPageLoad() {
     $(document).ready(function() {
         $('#new-input-button').click(inputsHandler.showFormToAdd)
@@ -10,6 +63,23 @@ function onPageLoad() {
         $('#new-output-button').click(outputsHandler.showFormToAdd)
         $('#refresh-page-button').click(updatePage)
         $('#restart-brave-button').click(restartBraveConfirmation)
+        
+        // add special input handlers for rebuild mixer and output
+        $('#rebuild-mixer-and-output').click(rebuild_mixer_and_output_with_delayed_start)
+        // add bitwave text
+        //$('#add-bitwave-text').click(add_bitwave_text)
+        
+        // add time overlay
+        $('#add-time-overlay').click(add_time_overlay)
+        
+        // global stop of output
+        $('#all-stop').click(global_all_stop)
+        
+        // do quick adds for quickaddrebox
+        $('#qa-youtubedl').click(qa_ytdl)
+        $('#qa-streamlink').click(qa_streamlink)
+        $('#qa-text').click(qa_text)
+        
         $("#top-message").hide();
         updatePage();
         websocket.setup()

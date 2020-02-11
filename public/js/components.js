@@ -113,7 +113,7 @@ components._stateIcons = (item) => {
 }
 
 components.volumeInput = (volume) => {
-    const DEFAULT_VOLUME = 0.8
+    const DEFAULT_VOLUME = 1.0
     if (volume === undefined || volume === null) volume = DEFAULT_VOLUME
     volume *= 100 // as it's a percentage
     return formGroup({

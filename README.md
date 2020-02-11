@@ -94,6 +94,18 @@ First, install the dependencies, and then clone this repo.
 * [How to install on Ubuntu](./docs/install_ubuntu.md)
 * [How to install on CentOS 7](./docs/install_centos7.md)
 
+### Docker build and install and use
+`docker build https://github.com/DoxIsMightier/brave.git`
+
+Then get the package id from the end of the build process:
+`Successfully built PackageHashNumber`
+
+Then run the new docker image:
+`docker run --name brave --rm -t -i -p 5000:5000 PackageHashNumber`
+
+Optionally you can also mount a local directory interal to the docker instance:
+`-v /path/in/host:/videos`
+
 ## How to use
 To start:
 
