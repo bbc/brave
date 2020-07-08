@@ -22,7 +22,6 @@ sudo apt-get install -y \
     gstreamer1.0-plugins-ugly \
     gstreamer1.0-tools \
     libcairo2-dev \
-    libcairo2-dev \
     libgirepository1.0-dev \
     pkg-config \
     python-gst-1.0 \
