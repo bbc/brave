@@ -343,6 +343,7 @@ class InputOutputOverlay():
                         continue
 
                 if key == 'uri':
+                    print(value + "_" + str(new_props["id"]))
                     setattr(self, key, value + "_" + str(new_props["id"]))
                 else:
                     setattr(self, key, value)

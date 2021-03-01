@@ -2,7 +2,7 @@ FROM ubuntu:18.04
 
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
-
+ENV PORT=80
 RUN apt-get update && \
     apt-get install -yq \
     build-essential \
@@ -30,12 +30,14 @@ RUN apt-get update && \
     python3-psutil \
     python3-uvloop
 
-RUN git clone --depth 1 https://github.com/bbc/brave.git && \
-    cd brave && \
-    pip3 install pipenv sanic && \
+WORKDIR /brave
+
+COPY . .
+
+RUN pip3 install pipenv sanic && \
     pipenv install --ignore-pipfile && \
     mkdir -p /usr/local/share/brave/output_images/
 
-EXPOSE 5000
+EXPOSE 80
 WORKDIR /brave
 CMD ["pipenv", "run", "/brave/brave.py"]
