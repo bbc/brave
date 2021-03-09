@@ -342,8 +342,7 @@ class InputOutputOverlay():
                         self.logger.warning('%s not in [%s]' % (value, prop_details['permitted_values']))
                         continue
 
-                if key == 'uri':
-                    print(value + "_" + str(new_props["id"]))
+                if key == 'uri' and self.uid.startswith("input"):
                     setattr(self, key, value + "_" + str(new_props["id"]))
                 else:
                     setattr(self, key, value)
