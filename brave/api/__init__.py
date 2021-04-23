@@ -62,6 +62,7 @@ class RestApi(object):
         app.add_route(route_handler.overlays, "/api/overlays")
         app.add_route(route_handler.mixers, "/api/mixers")
         app.add_route(route_handler.elements, "/api/elements")
+        app.add_route(route_handler.get_health, "/api/healthCheck")
 
         app.add_route(route_handler.create_input, '/api/inputs', methods=['PUT'])
         app.add_route(route_handler.create_output, '/api/outputs', methods=['PUT'])

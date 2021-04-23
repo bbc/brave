@@ -42,6 +42,10 @@ async def elements(request):
         'mixers': request['session'].mixers.get_pipeline_details(show_inside_bin_elements)
     })
 
+async def get_health(request):
+    return _status_ok_response()
+
+
 
 async def delete_input(request, id):
     input = _get_input(request, id)
