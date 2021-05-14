@@ -1,0 +1,144 @@
+# Creates a video wall of 24 different test sources.
+# It's an example of how to mix multiple inputs side by side.
+# Warning this is computationally heavy!
+enable_audio: false
+inputs: 
+  - type: 'test_video'
+    pattern: 0
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 1
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 2
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 3
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 4
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 5
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 6
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 7
+    width: 160
+    height: 90
+  - type: 'test_video'
+    pattern: 8
+    width: 160
+    height: 90
+  
+  
+mixers:
+  - {}
+  - pattern: 2
+    width: 640
+    height: 540
+    sources:
+      - uid: input1
+        width: 160
+        height: 90
+      - uid: input2
+        xpos: 160
+        width: 160
+        height: 90
+      - uid: input3
+        xpos: 320
+        width: 160
+        height: 90
+      - uid: input4
+        xpos: 480
+        width: 160
+        height: 90
+      - uid: input5
+        xpos: 0
+        ypos: 90
+        width: 160
+        height: 90
+      - uid: input6
+        xpos: 160
+        ypos: 90
+        width: 160
+        height: 90
+      - uid: input7
+        xpos: 320
+        ypos: 90
+        width: 160
+        height: 90
+      - uid: input8
+        xpos: 480
+        ypos: 90
+        width: 160
+        height: 90
+      - uid: input9
+        xpos: 0
+        ypos: 180
+        width: 160
+        height: 90
+      
+  
+
+overlays:
+  - type: text
+    visible: true
+    text: 1
+    source: input1
+    font_size: 150
+  - type: text
+    visible: true
+    text: 2
+    source: input2
+    font_size: 150
+  - type: text
+    visible: true
+    text: 3
+    source: input3
+    font_size: 150
+  - type: text
+    visible: true
+    text: 4
+    source: input4
+    font_size: 150
+  - type: text
+    visible: true
+    text: 5
+    source: input5
+    font_size: 150
+  - type: text
+    visible: true
+    text: 6
+    source: input6
+    font_size: 150
+  - type: text
+    visible: true
+    text: 7
+    source: input7
+    font_size: 150
+  - type: text
+    visible: true
+    text: 8
+    source: input8
+    font_size: 150
+  - type: text
+    visible: true
+    text: 9
+    source: input9
+    font_size: 150
+  
+  
+outputs:
+  - type: 'image'
+    width: 640
+    height: 540
