@@ -48,44 +48,44 @@ mixers:
     height: 540
     sources:
       - uid: input1
-        width: 160
+        width: 213
         height: 90
       - uid: input2
-        xpos: 160
-        width: 160
+        xpos: 213
+        width: 213
         height: 90
       - uid: input3
-        xpos: 320
-        width: 160
+        xpos: 426
+        width: 213
         height: 90
       - uid: input4
-        xpos: 480
-        width: 160
+        xpos: 0
+        width: 213
         height: 90
       - uid: input5
-        xpos: 0
+        xpos: 213
         ypos: 90
-        width: 160
+        width: 213
         height: 90
       - uid: input6
-        xpos: 160
+        xpos: 426
         ypos: 90
-        width: 160
+        width: 213
         height: 90
       - uid: input7
-        xpos: 320
+        xpos: 0
         ypos: 90
-        width: 160
+        width: 213
         height: 90
       - uid: input8
-        xpos: 480
+        xpos: 213
         ypos: 90
-        width: 160
+        width: 213
         height: 90
       - uid: input9
-        xpos: 0
+        xpos: 426
         ypos: 180
-        width: 160
+        width: 213
         height: 90
       
   
