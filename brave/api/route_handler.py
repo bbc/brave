@@ -110,11 +110,19 @@ async def update_mixer(request, id):
 
 
 async def create_input(request):
-    # TODO  adicionar aqui output com id correspondente ao input, mas com uri de rtmp://rmtp.eaglestream.tv/live/ID00001 00002 00003 etc... 
-
+    # TODO  adicionar aqui output com id correspondente ao input, mas com uri de rtmp://rmtp.eaglestream.tv/live/ID00001 00002 00003 etc...     
+    
     input = request['session'].inputs.add(**request.json)
     input.setup()
     logger.info('Created input #%d with details %s' % (input.id, request.json))
+
+
+    output_uri = request['uri'].split("/")[:-2] + "/live/" + request['uri'].split("/")[-1] + "0000" + str(input.id)
+
+    params = {'type': 'rtmp', 'uri': output_uri, 'source': 'input' + str(input.id)}
+    output = request['session'].outputs.add(**params)
+
+
     return sanic.response.json({'id': input.id, 'uid': input.uid})
 
 

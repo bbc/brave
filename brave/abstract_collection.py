@@ -30,6 +30,8 @@ class AbstractCollection(collections.abc.MutableMapping):
         return len(self._items)
 
     def get_new_id(self):
+        #ISTO FAZ COM QUE ELE CRIE POR ORDEM OS IDS
+        self._next_id = 1
         while self._next_id in self._items:
             self._next_id += 1
         return self._next_id

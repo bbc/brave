@@ -343,6 +343,7 @@ class InputOutputOverlay():
                         continue
 
                 if key == 'uri' and self.uid.startswith("input"):
+                    # self.logger.info()
                     setattr(self, key, value + "_" + str(new_props["id"]))
                 else:
                     setattr(self, key, value)
