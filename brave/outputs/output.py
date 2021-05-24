@@ -10,6 +10,9 @@ class Output(InputOutputOverlay):
     '''
 
     def __init__(self, **args):
+        if 'name' in args:
+            self.name = args["name"]
+            del args["name"]
         if 'source' in args:
             source_uid = args['source']
             del args['source']

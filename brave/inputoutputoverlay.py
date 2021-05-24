@@ -141,6 +141,9 @@ class InputOutputOverlay():
 
     @property
     def uid(self):
+        if hasattr(self,"name"):
+            return self.name
+        # if self.uid != self.input_output_overlay_or_mixer():
         return '%s%d' % (self.input_output_overlay_or_mixer(), self.id)
 
     def source_connections(self):

@@ -34,8 +34,9 @@ outputsHandler._drawCards = () => {
 }
 
 outputsHandler._asCard = (output) => {
+    var title = 'Output ' + (output.uid == "Master" ? output.uid : output.id); 
     return components.card({
-        title: 'Output ' + output.id + ' (' + prettyType(output.type) + ')',
+        title: title + ' (' + prettyType(output.type) + ')',
         options: outputsHandler._optionButtonsForOutput(output),
         body: outputsHandler._outputCardBody(output),
         state: components.stateBox(output, outputsHandler.setState),
