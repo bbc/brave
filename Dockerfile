@@ -30,13 +30,20 @@ RUN apt-get update && \
     python3-psutil \
     python3-uvloop
 
+
+
+RUN pip3 install pipenv sanic && \
+    mkdir -p /usr/local/share/brave/output_images/
+
+
+
 WORKDIR /brave
 
 COPY . .
 
-RUN pip3 install pipenv sanic && \
-    pipenv install --ignore-pipfile && \
-    mkdir -p /usr/local/share/brave/output_images/
+# RUN pip3 install pipenv sanic && \
+RUN pipenv install --ignore-pipfile 
+    # mkdir -p /usr/local/share/brave/output_images/
 
 EXPOSE 80
 WORKDIR /brave
