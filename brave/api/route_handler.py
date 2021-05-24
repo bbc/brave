@@ -116,8 +116,7 @@ async def create_input(request):
     input.setup()
     logger.info('Created input #%d with details %s' % (input.id, request.json))
 
-
-    output_uri = request['uri'].split("/")[:-2] + "/live/" + request['uri'].split("/")[-1] + "0000" + str(input.id)
+    output_uri = '/'.join(request.json['uri'].split("/")[:-2]) + "/live/" + request.json['uri'].split("/")[-1] + "0000" + str(input.id)
 
     params = {'type': 'rtmp', 'uri': output_uri, 'source': 'input' + str(input.id)}
     output = request['session'].outputs.add(**params)
