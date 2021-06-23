@@ -1,0 +1,10 @@
+pyyaml
+gbulb
+sanic
+websockets
+pytest
+pillow
+pygobject
+vext
+psutil
+gobject
