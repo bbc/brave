@@ -37,7 +37,7 @@ The `uri` input type uses GStreamer's `playbin` element to accept a wide variety
 
 The types of content accepted will depend, in part, on which decoders and GStreamer elements that are installed.
 
-Note that this type does not as a server. Content must be 'pulled' from another place. For example, if you had a video source that wanted to send RTMP, you'd require an RTMP server to accept this so that Brave could then read it.
+Note that this type does not act as a server. Content must be 'pulled' from another place. For example, if you had a video source that wanted to send RTMP, you'd require an RTMP server to accept this so that Brave could then read it.
 
 ### Properties
 In addition to the common properties above, this input type also has the following:
