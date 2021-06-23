@@ -34,7 +34,7 @@ class Input(InputOutputOverlay):
         if not for_config_file:
             if hasattr(self, 'pipeline'):
                 position = int(str(self.pipeline.query_position(Gst.Format.TIME).cur))
-                if position is not None and position is not -1:
+                if position != None and position != -1:
                     s['position'] = position
                 s['duration'] = int(str(self.pipeline.query_duration(Gst.Format.TIME).duration))
 

@@ -134,7 +134,7 @@ class InputOutputOverlay():
                 s['desired_state'] = self.desired_state.value_nick.upper()
 
         for a in attributes_to_copy:
-            if a is not 'state' and hasattr(self, a):
+            if a != 'state' and hasattr(self, a):
                 s[a] = getattr(self, a)
 
         return s

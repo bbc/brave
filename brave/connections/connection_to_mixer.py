@@ -284,7 +284,7 @@ class ConnectionToMixer(Connection):
 
         # We ask the src to hold the frame for 24 hours (basically, a very long time)
         # This is optional, but prevents it from going black when it's better to show the last frame.
-        if audio_or_video is 'video':
+        if audio_or_video == 'video':
             self._intersrc_element[audio_or_video].set_property('timeout', Gst.SECOND * 60 * 60 * 24)
 
         return self._intersrc_element[audio_or_video]
