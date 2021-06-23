@@ -17,7 +17,7 @@ class RestApi(object):
     '''
 
     def __init__(self, session):
-        app = Sanic()
+        app = Sanic(name='Brave')
         app.config.KEEP_ALIVE = False
         session.rest_api = self
         self.webockets_handler = brave.api.websockets_handler.WebsocketsHandler(session)
