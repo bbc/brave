@@ -96,8 +96,10 @@ class Connection():
 
         # Give the 'inter' elements a channel name. It doesn't matter what, so long as they're unique.
         channel_name = create_intersink_channel_name()
-        intersink.set_property('channel', channel_name)
-        intersrc.set_property('channel', channel_name)
+        if intersink:
+            intersink.set_property('channel', channel_name)
+        if intersrc:
+            intersrc.set_property('channel', channel_name)
         return intersrc, intersink
 
     def _block_intersrc(self, audio_or_video):
