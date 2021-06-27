@@ -10,36 +10,36 @@ import brave.config_file
 
 async def all(request):
     return sanic.response.json({
-        'inputs': request['session'].inputs.summarise(),
-        'overlays': request['session'].overlays.summarise(),
-        'outputs': request['session'].outputs.summarise(),
-        'mixers': request['session'].mixers.summarise()
+        'inputs': request.ctx.session.inputs.summarise(),
+        'overlays': request.ctx.session.overlays.summarise(),
+        'outputs': request.ctx.session.outputs.summarise(),
+        'mixers': request.ctx.session.mixers.summarise()
     })
 
 
 async def inputs(request):
-    return sanic.response.json(request['session'].inputs.summarise())
+    return sanic.response.json(request.ctx.session.inputs.summarise())
 
 
 async def outputs(request):
-    return sanic.response.json(request['session'].outputs.summarise())
+    return sanic.response.json(request.ctx.session.outputs.summarise())
 
 
 async def overlays(request):
-    return sanic.response.json(request['session'].overlays.summarise())
+    return sanic.response.json(request.ctx.session.overlays.summarise())
 
 
 async def mixers(request):
-    return sanic.response.json(request['session'].mixers.summarise())
+    return sanic.response.json(request.ctx.session.mixers.summarise())
 
 
 async def elements(request):
     show_inside_bin_elements = 'show_inside_bin_elements' in request.args
     return sanic.response.json({
-        'inputs': request['session'].inputs.get_pipeline_details(show_inside_bin_elements),
-        'overlays': request['session'].overlays.get_pipeline_details(show_inside_bin_elements),
-        'outputs': request['session'].outputs.get_pipeline_details(show_inside_bin_elements),
-        'mixers': request['session'].mixers.get_pipeline_details(show_inside_bin_elements)
+        'inputs': request.ctx.session.inputs.get_pipeline_details(show_inside_bin_elements),
+        'overlays': request.ctx.session.overlays.get_pipeline_details(show_inside_bin_elements),
+        'outputs': request.ctx.session.outputs.get_pipeline_details(show_inside_bin_elements),
+        'mixers': request.ctx.session.mixers.get_pipeline_details(show_inside_bin_elements)
     })
 
 
@@ -106,26 +106,26 @@ async def update_mixer(request, id):
 
 
 async def create_input(request):
-    input = request['session'].inputs.add(**request.json)
+    input = request.ctx.session.inputs.add(**request.json)
     input.setup()
     logger.info('Created input #%d with details %s' % (input.id, request.json))
     return sanic.response.json({'id': input.id, 'uid': input.uid})
 
 
 async def create_output(request):
-    output = request['session'].outputs.add(**request.json)
+    output = request.ctx.session.outputs.add(**request.json)
     logger.info('Created output #%d with details %s' % (output.id, request.json))
     return sanic.response.json({'id': output.id, 'uid': output.uid})
 
 
 async def create_overlay(request):
-    overlay = request['session'].overlays.add(**request.json)
+    overlay = request.ctx.session.overlays.add(**request.json)
     logger.info('Created overlay #%d with details %s' % (overlay.id, request.json))
     return sanic.response.json({'id': overlay.id, 'uid': overlay.uid})
 
 
 async def create_mixer(request):
-    mixer = request['session'].mixers.add(**request.json)
+    mixer = request.ctx.session.mixers.add(**request.json)
     mixer.setup_sources()
     logger.info('Created mixer #%d with details %s' % (mixer.id, request.json))
     return sanic.response.json({'id': mixer.id, 'uid': mixer.uid})
@@ -153,45 +153,45 @@ async def restart(request):
         raise InvalidUsage('Body must contain "config" key')
     if request.json['config'] not in ['original', 'current']:
         raise InvalidUsage('Body "config" key must have value "original" or "current"')
-    run_on_master_thread_when_idle(request['session'].end, restart=True,
+    run_on_master_thread_when_idle(request.ctx.session.end, restart=True,
                                    use_current_config=request.json['config'] == 'current')
     return _status_ok_response()
 
 
 async def config_yaml(request):
-    return sanic.response.text(brave.config_file.as_yaml(request['session']),
+    return sanic.response.text(brave.config_file.as_yaml(request.ctx.session),
                                headers={'Content-Type': 'application/x-yaml'})
 
 
 def _get_output(request, id):
-    if id not in request['session'].outputs or request['session'].outputs[id] is None:
+    if id not in request.ctx.session.outputs or request.ctx.session.outputs[id] is None:
         raise InvalidUsage('no such output ID')
-    return request['session'].outputs[id]
+    return request.ctx.session.outputs[id]
 
 
 def _get_input(request, id):
-    if id not in request['session'].inputs or request['session'].inputs[id] is None:
+    if id not in request.ctx.session.inputs or request.ctx.session.inputs[id] is None:
         raise InvalidUsage('no such input ID')
-    return request['session'].inputs[id]
+    return request.ctx.session.inputs[id]
 
 
 def _get_overlay(request, id):
-    if id not in request['session'].overlays or request['session'].overlays[id] is None:
+    if id not in request.ctx.session.overlays or request.ctx.session.overlays[id] is None:
         raise InvalidUsage('no such overlay ID')
-    return request['session'].overlays[id]
+    return request.ctx.session.overlays[id]
 
 
 def _get_mixer(request, id):
-    if id not in request['session'].mixers or request['session'].mixers[id] is None:
+    if id not in request.ctx.session.mixers or request.ctx.session.mixers[id] is None:
         raise InvalidUsage('no such mixer ID')
-    return request['session'].mixers[id]
+    return request.ctx.session.mixers[id]
 
 
 def _get_connection(request, id, create_if_not_made):
     if 'uid' not in request.json:
         raise InvalidUsage('Requires "uid" field in JSON body')
 
-    source = request['session'].uid_to_block(request.json['uid'])
+    source = request.ctx.session.uid_to_block(request.json['uid'])
     if source is None:
         raise InvalidUsage('No such item "%s"' % request.json['uid'])
 
