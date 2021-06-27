@@ -39,7 +39,7 @@ class RestApi(object):
 
         @app.middleware('request')
         async def give_session_to_each_route_handler(request):
-            request['session'] = session
+            request.ctx.session['session'] = session
 
         @app.middleware('request')
         async def ensure_objects_always_provided_in_json(request):
