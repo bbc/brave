@@ -1,4 +1,4 @@
-FROM ubuntu:21.04
+FROM ubuntu:latest
 
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
@@ -18,7 +18,7 @@ RUN apt-get update && \
     libjpeg-dev python3.9-dev \
     python3-gst-1.0 python3-pip
 
-RUN git clone --depth 1 https://github.com/bbc/brave.git && cd brave && \
+RUN git clone --depth 1 https://github.com/LoveTropics/brave.git && cd brave && \
     pip3 install -r && \
     mkdir -p /usr/local/share/brave/output_images/
 
