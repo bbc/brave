@@ -7,7 +7,7 @@ RUN apt-get update && \
     apt-get install -yq \
     build-essential \
     gcc \
-    git \ 
+    git \
     libffi6 libffi-dev \
     gobject-introspection \
     gstreamer1.0-libav \
@@ -17,7 +17,7 @@ RUN apt-get update && \
     gstreamer1.0-plugins-bad \
     gstreamer1.0-plugins-ugly \
     gstreamer1.0-tools \
-    gir1.2-gst-plugins-bad-1.0 \ 
+    gir1.2-gst-plugins-bad-1.0 \
     libcairo2-dev \
     libgirepository1.0-dev \
     pkg-config \
@@ -32,7 +32,7 @@ RUN apt-get update && \
 
 RUN git clone --depth 1 https://github.com/bbc/brave.git && \
     cd brave && \
-    pip3 install pipenv sanic && \
+    pip3 install -Iv pipenv==2022.4.8 && \
     pipenv install --ignore-pipfile && \
     mkdir -p /usr/local/share/brave/output_images/
 
